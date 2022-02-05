@@ -17,13 +17,16 @@
             class="white--text align-end"
             v-bind:src="invoiceQRImage"
             ref="invoice"
-            max-height="250"
+            max-height="220"
           >
             <v-card-title>{{ invoiceQr }}</v-card-title>
           </v-img>
 
           <v-card-subtitle class="pb-0" v-if="cufe.chFE"
-            >CUFE {{ cufe.chFE }} <v-icon v-if="cufe.verified" large color="darken-3 green">mdi-certificate</v-icon>
+            >CUFE {{ cufe.chFE }}
+            <v-icon v-if="cufe.verified" large color="darken-3 green"
+              >mdi-certificate</v-icon
+            >
           </v-card-subtitle>
           <!-- 
           <v-card-text class="text--primary">
@@ -63,7 +66,7 @@
             class="white--text align-end"
             v-bind:src="cedulaQRImage"
             ref="cedula"
-            max-height="250"
+            max-height="220"
           >
             <v-card-title>{{ cedulaQr }}</v-card-title>
           </v-img>
@@ -90,15 +93,13 @@
       </v-col>
       <v-col class="text-center" cols="6">
         <v-card class="mx-auto">
-          <v-card-subtitle class="pb-0">
-            Emitido por Farmacias Arrochas
-          </v-card-subtitle>
-          <!-- 
-          <v-card-text class="text--primary">
-            <div>Whitehaven Beach</div>
-
-            <div>Whitsunday Island, Whitsunday Islands</div>
-          </v-card-text> -->
+          <v-card-subtitle class="pb-0"> </v-card-subtitle>
+          
+          <v-card-text class="text--primary" v-if="cafeModel.issuer.ruc">
+            <div>Emitida por {{ cafeModel.issuer.name }} ({{ cafeModel.issuer.ruc }} DV {{ cafeModel.issuer.dv }})</div>
+            <div>Direccion {{ cafeModel.issuer.address }}</div>
+            <div>{{ cafeModel.recipient.type }} {{ cafeModel.recipient.name }} ({{ cafeModel.recipient.ruc }}) </div>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
@@ -106,7 +107,8 @@
     <v-row>
       <v-col class="text-center" cols="12">
         <v-card class="mx-auto">
-          <v-card-subtitle class="pb-0"> Verificacion exitosa </v-card-subtitle>
+          <v-card-subtitle class="pb-0" v-if="cedulaId.id === cafeModel.recipient.ruc"> Verificacion exitosa </v-card-subtitle>
+          <v-card-subtitle class="pb-0" v-if="cedulaId.id !== cafeModel.recipient.ruc"> Factura no concuerda con cedula de identidad </v-card-subtitle>
 
           <v-card-actions>
             <v-btn
@@ -142,6 +144,8 @@ import { CUFEBuilder } from './cufe'
 import { BrowserQRCodeReader } from '@zxing/browser'
 import * as reader from 'promise-file-reader'
 import BarcodeDetector from 'barcode-detector'
+import 'pdfjs-dist/legacy/build/pdf.worker.entry'
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.js'
 
 @Component({
   components: {
@@ -162,6 +166,7 @@ export default class Scan extends Vue {
   cufe = {}
   selectedCedula: any
   feURL = ''
+  cafeModel = {issuer: {}, recipient: {},}
 
   openDGI() {
     window.open(this.feURL, '_blank')
@@ -190,7 +195,31 @@ export default class Scan extends Vue {
   }
 
   async readCAFE() {
-    const codeReader = new BrowserQRCodeReader()
+    const b = await reader.readAsArrayBuffer(this.selectedCafe as any)
+    const doc = await getDocument(b).promise
+    const page = await doc.getPage(1)
+    const result = await page.getTextContent()
+
+    const items = result.items
+      .filter((i: any) => !i.hasEOL && i.str.length > 1)
+      .map((i: any) => i.str)
+
+    this.cafeModel = {
+      issuer: {
+        name: items[3],
+        ruc: items[5],
+        dv: items[7],
+        address: items[9],        
+      },
+      recipient: {
+        type: items[11],
+        name: items[13],
+        ruc: items[15],
+      }
+    }
+  }
+  selectedCafe(selectedCafe: any) {
+    throw new Error('Method not implemented.')
   }
   async scanCedula() {
     if (!this.selectedCedula) return
