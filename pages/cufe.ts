@@ -1,3 +1,4 @@
+// @ts-nocheck
 import moment from 'moment'
 import { Matches, IsInt, IsEnum, IsDate, IsString } from 'class-validator'
 const checkdigit = require('checkdigit')
@@ -30,7 +31,7 @@ export class CUFEBuilder {
     const ptofac = raw.substring(48, 51)
     const tipoEmis = raw.substring(51, 53)
     const iAmb = raw.substring(53, 54)
-    const securityCode = raw.substring(54,63 )
+    const securityCode = raw.substring(54, 63)
     const cufeSequence = [
       tipoDocumento,
       tipoContribuyente,
@@ -46,13 +47,18 @@ export class CUFEBuilder {
     ].join('')
     const mod10 = this.asciify(cufeSequence)
     const digit = checkdigit.mod10.create(mod10)
-    return { cufe: cufeSequence, dv: digit, verified: raw === cufeSequence+digit }
+    return {
+      cufe: cufeSequence,
+      dv: digit,
+      verified: raw === cufeSequence + digit,
+    }
   }
   /**
    * turns to ascii
    * @param val
    */
   asciify(val: string) {
+    //@ts-ignore
     let arr = []
     for (let i = 0; i < val.length; i++) {
       let char = parseInt(val.charAt(i), 10)
@@ -65,8 +71,10 @@ export class CUFEBuilder {
       }
 
       if (char > 9) {
+        //@ts-ignore
         arr = [parseInt(char.toFixed().substring(1, 2), 10), ...arr]
       } else {
+        //@ts-ignore
         arr = [char, ...arr]
       }
     }

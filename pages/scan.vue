@@ -139,10 +139,12 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
 import { QrcodeCapture } from 'vue-qrcode-reader'
+//@ts-ignore
 import { decode } from 'jsonwebtoken'
 import { CUFEBuilder } from './cufe'
 import { BrowserQRCodeReader } from '@zxing/browser'
 import * as reader from 'promise-file-reader'
+//@ts-ignore
 import BarcodeDetector from 'barcode-detector'
 import 'pdfjs-dist/legacy/build/pdf.worker.entry'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.js'
@@ -196,7 +198,7 @@ export default class Scan extends Vue {
 
   async readCAFE() {
     const b = await reader.readAsArrayBuffer(this.selectedCafe as any)
-    const doc = await getDocument(b).promise
+    const doc = await getDocument(b as any).promise
     const page = await doc.getPage(1)
     const result = await page.getTextContent()
 
