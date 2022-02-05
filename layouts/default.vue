@@ -57,7 +57,7 @@
       </v-list>
     </v-navigation-drawer>
     <v-footer :absolute="!fixed" app>
-      <span>&copy; {{ new Date().getFullYear() }}</span>
+      <span>&copy; {{ new Date().getFullYear() }} Industrias de Firmas Electronicas SA</span>
     </v-footer>
   </v-app>
 </template>
@@ -105,7 +105,7 @@ export default {
       miniVariant: false,
       right: true,
       rightDrawer: false,
-      title: 'Vuetify.js',
+      title: 'IFESA',
     }
   },
 }
