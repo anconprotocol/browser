@@ -7,38 +7,36 @@
           accept="image/*"
           counter
           v-model="selected"
-          multiple
-          label="Archivo"
+          @change="loadInvoice"
+          label="QR Factura"
         ></v-file-input>
-        <v-btn
-          :loading="loading"
-          :disabled="loading"
-          color="blue-grey"
-          class="ma-2 white--text"
-          @click="scanInvoice"
-        >
-          Leer QR Factura
-          <v-icon right dark> mdi-cloud-upload </v-icon>
-        </v-btn>
       </v-col>
       <v-col class="text-center" cols="6">
         <v-card class="mx-auto">
+          <v-img
+            class="white--text align-end"
+            v-bind:src="invoiceQRImage"
+            ref="invoice"
+            max-height="250"
+          >
+            <v-card-title>{{ invoiceQr }}</v-card-title>
+          </v-img>
 
-          <v-card-subtitle class="pb-0"> Number 10 </v-card-subtitle>
-
+          <v-card-subtitle class="pb-0"> {{ cufe }} </v-card-subtitle>
+          <!-- 
           <v-card-text class="text--primary">
             <div>Whitehaven Beach</div>
 
             <div>Whitsunday Island, Whitsunday Islands</div>
-          </v-card-text>
+          </v-card-text> -->
 
-          <v-card-actions >
+          <v-card-actions>
             <v-btn
               :loading="loading"
               :disabled="loading"
               color="blue-grey"
               class="ma-2 white--text"
-              @click="scanInvoice"
+              @click="openDGI"
             >
               Descargar Auxiliar de Factura (DGI)
             </v-btn>
@@ -52,32 +50,27 @@
           show-size
           counter
           accept="image/*"
-          v-model="selected"
-          multiple
-          label="Archivo"
+          v-model="selectedCedula"
+          @change="scanCedula"
+          label="QR Cedula"
         ></v-file-input>
-        <v-btn
-          :loading="loading"
-          :disabled="loading"
-          color="blue-grey"
-          class="ma-2 white--text"
-          @click="scanCedula"
-        >
-          Leer QR Cedula
-          <v-icon right dark> mdi-cloud-upload </v-icon>
-        </v-btn>
       </v-col>
       <v-col class="text-center" cols="6">
         <v-card class="mx-auto">
-
-          <v-card-subtitle class="pb-0"> Number 10 </v-card-subtitle>
+          <v-img
+            class="white--text align-end"
+            v-bind:src="cedulaQRImage"
+            ref="cedula"
+            max-height="250"
+          >
+            <v-card-title>{{ cedulaQr }}</v-card-title>
+          </v-img>
+          <v-card-subtitle class="pb-0"> Rogelio  Morrell </v-card-subtitle>
 
           <v-card-text class="text--primary">
-            <div>Whitehaven Beach</div>
+            <div>8-713-2230</div>
 
-            <div>Whitsunday Island, Whitsunday Islands</div>
           </v-card-text>
-
         </v-card>
       </v-col>
     </v-row>
@@ -87,32 +80,20 @@
           show-size
           accept="application/pdf"
           counter
-          v-model="selected"
-          multiple
-          label="Archivo"
+          v-model="selectedCafe"
+          label="CAFE"
+          @change="readCAFE"
         ></v-file-input>
-        <v-btn
-          :loading="loading"
-          :disabled="loading"
-          color="blue-grey"
-          class="ma-2 white--text"
-          @click="scanInvoice"
-        >
-          Subir Auxiliar de Factura (CAFE)
-          <v-icon right dark> mdi-cloud-upload </v-icon>
-        </v-btn>
       </v-col>
       <v-col class="text-center" cols="6">
         <v-card class="mx-auto">
-
-          <v-card-subtitle class="pb-0"> Number 10 </v-card-subtitle>
-
+          <v-card-subtitle class="pb-0"> Emitido por Farmacias  Arrochas </v-card-subtitle>
+<!-- 
           <v-card-text class="text--primary">
             <div>Whitehaven Beach</div>
 
             <div>Whitsunday Island, Whitsunday Islands</div>
-          </v-card-text>
-
+          </v-card-text> -->
         </v-card>
       </v-col>
     </v-row>
@@ -120,21 +101,7 @@
     <v-row>
       <v-col class="text-center" cols="12">
         <v-card class="mx-auto">
-          <v-img
-            class="white--text align-end"
-            height="200px"
-            src="https://cdn.vuetifyjs.com/images/cards/docks.jpg"
-          >
-            <v-card-title>Top 10 Australian beaches</v-card-title>
-          </v-img>
-
-          <v-card-subtitle class="pb-0"> Number 10 </v-card-subtitle>
-
-          <v-card-text class="text--primary">
-            <div>Whitehaven Beach</div>
-
-            <div>Whitsunday Island, Whitsunday Islands</div>
-          </v-card-text>
+          <v-card-subtitle class="pb-0"> Verificacion  exitosa </v-card-subtitle>
 
           <v-card-actions>
             <v-btn
@@ -142,7 +109,7 @@
               :disabled="loading"
               color="blue-grey"
               class="ma-2 white--text"
-              @click="scanInvoice"
+              @click="openMintNFT"
             >
               Certificar como Documento Verificable
             </v-btn>
@@ -151,7 +118,7 @@
               :disabled="loading"
               color="blue-grey"
               class="ma-2 white--text"
-              @click="scanInvoice"
+              @click="openMintNFT"
             >
               Certificar como NFT
             </v-btn>
@@ -167,6 +134,10 @@ import { Component, Vue } from 'vue-property-decorator'
 import { QrcodeCapture } from 'vue-qrcode-reader'
 import { decode } from 'jsonwebtoken'
 import { CUFEBuilder } from './cufe'
+import { BrowserQRCodeReader } from '@zxing/browser'
+import * as reader from 'promise-file-reader'
+import BarcodeDetector from 'barcode-detector'
+
 @Component({
   components: {
     QrcodeCapture,
@@ -174,10 +145,58 @@ import { CUFEBuilder } from './cufe'
 })
 export default class Scan extends Vue {
   result = ''
-  selected: File | undefined
+  selected: any
   loading = false
-  onDecode(result: any) {
+  invoiceQr = ''
+  cedulaQr = ''
+  invoiceQRImage: any
+  cedulaQRImage: any
+  invoice: any
+  cedula: any
+  cufe: string
+  selectedCedula: any
+
+  async scanInvoice() {
+    const codeReader = new BrowserQRCodeReader()
+    const el = this.$refs.invoice as any
+    const img = BrowserQRCodeReader.prepareImageElement(el.image)
+    img.width = 200
+    img.height = 200
+    const resultImage = await codeReader.decodeFromImageElement(img)
+
+    debugger
+  }
+
+  async loadInvoice() {
+    if (!this.selected) return
+    // const datauri = await reader.readAsDataURL(this.selected)
+    this.invoiceQr = this.selected.name
+    this.invoiceQRImage = URL.createObjectURL(this.selected)
+
+    // pick barcode formats. Other formats will be ignored
+    const barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] })
+    // directly pass an image element, video element, ...
+    const [{ rawValue }] = await barcodeDetector.detect(this.selected)
+
+    this.decode(rawValue)
+  }
+
+  async readCAFE() {
+    const codeReader = new BrowserQRCodeReader()
+  }
+  async scanCedula() {
+    if (!this.selectedCedula) return
+    // const datauri = await reader.readAsDataURL(this.selectedCedula)
+    this.cedulaQr = this.selectedCedula.name
+    this.cedulaQRImage = URL.createObjectURL(this.selectedCedula)
+  }
+  async openMintNFT() {
+    const codeReader = new BrowserQRCodeReader()
+  }
+
+  decode(result: any) {
     this.result = result
+    this.cufe = ''
 
     if (result.indexOf('jwt') > 0) {
       const fe = decode(result.split('jwt')[1].split('=')[1])
@@ -186,6 +205,7 @@ export default class Scan extends Vue {
       const o = builder.fromCUFE(fe.chFE)
 
       console.log(fe)
+      this.cufe = o.cufe
     }
     console.log(result)
   }

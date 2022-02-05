@@ -76,31 +76,31 @@ export default {
           title: 'OpenInvoice Panama',
           to: '/',
         },
-        {
-          icon: 'mdi-identifier',
-          title: 'Registrar identidad',
-          to: '/identity',
-        },         
-        {
-          icon: 'mdi-qrcode-scan',
-          title: 'Escanear',
-          to: '/scan',
-        },
+        // {
+        //   icon: 'mdi-identifier',
+        //   title: 'Registrar identidad',
+        //   to: '/identity',
+        // },         
+        // {
+        //   icon: 'mdi-qrcode-scan',
+        //   title: 'Escanear',
+        //   to: '/scan',
+        // },
         {
           icon: 'mdi-certificate-outline',
           title: 'Certificar',
-          to: '/certify',
+          to: '/scan',
         },        
-        {
-          icon: 'mdi-file-sign',
-          title: 'Documento Verificable',
-          to: '/sign',
-        },                
-        {
-          icon: 'mdi-gamepad-square-outline',
-          title: 'Tokenizar',
-          to: '/nft',
-        },        
+        // {
+        //   icon: 'mdi-file-sign',
+        //   title: 'Documento Verificable',
+        //   to: '/sign',
+        // },                
+        // {
+        //   icon: 'mdi-gamepad-square-outline',
+        //   title: 'Tokenizar',
+        //   to: '/nft',
+        // },        
       ],
       miniVariant: false,
       right: true,
