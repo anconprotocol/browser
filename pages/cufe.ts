@@ -44,11 +44,9 @@ export class CUFEBuilder {
       iAmb,
       securityCode,
     ].join('')
-debugger
     const mod10 = this.asciify(cufeSequence)
     const digit = checkdigit.mod10.create(mod10)
-debugger
-    return { cufe: cufeSequence, dv: digit }
+    return { cufe: cufeSequence, dv: digit, verified: raw === cufeSequence+digit }
   }
   /**
    * turns to ascii

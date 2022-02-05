@@ -22,7 +22,9 @@
             <v-card-title>{{ invoiceQr }}</v-card-title>
           </v-img>
 
-          <v-card-subtitle class="pb-0"> {{ cufe }} </v-card-subtitle>
+          <v-card-subtitle class="pb-0" v-if="cufe.chFE"
+            >CUFE {{ cufe.chFE }} <v-icon v-if="cufe.verified" large color="darken-3 green">mdi-certificate</v-icon>
+          </v-card-subtitle>
           <!-- 
           <v-card-text class="text--primary">
             <div>Whitehaven Beach</div>
@@ -65,11 +67,12 @@
           >
             <v-card-title>{{ cedulaQr }}</v-card-title>
           </v-img>
-          <v-card-subtitle class="pb-0"> Rogelio  Morrell </v-card-subtitle>
+          <v-card-subtitle class="pb-0"> {{ cedulaId.name }} </v-card-subtitle>
 
-          <v-card-text class="text--primary">
-            <div>8-713-2230</div>
-
+          <v-card-text class="text--primary" v-if="cedulaId.id">
+            <div>{{ cedulaId.id }}</div>
+            <div>Exipira {{ cedulaId.expiration }}</div>
+            <div>Emitida en {{ cedulaId.province }}</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -87,8 +90,10 @@
       </v-col>
       <v-col class="text-center" cols="6">
         <v-card class="mx-auto">
-          <v-card-subtitle class="pb-0"> Emitido por Farmacias  Arrochas </v-card-subtitle>
-<!-- 
+          <v-card-subtitle class="pb-0">
+            Emitido por Farmacias Arrochas
+          </v-card-subtitle>
+          <!-- 
           <v-card-text class="text--primary">
             <div>Whitehaven Beach</div>
 
@@ -101,7 +106,7 @@
     <v-row>
       <v-col class="text-center" cols="12">
         <v-card class="mx-auto">
-          <v-card-subtitle class="pb-0"> Verificacion  exitosa </v-card-subtitle>
+          <v-card-subtitle class="pb-0"> Verificacion exitosa </v-card-subtitle>
 
           <v-card-actions>
             <v-btn
@@ -153,9 +158,14 @@ export default class Scan extends Vue {
   cedulaQRImage: any
   invoice: any
   cedula: any
-  cufe: string
+  cedulaId = {}
+  cufe = {}
   selectedCedula: any
+  feURL = ''
 
+  openDGI() {
+    window.open(this.feURL, '_blank')
+  }
   async scanInvoice() {
     const codeReader = new BrowserQRCodeReader()
     const el = this.$refs.invoice as any
@@ -163,22 +173,20 @@ export default class Scan extends Vue {
     img.width = 200
     img.height = 200
     const resultImage = await codeReader.decodeFromImageElement(img)
-
-    debugger
   }
 
   async loadInvoice() {
     if (!this.selected) return
-    // const datauri = await reader.readAsDataURL(this.selected)
     this.invoiceQr = this.selected.name
     this.invoiceQRImage = URL.createObjectURL(this.selected)
 
-    // pick barcode formats. Other formats will be ignored
     const barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] })
-    // directly pass an image element, video element, ...
     const [{ rawValue }] = await barcodeDetector.detect(this.selected)
 
-    this.decode(rawValue)
+    this.feURL = rawValue
+    setTimeout(() => {
+      this.decode(rawValue)
+    })
   }
 
   async readCAFE() {
@@ -189,6 +197,23 @@ export default class Scan extends Vue {
     // const datauri = await reader.readAsDataURL(this.selectedCedula)
     this.cedulaQr = this.selectedCedula.name
     this.cedulaQRImage = URL.createObjectURL(this.selectedCedula)
+
+    setTimeout(async () => {
+      const codeReader = new BrowserQRCodeReader()
+      const el = this.$refs.cedula as any
+      const img = BrowserQRCodeReader.prepareImageElement(el.image)
+      const resultImage = await codeReader.decodeFromImageElement(img)
+
+      const items = (resultImage as any).text.split('|')
+      this.cedulaId = {
+        id: items[0],
+        name: `${items[1]} ${items[2]}`,
+        dob: items[6],
+        province: items[5],
+        expiration: items[15],
+        issued: items[14],
+      }
+    })
   }
   async openMintNFT() {
     const codeReader = new BrowserQRCodeReader()
@@ -204,10 +229,8 @@ export default class Scan extends Vue {
       const builder = new CUFEBuilder()
       const o = builder.fromCUFE(fe.chFE)
 
-      console.log(fe)
-      this.cufe = o.cufe
+      this.cufe = { ...fe, ...o }
     }
-    console.log(result)
   }
 }
 </script>
