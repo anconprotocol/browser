@@ -1,4 +1,18 @@
 import colors from 'vuetify/es5/util/colors'
+import { createOidcAuth, SignInType } from 'vue-oidc-client/vue2';
+
+// note the ending '/'
+const appUrl = 'https://localhost:3000/';
+
+// SignInType could be Window or Popup
+const mainOidc = createOidcAuth('main', SignInType.Window, appUrl , {
+
+  authority: 'https://accounts.google.com',
+  client_id: "21519769802-l2n9e5um21n1onq27qnt2r4idh71kbd6.apps.googleusercontent.com",
+  redirect_uri: "http://localhost:3000/auth/callback",
+  response_type: 'id_token token',
+  scope: 'openid profile email api'
+});
 
 export default {
   // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
@@ -9,8 +23,8 @@ export default {
 
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
-    titleTemplate: '%s - OpenInvoice Panama',
-    title: 'OpenInvoice Panama',
+    titleTemplate: '%s - XDV',
+    title: 'XDV',
     htmlAttrs: {
       lang: 'en',
     },

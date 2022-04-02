@@ -6,13 +6,13 @@
       </v-card>
       <v-card>
         <v-card-title class="headline">
-          Certificación de Facturas Electronicas
+XDV
         </v-card-title>
         <v-card-text>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn color="primary" nuxt to="/scan"> Leer factura </v-btn>
+          <v-btn color="primary" nuxt to="/scan"> Sign in</v-btn>
         </v-card-actions>
       </v-card>
     </v-col>
