@@ -1,5 +1,4 @@
-<template>
- </template>
+<template></template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
@@ -13,7 +12,7 @@ import * as reader from 'promise-file-reader'
 import BarcodeDetector from 'barcode-detector'
 import 'pdfjs-dist/legacy/build/pdf.worker.entry'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.js'
-
+import { ParkyDB } from 'parkydb'
 @Component({
   components: {
     QrcodeCapture,
@@ -33,7 +32,7 @@ export default class Main extends Vue {
   cufe = {}
   selectedCedula: any
   feURL = ''
-  cafeModel = {issuer: {}, recipient: {},}
+  cafeModel = { issuer: {}, recipient: {} }
 
   openDGI() {
     window.open(this.feURL, '_blank')
@@ -76,13 +75,13 @@ export default class Main extends Vue {
         name: items[3],
         ruc: items[5],
         dv: items[7],
-        address: items[9],        
+        address: items[9],
       },
       recipient: {
         type: items[11],
         name: items[13],
         ruc: items[15],
-      }
+      },
     }
   }
   selectedCafe(selectedCafe: any) {
@@ -127,6 +126,22 @@ export default class Main extends Vue {
 
       this.cufe = { ...fe, ...o }
     }
+  }
+
+  async mounted() {
+    const bob = new ParkyDB()
+    await bob.initialize({
+      // Remember these values come from a CLI or UI, DO NOT hardcode when implementing
+      withWallet: {
+        password: 'zxcvb',
+        seed: 'opera offer craft joke defy team prosper tragic reopen street advice moral',
+      },
+    })
+
+// @ts-ignore
+    await bob.wallet.submitPassword(`zxcvb`)
+    const accounts = await bob.wallet.getAccounts()
+    const accountB = accounts[0]
   }
 }
 </script>

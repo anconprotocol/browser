@@ -12,7 +12,7 @@ XDV
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn color="primary" nuxt to="/scan"> Sign in</v-btn>
+          <v-btn color="primary" nuxt to="/main"> Sign in</v-btn>
         </v-card-actions>
       </v-card>
     </v-col>

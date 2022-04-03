@@ -1,18 +1,18 @@
 import colors from 'vuetify/es5/util/colors'
-import { createOidcAuth, SignInType } from 'vue-oidc-client/vue2';
+// import { createOidcAuth, SignInType } from 'vue-oidc-client/vue2';
 
-// note the ending '/'
-const appUrl = 'https://localhost:3000/';
+// // note the ending '/'
+// const appUrl = 'https://localhost:3000/';
 
-// SignInType could be Window or Popup
-const mainOidc = createOidcAuth('main', SignInType.Window, appUrl , {
+// // SignInType could be Window or Popup
+// const mainOidc = createOidcAuth('main', SignInType.Window, appUrl , {
 
-  authority: 'https://accounts.google.com',
-  client_id: "21519769802-l2n9e5um21n1onq27qnt2r4idh71kbd6.apps.googleusercontent.com",
-  redirect_uri: "http://localhost:3000/auth/callback",
-  response_type: 'id_token token',
-  scope: 'openid profile email api'
-});
+//   authority: 'https://accounts.google.com',
+//   client_id: "21519769802-l2n9e5um21n1onq27qnt2r4idh71kbd6.apps.googleusercontent.com",
+//   redirect_uri: "http://localhost:3000/auth/callback",
+//   response_type: 'id_token token',
+//   scope: 'openid profile email api'
+// });
 
 export default {
   // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
@@ -85,6 +85,26 @@ export default {
     },
   },
 
-  // Build Configuration: https://go.nuxtjs.dev/config-build
-  build: {},
+  /*
+   ** Build configuration
+   ** Doc: https://nuxtjs.org/api/configuration-build
+   */
+   build: {
+    /*
+     ** You can extend webpack config here
+     */
+    extend(config, ctx) {
+      // transpile .mjs too
+      const babelRule = config.module.rules.find(
+        rule => `${rule.test}` === "/\\.jsx?$/i"
+      );
+      if (babelRule) {
+        babelRule.test = /\.mjs?$/i;
+      }
+      config.modules.rules.push(     {
+        test: /\.mjs$/,
+        include: /node_modules/,
+        type: 'javascript/auto'
+      })
+    },},
 }
