@@ -101,8 +101,13 @@ export default {
       if (babelRule) {
         babelRule.test = /\.mjs?$/i;
       }
-      config.modules.rules.push(     {
+      config.module.rules.push(     {
         test: /\.mjs$/,
+        include: /node_modules/,
+        type: 'javascript/auto'
+      }) 
+           config.module.rules.push(     {
+        test: /\.js$/,
         include: /node_modules/,
         type: 'javascript/auto'
       })
