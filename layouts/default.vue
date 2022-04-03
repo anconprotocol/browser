@@ -24,16 +24,10 @@
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
-    <v-app-bar :clipped-left="clipped" fixed app>
+    <v-app-bar :clipped-left="clipped" fixed app color="pink">
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
       <v-btn icon @click.stop="miniVariant = !miniVariant">
         <v-icon>mdi-{{ `chevron-${miniVariant ? 'right' : 'left'}` }}</v-icon>
-      </v-btn>
-      <v-btn icon @click.stop="clipped = !clipped">
-        <v-icon>mdi-application</v-icon>
-      </v-btn>
-      <v-btn icon @click.stop="fixed = !fixed">
-        <v-icon>mdi-minus</v-icon>
       </v-btn>
       <v-toolbar-title v-text="title" />
       <v-spacer />
@@ -52,7 +46,7 @@
           <v-list-item-action>
             <v-icon light> mdi-repeat </v-icon>
           </v-list-item-action>
-          <v-list-item-title>Switch drawer (click me)</v-list-item-title>
+          <v-list-item-title>Connect</v-list-item-title>
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
@@ -73,7 +67,7 @@ export default {
       items: [
         {
           icon: 'mdi-apps',
-          title: 'OpenInvoice Panama',
+          title: 'Home',
           to: '/',
         },
         // {
@@ -88,8 +82,8 @@ export default {
         // },
         {
           icon: 'mdi-certificate-outline',
-          title: 'Certificar',
-          to: '/scan',
+          title: 'Main',
+          to: '/main',
         },        
         // {
         //   icon: 'mdi-file-sign',
@@ -105,7 +99,7 @@ export default {
       miniVariant: false,
       right: true,
       rightDrawer: false,
-      title: 'IFESA',
+      title: 'xdv.digital [codename everdid]',
     }
   },
 }
