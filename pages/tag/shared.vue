@@ -1,45 +1,40 @@
 <template>
-  <v-card max-width="400" class="mx-auto">
-    <v-container>
-      <v-row dense>
-        <v-col cols="12">
-          <v-card color="amber accent-4" dark>
-            <v-card-title class="text-h5"> Public </v-card-title>
+  <v-card class="mx-auto" max-width="500">
+    <v-list subheader>
+      <v-subheader>Recent chat</v-subheader>
 
-            <v-card-subtitle
-              >Data economy services.</v-card-subtitle
-            >
+      <v-list-item v-for="chat in recent" :key="chat.title">
+        <v-list-item-avatar>
+          <v-img :alt="`${chat.title} avatar`" :src="chat.avatar"></v-img>
+        </v-list-item-avatar>
 
-            <v-card-actions>
-              <v-btn text nuxt to="/tag/public"> 21 Dapps, 80 NFTs, 5 alert topics </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
+        <v-list-item-content>
+          <v-list-item-title v-text="chat.title"></v-list-item-title>
+        </v-list-item-content>
 
-        <v-col cols="12">
-          <v-card color="indigo accent-4" dark>
-            <v-card-title class="text-h5"> Shared </v-card-title>
+        <v-list-item-icon>
+          <v-icon :color="chat.active ? 'deep-purple accent-4' : 'grey'">
+            mdi-message-outline
+          </v-icon>
+        </v-list-item-icon>
+      </v-list-item>
+    </v-list>
 
-            <v-card-subtitle>Secure messaging.</v-card-subtitle>
+    <v-divider></v-divider>
 
-            <v-card-actions>
-              <v-btn text nuxt to="/tag/shared"> 16 groups (11 encrypted, 5 open) </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
-        <v-col cols="12">
-          <v-card color="blue-grey accent-4" dark>
-            <v-card-title class="text-h5"> Personal </v-card-title>
+    <v-list subheader>
+      <v-subheader>Previous chats</v-subheader>
 
-            <v-card-subtitle>Digital assets and credentials.</v-card-subtitle>
+      <v-list-item v-for="chat in previous" :key="chat.title">
+        <v-list-item-avatar>
+          <v-img :alt="`${chat.title} avatar`" :src="chat.avatar"></v-img>
+        </v-list-item-avatar>
 
-            <v-card-actions>
-              <v-btn text nuxt to="/tag/personal"> 1001 assets, 10 credentials </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-container>
+        <v-list-item-content>
+          <v-list-item-title v-text="chat.title"></v-list-item-title>
+        </v-list-item-content>
+      </v-list-item>
+    </v-list>
   </v-card>
 </template>
 
@@ -48,7 +43,7 @@ import { Component, Vue } from 'vue-property-decorator'
 import { QrcodeCapture } from 'vue-qrcode-reader'
 //@ts-ignore
 import { decode } from 'jsonwebtoken'
-import { CUFEBuilder } from './cufe'
+import { CUFEBuilder } from '../cufe'
 import { BrowserQRCodeReader } from '@zxing/browser'
 import * as reader from 'promise-file-reader'
 //@ts-ignore
@@ -103,7 +98,7 @@ const payload = {
     QrcodeCapture,
   },
 })
-export default class Main extends Vue {
+export default class Shared extends Vue {
   bob = new ParkyDB()
   result = ''
   selected: any
@@ -119,6 +114,32 @@ export default class Main extends Vue {
   selectedCedula: any
   feURL = ''
   cafeModel = { issuer: {}, recipient: {} }
+  recent = [
+    {
+      active: true,
+      avatar: 'https://cdn.vuetifyjs.com/images/lists/1.jpg',
+      title: 'Jason Oner',
+    },
+    {
+      active: true,
+      avatar: 'https://cdn.vuetifyjs.com/images/lists/2.jpg',
+      title: 'Mike Carlson',
+    },
+    {
+      avatar: 'https://cdn.vuetifyjs.com/images/lists/3.jpg',
+      title: 'Cindy Baker',
+    },
+    {
+      avatar: 'https://cdn.vuetifyjs.com/images/lists/4.jpg',
+      title: 'Ali Connors',
+    },
+  ]
+  previous = [
+    {
+      title: 'Travis Howard',
+      avatar: 'https://cdn.vuetifyjs.com/images/lists/5.jpg',
+    },
+  ]
 
   openDGI() {
     window.open(this.feURL, '_blank')
@@ -215,27 +236,9 @@ export default class Main extends Vue {
   }
 
   async mounted() {
-    const peer =
-      '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
-    try {
-      await this.bob.initialize({
-        wakuconnect: { bootstrap: { peers: [peer] } },
-        // Remember these values come from a CLI or UI, DO NOT hardcode when implementing
-        withWallet: {
-          password: 'zxcvb',
-          seed: 'opera offer craft joke defy team prosper tragic reopen street advice moral',
-        },
-      })
-    } catch (e) {
-    }
-
-    // @ts-ignore
-    await this.bob.wallet.submitPassword(`zxcvb`)
-    const accounts = await this.bob.wallet.getAccounts()
     // const accountB = accounts[0]
     // const id = await this.bob.putBlock(payload)
     // debugger
-
     // const res = await this.bob.get(id, null)
     // const q = await this.bob.query({
     //   cid: id,
@@ -245,7 +248,7 @@ export default class Main extends Vue {
     //      network
     //      key
     //    }
-    // }   
+    // }
     // `,
     // })
     // console.log(q)
