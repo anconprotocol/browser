@@ -1,53 +1,47 @@
 <template>
-  <v-card
-    class="mx-auto"
-    max-width="500"
-  >
-    <v-card
-    class="mx-auto"
-    max-width="344" v-for="(v, k) in items" :key="k"
-  >
-    <v-img
-      :src="v.sources[0]"
-      height="200px"
-    ></v-img>
+  <v-card class="mx-auto" max-width="2000">
+    <v-row>
+      <v-col dense v-for="v in items" :key="v[0]">
+        <v-card class="mx-auto" max-width="344">
+          <v-img :src="v[1].sources[0]" height="200px"></v-img>
 
-    <v-card-title>
-      {{ v.name }}
-    </v-card-title>
+          <v-card-title>
+            {{ v[1].name }}
+          </v-card-title>
 
-    <v-card-subtitle>
-      {{ v.description }} 
-    </v-card-subtitle>
+          <v-card-subtitle>
+            {{ v[1].description }}
+          </v-card-subtitle>
 
-    <v-card-actions>
-      <v-btn
-        color="orange lighten-2"
-        text
-      >
-        Publish
-      </v-btn>
+          <v-card-actions>
+            <v-btn color="orange lighten-2" text> Publish </v-btn>
 
-      <v-spacer></v-spacer>
+            <v-spacer></v-spacer>
 
-      <v-btn
-        icon
-        @click="show = !show"
-      >
-        <v-icon>{{ show ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-      </v-btn>
-    </v-card-actions>
+            <v-btn icon @click="show = !show">
+              <v-icon>{{
+                show ? 'mdi-chevron-up' : 'mdi-chevron-down'
+              }}</v-icon>
+            </v-btn>
+          </v-card-actions>
 
-    <v-expand-transition>
-      <div v-show="show">
-        <v-divider></v-divider>
+          <v-expand-transition>
+            <div v-show="show">
+              <v-divider></v-divider>
 
-        <v-card-text>
-          I'm a thing. But, like most politicians, he promised more than he could deliver. You won't have time for sleeping, soldier, not with all the bed making you'll be doing. Then we'll go with that data file! Hey, you add a one and two zeros to that or we walk! You're going to do his laundry? I've got to find a way to escape.
-        </v-card-text>
-      </div>
-    </v-expand-transition>
-  </v-card>
+              <v-card-text>
+                I'm a thing. But, like most politicians, he promised more than
+                he could deliver. You won't have time for sleeping, soldier, not
+                with all the bed making you'll be doing. Then we'll go with that
+                data file! Hey, you add a one and two zeros to that or we walk!
+                You're going to do his laundry? I've got to find a way to
+                escape.
+              </v-card-text>
+            </div>
+          </v-expand-transition>
+        </v-card>
+      </v-col>
+    </v-row>
   </v-card>
 </template>
 
@@ -64,7 +58,6 @@ import BarcodeDetector from 'barcode-detector'
 import 'pdfjs-dist/legacy/build/pdf.worker.entry'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.js'
 import { ParkyDB } from 'parkydb'
-
 
 @Component({
   components: {
@@ -87,17 +80,18 @@ export default class Personal extends Vue {
   selectedCedula: any
   feURL = ''
   cafeModel = { issuer: {}, recipient: {} }
-  items = []
+  items: any = []
 
   async fetchItems() {
-      const uri = `https://api.ancon.did.pa/v0/topics?topic=@uuidIndexMainnet&from=0x6502781e4024D1FeBaBc8CdD18fA74f4e1954651`;
+    const uri = `https://api.ancon.did.pa/v0/topics?topic=@uuidIndexMainnet&from=0x6502781e4024D1FeBaBc8CdD18fA74f4e1954651`
     const res = await fetch(uri)
     const output = await res.json()
-    this.items = output.content;
+    this.items = Object.entries(output.content).filter(
+      (v: any, k: any) => v[1].currentOrderHash
+    )
   }
-
   async mounted() {
-       await this.fetchItems();
+    await this.fetchItems()
     // const accountB = accounts[0]
     // const id = await this.bob.putBlock(payload)
     // debugger
@@ -111,7 +105,7 @@ export default class Personal extends Vue {
     //      network
     //      key
     //    }
-    // }   
+    // }
     // `,
     // })
     // console.log(q)

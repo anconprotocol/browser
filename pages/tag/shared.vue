@@ -1,5 +1,5 @@
 <template>
-  <v-card class="mx-auto" max-width="500">
+  <v-card class="mx-auto" max-width="2000">
     <v-list subheader>
       <v-subheader>Recent chat</v-subheader>
 
