@@ -232,23 +232,22 @@ export default class Main extends Vue {
     // @ts-ignore
     await this.bob.wallet.submitPassword(`zxcvb`)
     const accounts = await this.bob.wallet.getAccounts()
-    // const accountB = accounts[0]
-    // const id = await this.bob.putBlock(payload)
-    // debugger
+    const accountB = accounts[0]
+    const id = await this.bob.putBlock(payload)
 
-    // const res = await this.bob.get(id, null)
-    // const q = await this.bob.query({
-    //   cid: id,
-    //   query: `
-    // query{
-    //    block(cid: "${id}") {
-    //      network
-    //      key
-    //    }
-    // }   
-    // `,
-    // })
-    // console.log(q)
+    const res = await this.bob.get(id, null)
+    const q = await this.bob.query({
+      cid: id,
+      query: `
+    query{
+       block(cid: "${id}") {
+         network
+         key
+       }
+    }   
+    `,
+    })
+    console.log(q)
   }
 }
 </script>
