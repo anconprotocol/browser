@@ -13,31 +13,29 @@
     ></v-row>
     <v-row>
       <v-col>
-              <file-pond
-        name="test"
-        ref="pond"
-        label-idle="Drop files here..."
-        v-bind:allow-multiple="false"
-        accepted-file-types="image/jpeg, image/png"
-        server="/api"
-        v-bind:files="files"
-        v-on:init="handleFilePondInit"
-        @change="upload"
-      />
-
+        <file-pond
+          name="test"
+          ref="pond"
+          label-idle="Drop files here..."
+          v-bind:allow-multiple="false"
+          accepted-file-types="image/jpeg, image/png"
+          server="/api"
+          v-bind:files="files"
+          v-on:processfile="upload"
+        />
       </v-col>
     </v-row>
     <v-row>
       <v-col dense v-for="v in items" :key="v[0]">
         <v-card class="mx-auto" max-width="344">
-          <v-img :src="v[1].sources[0]" height="200px"></v-img>
+          <v-img :src="v.image" height="200px"></v-img>
 
           <v-card-title>
-            {{ v[1].name }}
+            {{ v.name }}
           </v-card-title>
 
           <v-card-subtitle>
-            {{ v[1].description }}
+            {{ v.description }}
           </v-card-subtitle>
 
           <v-card-actions>
@@ -103,6 +101,7 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 // Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
+import { map, merge } from 'rxjs'
 
 // Create component
 const FilePond = vueFilePond(
@@ -149,18 +148,17 @@ export default class Personal extends Vue {
   }
 
   async handleFilePondInit() {}
-  async upload() {
-    this.selectedFile = this.files[0]
-    debugger
+  async upload(err, file) {
+    this.selectedFile = file.file
 
     const payload = {
       name: this.selectedFile.name,
       kind: 'StorageAsset',
-      // @ts-ignore
-      owner: this.web3.defaultAddress,
+      owner: '',
       sources: [],
       description: '',
-      image: this.selectedFile,
+      timestamp: new Date().getTime(),
+      image: URL.createObjectURL(file.file),
     } as StorageAsset
 
     // @ts-ignore
@@ -174,8 +172,14 @@ export default class Personal extends Vue {
     console.log(model)
   }
   async mounted() {
-    await this.fetchItems()
+    const obs$ = await this.db.queryBlocks$((blocks) => {
+      return () => blocks.toArray()//where({ 'kind': 'StorageAsset' })
 
+    })
+
+    obs$.subscribe(async(i: any)=> {
+      this.items = [...i]
+    },   console.error)
     // const accountB = accounts[0]
     // const id = await this.bob.putBlock(payload)
     //

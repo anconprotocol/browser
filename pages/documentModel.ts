@@ -2,6 +2,7 @@
 export interface StorageAsset {
     name: string;
     kind: string;
+    timestamp: number;
     description: string;
     image: string;
     sources: string[];
