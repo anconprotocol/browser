@@ -82,15 +82,19 @@ import BarcodeDetector from 'barcode-detector'
 import 'pdfjs-dist/legacy/build/pdf.worker.entry'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.js'
 import { ParkyDB } from 'parkydb'
-
+import { StorageAsset } from '../documentModel'
 @Component({
   components: {
     QrcodeCapture,
   },
+  inject: ['db', 'web3provider'],
 })
 export default class Personal extends Vue {
-  bob = new ParkyDB()
   result = ''
+  // @ts-ignore
+  db: ParkyDB
+  // @ts-ignore
+  web3provider: any
   selected: any
   loading = false
   invoiceQr = ''
@@ -119,11 +123,28 @@ export default class Personal extends Vue {
   }
 
   async upload() {
+    // @ts-ignore
     document.getElementById('fileUpload').click()
   }
 
   async onFileChanged(e) {
     this.selectedFile = e.target.files[0]
+
+    const payload = {
+      name: this.selectedFile.name,
+      kind: 'StorageAsset',
+      owner: this.web3provider.defaultAddress,
+      sources: [],
+      description: '',
+      image: this.selectedFile,
+    } as StorageAsset
+    let { id, model } = await this.db.putBlock(payload)
+
+    if (!!model) {
+      model = await this.db.get(id)
+    }
+
+    console.log(model)
   }
   async mounted() {
     await this.fetchItems()

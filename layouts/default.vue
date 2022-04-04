@@ -53,6 +53,7 @@
 <script>
 import WalletConnectProvider from '@walletconnect/web3-provider'
 import { providers } from 'ethers'
+import { ParkyDB } from 'parkydb'
 
 export default {
   name: 'DefaultLayout',
@@ -81,14 +82,47 @@ export default {
     await provider.enable()
 
     this.web3Provider = new providers.Web3Provider(provider)
+
+    // Configure and load ParkyDB
+    const peer =
+      '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
+    try {
+      await this.db.initialize({
+        wakuconnect: { bootstrap: { peers: [peer] } },
+        withWeb3: {
+          provider: this.web3Provider,
+          defaultAddress: this.address,
+          pubkey,
+        },
+      })
+    } catch (e) {}
+
+    // // @ts-ignore
+    // let id = await this.db.putBlock(payload)
+
+    // if (typeof id !== 'string') id = id.cid
+    // const res = await this.db.get(id, null)
+    // const q = await this.db.query({
+    //   cid: id,
+    //   query: `
+    // query{
+    //    block(cid: "${id}") {
+    //      network
+    //      key
+    //    }
+    // }
+    // `,
+    // })
   },
   provide: function () {
     return {
       web3provider: this.web3Provider,
+      db: this.db,
     }
   },
   data() {
     return {
+      db: new ParkyDB(),
       network: '1',
       address: '',
       clipped: false,
