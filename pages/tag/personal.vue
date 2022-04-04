@@ -1,5 +1,19 @@
+
 <template>
-  <v-card class="mx-auto" max-width="2000">
+  <v-container>
+    <div></div>
+    <v-row>
+      <v-col cols="8">
+        <v-breadcrumbs :items="steps">
+          <template v-slot:divider>
+            <v-icon>mdi-chevron-right</v-icon>
+          </template>
+        </v-breadcrumbs>
+      </v-col>
+      <v-col cols="4" align="right">
+        <v-btn>Add</v-btn>
+      </v-col></v-row
+    >
     <v-row>
       <v-col dense v-for="v in items" :key="v[0]">
         <v-card class="mx-auto" max-width="344">
@@ -42,7 +56,7 @@
         </v-card>
       </v-col>
     </v-row>
-  </v-card>
+  </v-container>
 </template>
 
 <script lang="ts">
@@ -70,16 +84,18 @@ export default class Personal extends Vue {
   selected: any
   loading = false
   invoiceQr = ''
-  cedulaQr = ''
-  invoiceQRImage: any
-  cedulaQRImage: any
-  invoice: any
-  cedula: any
-  cedulaId = {}
-  cufe = {}
-  selectedCedula: any
-  feURL = ''
-  cafeModel = { issuer: {}, recipient: {} }
+  steps = [
+    {
+      text: 'Dashboard',
+      disabled: false,
+      href: '/',
+    },
+    {
+      text: 'Personal',
+      disabled: true,
+      href: 'breadcrumbs_link_2',
+    },
+  ]
   items: any = []
 
   async fetchItems() {

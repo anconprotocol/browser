@@ -31,39 +31,66 @@
       </v-btn>
       <v-toolbar-title v-text="title" />
       <v-spacer />
-      <v-btn icon @click.stop="rightDrawer = !rightDrawer">
-        <v-icon>mdi-menu</v-icon>
-      </v-btn>
+      <div>Network {{ network }}</div>
+      <v-spacer />
+      <div>Address {{ address }}</div>
+      <!-- <v-btn> Connect </v-btn> -->
     </v-app-bar>
     <v-main>
       <v-container>
         <Nuxt />
       </v-container>
     </v-main>
-    <v-navigation-drawer v-model="rightDrawer" :right="right" temporary fixed>
-      <v-list>
-        <v-list-item @click.native="right = !right">
-          <v-list-item-action>
-            <v-icon light> mdi-repeat </v-icon>
-          </v-list-item-action>
-          <v-list-item-title>Connect</v-list-item-title>
-        </v-list-item>
-      </v-list>
-    </v-navigation-drawer>
     <v-footer :absolute="!fixed" app>
-      <span>&copy; {{ new Date().getFullYear() }} Industrias de Firmas Electronicas SA</span>
+      <span
+        >&copy; {{ new Date().getFullYear() }} Industrias de Firmas Electronicas
+        SA</span
+      >
     </v-footer>
   </v-app>
 </template>
 
 <script>
 import WalletConnectProvider from '@walletconnect/web3-provider'
-
+import { providers } from 'ethers'
 
 export default {
   name: 'DefaultLayout',
+  mounted: async function () {
+    //  Create WalletConnect Provider
+    const provider = new WalletConnectProvider({
+      infuraId: '92ed13edfad140409ac24457a9c4e22d',
+    })
+    // Subscribe to accounts change
+    provider.on('accountsChanged', (accounts) => {
+      console.log(accounts)
+      this.address = accounts[0]
+    })
+
+    // Subscribe to chainId change
+    provider.on('chainChanged', (chainId) => {
+      this.network = chainId
+      console.log(chainId)
+    })
+
+    // Subscribe to session disconnection
+    provider.on('disconnect', (code, reason) => {
+      console.log(code, reason)
+    })
+    //  Enable session (triggers QR Code modal)
+    await provider.enable()
+
+    this.web3Provider = new providers.Web3Provider(provider)
+  },
+  provide: function () {
+    return {
+      web3provider: this.web3Provider,
+    }
+  },
   data() {
     return {
+      network: '1',
+      address: '',
       clipped: false,
       drawer: false,
       fixed: false,
