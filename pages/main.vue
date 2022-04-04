@@ -233,8 +233,9 @@ export default class Main extends Vue {
     await this.bob.wallet.submitPassword(`zxcvb`)
     const accounts = await this.bob.wallet.getAccounts()
     const accountB = accounts[0]
-    const id = await this.bob.putBlock(payload)
+    let id = await this.bob.putBlock(payload)
 
+    if  (typeof id !== 'string') id = id.cid
     const res = await this.bob.get(id, null)
     const q = await this.bob.query({
       cid: id,
