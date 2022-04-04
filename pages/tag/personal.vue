@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container fluid>
     <div></div>
     <v-row>
       <v-col cols="6">
@@ -9,20 +9,24 @@
           </template>
         </v-breadcrumbs>
       </v-col>
-      <v-col cols="6" align="right">
-        <label>
-          <v-btn icon @click="upload"
-            ><v-icon>mdi-cloud-upload</v-icon> Upload</v-btn
-          >
-
-          <input
-            id="fileUpload"
-            type="file"
-            hidden="true"
-            @change="onFileChanged"
-          />
-        </label> </v-col
+      <v-col align="right"> </v-col
     ></v-row>
+    <v-row>
+      <v-col>
+              <file-pond
+        name="test"
+        ref="pond"
+        label-idle="Drop files here..."
+        v-bind:allow-multiple="false"
+        accepted-file-types="image/jpeg, image/png"
+        server="/api"
+        v-bind:files="files"
+        v-on:init="handleFilePondInit"
+        @change="upload"
+      />
+
+      </v-col>
+    </v-row>
     <v-row>
       <v-col dense v-for="v in items" :key="v[0]">
         <v-card class="mx-auto" max-width="344">
@@ -64,7 +68,9 @@
         </v-card>
       </v-col>
     </v-row>
-    <v-alert type="info" v-if="this.items < 1"> There is no documents yet. Add a document.</v-alert>
+    <v-alert type="info" v-if="this.items < 1">
+      There is no documents yet. Add a document.</v-alert
+    >
   </v-container>
 </template>
 
@@ -82,18 +88,37 @@ import 'pdfjs-dist/legacy/build/pdf.worker.entry'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.js'
 import { ParkyDB } from 'parkydb'
 import { StorageAsset } from '../documentModel'
+// Import Vue FilePond
+import vueFilePond from 'vue-filepond'
+
+// Import FilePond styles
+import 'filepond/dist/filepond.min.css'
+
+// Import FilePond plugins
+// Please note that you need to install these plugins separately
+
+// Import image preview plugin styles
+import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css'
+
+// Import image preview and file type validation plugins
+import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
+import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
+
+// Create component
+const FilePond = vueFilePond(
+  FilePondPluginFileValidateType,
+  FilePondPluginImagePreview
+)
+
 @Component({
   components: {
     QrcodeCapture,
+    FilePond,
   },
-  inject: ['db', 'web3provider'],
+  inject: ['db', 'web3'],
 })
 export default class Personal extends Vue {
   result = ''
-  // @ts-ignore
-  db: ParkyDB
-  // @ts-ignore
-  web3provider: any
   selected: any
   loading = false
   invoiceQr = ''
@@ -109,8 +134,10 @@ export default class Personal extends Vue {
       href: 'breadcrumbs_link_2',
     },
   ]
+  show: any = true
   items: any = []
-  selectedFile: any
+  files = []
+  selectedFile: any = {}
 
   async fetchItems() {
     const uri = `https://api.ancon.did.pa/v0/topics?topic=@uuidIndexMainnet&from=0x6502781e4024D1FeBaBc8CdD18fA74f4e1954651`
@@ -121,25 +148,26 @@ export default class Personal extends Vue {
     )
   }
 
+  async handleFilePondInit() {}
   async upload() {
-    // @ts-ignore
-    document.getElementById('fileUpload').click()
-  }
-
-  async onFileChanged(e) {
-    this.selectedFile = e.target.files[0]
+    this.selectedFile = this.files[0]
+    debugger
 
     const payload = {
       name: this.selectedFile.name,
       kind: 'StorageAsset',
-      owner: this.web3provider.defaultAddress,
+      // @ts-ignore
+      owner: this.web3.defaultAddress,
       sources: [],
       description: '',
       image: this.selectedFile,
     } as StorageAsset
+
+    // @ts-ignore
     let { id, model } = await this.db.putBlock(payload)
 
     if (!!model) {
+      // @ts-ignore
       model = await this.db.get(id)
     }
 
@@ -147,9 +175,10 @@ export default class Personal extends Vue {
   }
   async mounted() {
     await this.fetchItems()
+
     // const accountB = accounts[0]
     // const id = await this.bob.putBlock(payload)
-    // debugger
+    //
 
     // const res = await this.bob.get(id, null)
     // const q = await this.bob.query({

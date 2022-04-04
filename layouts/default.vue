@@ -52,7 +52,8 @@
 
 <script>
 import WalletConnectProvider from '@walletconnect/web3-provider'
-import { providers } from 'ethers'
+import { ethers } from 'ethers'
+import Web3 from 'web3'
 import { ParkyDB } from 'parkydb'
 
 export default {
@@ -81,8 +82,13 @@ export default {
     //  Enable session (triggers QR Code modal)
     await provider.enable()
 
-    this.web3Provider = new providers.Web3Provider(provider)
+    const web3 = new Web3(provider)
+//    this.web3Provider = new ethers.providers.Web3Provider(web3.currentProvider)
+    this.web3Provider = web3.currentProvider
 
+    console.log(this.web3Provider)
+
+    this.db = new ParkyDB()
     // Configure and load ParkyDB
     const peer =
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
@@ -92,10 +98,12 @@ export default {
         withWeb3: {
           provider: this.web3Provider,
           defaultAddress: this.address,
-          pubkey,
+          pubkey: '',
         },
       })
-    } catch (e) {}
+    } catch (e) {
+      console.error(e)
+    }
 
     // // @ts-ignore
     // let id = await this.db.putBlock(payload)
@@ -116,13 +124,14 @@ export default {
   },
   provide: function () {
     return {
-      web3provider: this.web3Provider,
+      web3: this.web3Provider,
       db: this.db,
     }
   },
   data() {
     return {
       db: new ParkyDB(),
+      web3: '',
       network: '1',
       address: '',
       clipped: false,
@@ -138,6 +147,7 @@ export default {
       miniVariant: false,
       right: true,
       rightDrawer: false,
+      show: '',
       title: 'xdv.digital [codename everdid]',
     }
   },
