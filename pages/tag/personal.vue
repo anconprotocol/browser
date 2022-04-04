@@ -1,4 +1,3 @@
-
 <template>
   <v-container>
     <div></div>
@@ -48,7 +47,6 @@
               }}</v-icon>
             </v-btn>
           </v-card-actions>
-
           <v-expand-transition>
             <div v-show="show">
               <v-divider></v-divider>
@@ -66,6 +64,7 @@
         </v-card>
       </v-col>
     </v-row>
+    <v-alert type="info" v-if="this.items < 1"> There is no documents yet. Add a document.</v-alert>
   </v-container>
 </template>
 
