@@ -3,17 +3,27 @@
   <v-container>
     <div></div>
     <v-row>
-      <v-col cols="8">
+      <v-col cols="6">
         <v-breadcrumbs :items="steps">
           <template v-slot:divider>
             <v-icon>mdi-chevron-right</v-icon>
           </template>
         </v-breadcrumbs>
       </v-col>
-      <v-col cols="4" align="right">
-        <v-btn>Add</v-btn>
-      </v-col></v-row
-    >
+      <v-col cols="6" align="right">
+        <label>
+          <v-btn icon @click="upload"
+            ><v-icon>mdi-cloud-upload</v-icon> Upload</v-btn
+          >
+
+          <input
+            id="fileUpload"
+            type="file"
+            hidden="true"
+            @change="onFileChanged"
+          />
+        </label> </v-col
+    ></v-row>
     <v-row>
       <v-col dense v-for="v in items" :key="v[0]">
         <v-card class="mx-auto" max-width="344">
@@ -97,6 +107,7 @@ export default class Personal extends Vue {
     },
   ]
   items: any = []
+  selectedFile: any
 
   async fetchItems() {
     const uri = `https://api.ancon.did.pa/v0/topics?topic=@uuidIndexMainnet&from=0x6502781e4024D1FeBaBc8CdD18fA74f4e1954651`
@@ -105,6 +116,14 @@ export default class Personal extends Vue {
     this.items = Object.entries(output.content).filter(
       (v: any, k: any) => v[1].currentOrderHash
     )
+  }
+
+  async upload() {
+    document.getElementById('fileUpload').click()
+  }
+
+  async onFileChanged(e) {
+    this.selectedFile = e.target.files[0]
   }
   async mounted() {
     await this.fetchItems()
