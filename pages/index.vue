@@ -1,47 +1,57 @@
 <template>
-  <v-card max-width="2000" class="mx-auto">
-    <v-container>
-      <v-row dense>
-        <v-col cols="12">
-          <v-card color="amber accent-4" dark>
-            <v-card-title class="text-h5"> Public </v-card-title>
+  <v-container>
+    <v-breadcrumbs :items="steps">
+      <template v-slot:divider>
+        <v-icon>mdi-chevron-right</v-icon>
+      </template>
+    </v-breadcrumbs>
+    <v-card max-width="2000" class="mx-auto">
+      <v-container>
+        <v-row dense>
+          <v-col cols="12">
+            <v-card color="amber accent-4" dark>
+              <v-card-title class="text-h5"> Public </v-card-title>
 
-            <v-card-subtitle
-              >Data economy services.</v-card-subtitle
-            >
+              <v-card-subtitle>Data economy services.</v-card-subtitle>
 
-            <v-card-actions>
-              <v-btn text nuxt to="/tag/public"> 21 Dapps, 80 NFTs, 5 alert topics </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
+              <v-card-actions>
+                <v-btn text nuxt to="/tag/public">
+                  21 Dapps, 80 NFTs, 5 alert topics
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
 
-        <v-col cols="12">
-          <v-card color="indigo accent-4" dark>
-            <v-card-title class="text-h5"> Shared </v-card-title>
+          <v-col cols="12">
+            <v-card color="indigo accent-4" dark>
+              <v-card-title class="text-h5"> Shared </v-card-title>
 
-            <v-card-subtitle>Secure messaging.</v-card-subtitle>
+              <v-card-subtitle>Secure messaging.</v-card-subtitle>
 
-            <v-card-actions>
-              <v-btn text nuxt to="/tag/shared"> 16 groups (11 encrypted, 5 open) </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
-        <v-col cols="12">
-          <v-card color="blue-grey accent-4" dark>
-            <v-card-title class="text-h5"> Personal </v-card-title>
+              <v-card-actions>
+                <v-btn text nuxt to="/tag/shared">
+                  16 groups (11 encrypted, 5 open)
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+          <v-col cols="12">
+            <v-card color="blue-grey accent-4" dark>
+              <v-card-title class="text-h5"> Personal </v-card-title>
 
-            <v-card-subtitle>Digital assets and credentials.</v-card-subtitle>
+              <v-card-subtitle>Digital assets and credentials.</v-card-subtitle>
 
-            <v-card-actions>
-              <v-btn text nuxt to="/tag/personal"> 1001 assets, 10 credentials </v-btn>
-            </v-card-actions>
-
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-container>
-  </v-card>
+              <v-card-actions>
+                <v-btn text nuxt to="/tag/personal">
+                  1001 assets, 10 credentials
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-container>
+    </v-card>
+  </v-container>
 </template>
 
 <script lang="ts">
@@ -57,7 +67,6 @@ import BarcodeDetector from 'barcode-detector'
 import 'pdfjs-dist/legacy/build/pdf.worker.entry'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.js'
 import { ParkyDB } from 'parkydb'
-
 
 @Component({
   components: {
@@ -80,6 +89,14 @@ export default class Main extends Vue {
   selectedCedula: any
   feURL = ''
   cafeModel = { issuer: {}, recipient: {} }
+
+  steps = [
+    {
+      text: 'Dashboard',
+      disabled: false,
+      href: '/',
+    },
+  ]
 
   openDGI() {
     window.open(this.feURL, '_blank')
@@ -175,8 +192,6 @@ export default class Main extends Vue {
     }
   }
 
-  async mounted() {
-
-  }
+  async mounted() {}
 }
 </script>

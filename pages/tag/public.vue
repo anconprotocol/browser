@@ -1,165 +1,171 @@
-
 <template>
-  <v-card class="mx-auto" max-width="2000">
-    <v-row>
-      <v-col dense>
-        <v-card class="mx-auto" max-width="400" min-height="400">
-          <v-list-item two-line>
-            <v-list-item-content>
-              <v-list-item-title class="text-h5">
-                PancakeSwap
-              </v-list-item-title>
-              <v-list-item-subtitle
-                >Sold 51 NFT, 4 currently listed</v-list-item-subtitle
-              >
-            </v-list-item-content>
-          </v-list-item>
-
-          <v-card-text>
-            <v-row align="center">
-              <v-col class="text-h2"> $ 1, 000 </v-col>
-            </v-row>
-          </v-card-text>
-
-          <v-list-item>
-            <v-list-item-icon>
-              <v-icon>mdi-send</v-icon>
-            </v-list-item-icon>
-            <v-list-item-subtitle>Publish from personal</v-list-item-subtitle>
-          </v-list-item>
-
-          <v-list-item>
-            <v-list-item-icon>
-              <v-icon>mdi-clock</v-icon>
-            </v-list-item-icon>
-            <v-list-item-subtitle
-              >Enabled arbitrage bot $USDC-$ANCON</v-list-item-subtitle
-            >
-          </v-list-item>
-
-          <v-list-item>
-            <v-list-item-icon>
-              <v-icon>mdi-alarm</v-icon>
-            </v-list-item-icon>
-            <v-list-item-subtitle
-              >Subscribing $ETH > $5000</v-list-item-subtitle
-            >
-          </v-list-item>
-          <v-list class="transparent">
-            <v-list-item v-for="item in forecast" :key="item.day">
-              <v-list-item-title>{{ item.day }}</v-list-item-title>
-
-              <v-list-item-icon>
-                <v-icon>{{ item.icon }}</v-icon>
-              </v-list-item-icon>
-
-              <v-list-item-subtitle class="text-right">
-                {{ item.temp }}
-              </v-list-item-subtitle>
+  <v-container>
+    <v-breadcrumbs :items="steps">
+      <template v-slot:divider>
+        <v-icon>mdi-chevron-right</v-icon>
+      </template>
+    </v-breadcrumbs>
+    <v-card class="mx-auto" max-width="2000">
+      <v-row>
+        <v-col dense>
+          <v-card class="mx-auto" max-width="400" min-height="400">
+            <v-list-item two-line>
+              <v-list-item-content>
+                <v-list-item-title class="text-h5">
+                  PancakeSwap
+                </v-list-item-title>
+                <v-list-item-subtitle
+                  >Sold 51 NFT, 4 currently listed</v-list-item-subtitle
+                >
+              </v-list-item-content>
             </v-list-item>
-          </v-list>
 
-          <v-divider></v-divider>
+            <v-card-text>
+              <v-row align="center">
+                <v-col class="text-h2"> $ 1, 000 </v-col>
+              </v-row>
+            </v-card-text>
 
-          <v-card-actions>
-            <v-btn text> View details </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-      <v-col dense>
-        <v-card class="mx-auto" max-width="400" min-height="400">
-          <v-list-item two-line>
-            <v-list-item-content>
-              <v-list-item-title class="text-h5"> OpenSea </v-list-item-title>
-              <v-list-item-subtitle
-                >Sold 501 NFT, 499 currently listed</v-list-item-subtitle
-              >
-            </v-list-item-content>
-          </v-list-item>
-
-          <v-card-text>
-            <v-row align="center">
-              <v-col class="text-h2"> $ 104, 000 </v-col>
-            </v-row>
-          </v-card-text>
-
-          <v-list-item>
-            <v-list-item-icon>
-              <v-icon>mdi-send</v-icon>
-            </v-list-item-icon>
-            <v-list-item-subtitle>Publish from personal</v-list-item-subtitle>
-          </v-list-item>
-
-          <v-list class="transparent">
-            <v-list-item v-for="item in forecast" :key="item.day">
-              <v-list-item-title>{{ item.day }}</v-list-item-title>
-
+            <v-list-item>
               <v-list-item-icon>
-                <v-icon>{{ item.icon }}</v-icon>
+                <v-icon>mdi-send</v-icon>
               </v-list-item-icon>
-
-              <v-list-item-subtitle class="text-right">
-                {{ item.temp }}
-              </v-list-item-subtitle>
+              <v-list-item-subtitle>Publish from personal</v-list-item-subtitle>
             </v-list-item>
-          </v-list>
 
-          <v-divider></v-divider>
-
-          <v-card-actions>
-            <v-btn text> View Details </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-      <v-col dense>
-        <v-card class="mx-auto" max-width="400" min-height="400">
-          <v-list-item two-line>
-            <v-list-item-content>
-              <v-list-item-title class="text-h5">
-                Uniswap V3
-              </v-list-item-title>
-              <v-list-item-subtitle
-                >No NFT marketplace yet</v-list-item-subtitle
-              >
-            </v-list-item-content>
-          </v-list-item>
-
-          <v-card-text>
-            <v-row align="center">
-              <v-col class="text-h2"> $ 0 </v-col>
-            </v-row>
-          </v-card-text>
-
-          <v-list-item>
-            <v-list-item-icon>
-              <v-icon>mdi-send</v-icon>
-            </v-list-item-icon>
-            <v-list-item-subtitle>Go to DApp</v-list-item-subtitle>
-          </v-list-item>
-
-          <v-list class="transparent">
-            <v-list-item v-for="item in forecast" :key="item.day">
-              <v-list-item-title>{{ item.day }}</v-list-item-title>
-
+            <v-list-item>
               <v-list-item-icon>
-                <v-icon>{{ item.icon }}</v-icon>
+                <v-icon>mdi-clock</v-icon>
               </v-list-item-icon>
-
-              <v-list-item-subtitle class="text-right">
-                {{ item.temp }}
-              </v-list-item-subtitle>
+              <v-list-item-subtitle
+                >Enabled arbitrage bot $USDC-$ANCON</v-list-item-subtitle
+              >
             </v-list-item>
-          </v-list>
 
-          <v-divider></v-divider>
+            <v-list-item>
+              <v-list-item-icon>
+                <v-icon>mdi-alarm</v-icon>
+              </v-list-item-icon>
+              <v-list-item-subtitle
+                >Subscribing $ETH > $5000</v-list-item-subtitle
+              >
+            </v-list-item>
+            <v-list class="transparent">
+              <v-list-item v-for="item in forecast" :key="item.day">
+                <v-list-item-title>{{ item.day }}</v-list-item-title>
 
-          <v-card-actions class="mx-auto" height="100">
-            <v-btn text> View Details </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-card>
+                <v-list-item-icon>
+                  <v-icon>{{ item.icon }}</v-icon>
+                </v-list-item-icon>
+
+                <v-list-item-subtitle class="text-right">
+                  {{ item.temp }}
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+
+            <v-divider></v-divider>
+
+            <v-card-actions>
+              <v-btn text> View details </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-col>
+        <v-col dense>
+          <v-card class="mx-auto" max-width="400" min-height="400">
+            <v-list-item two-line>
+              <v-list-item-content>
+                <v-list-item-title class="text-h5"> OpenSea </v-list-item-title>
+                <v-list-item-subtitle
+                  >Sold 501 NFT, 499 currently listed</v-list-item-subtitle
+                >
+              </v-list-item-content>
+            </v-list-item>
+
+            <v-card-text>
+              <v-row align="center">
+                <v-col class="text-h2"> $ 104, 000 </v-col>
+              </v-row>
+            </v-card-text>
+
+            <v-list-item>
+              <v-list-item-icon>
+                <v-icon>mdi-send</v-icon>
+              </v-list-item-icon>
+              <v-list-item-subtitle>Publish from personal</v-list-item-subtitle>
+            </v-list-item>
+
+            <v-list class="transparent">
+              <v-list-item v-for="item in forecast" :key="item.day">
+                <v-list-item-title>{{ item.day }}</v-list-item-title>
+
+                <v-list-item-icon>
+                  <v-icon>{{ item.icon }}</v-icon>
+                </v-list-item-icon>
+
+                <v-list-item-subtitle class="text-right">
+                  {{ item.temp }}
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+
+            <v-divider></v-divider>
+
+            <v-card-actions>
+              <v-btn text> View Details </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-col>
+        <v-col dense>
+          <v-card class="mx-auto" max-width="400" min-height="400">
+            <v-list-item two-line>
+              <v-list-item-content>
+                <v-list-item-title class="text-h5">
+                  Uniswap V3
+                </v-list-item-title>
+                <v-list-item-subtitle
+                  >No NFT marketplace yet</v-list-item-subtitle
+                >
+              </v-list-item-content>
+            </v-list-item>
+
+            <v-card-text>
+              <v-row align="center">
+                <v-col class="text-h2"> $ 0 </v-col>
+              </v-row>
+            </v-card-text>
+
+            <v-list-item>
+              <v-list-item-icon>
+                <v-icon>mdi-send</v-icon>
+              </v-list-item-icon>
+              <v-list-item-subtitle>Go to DApp</v-list-item-subtitle>
+            </v-list-item>
+
+            <v-list class="transparent">
+              <v-list-item v-for="item in forecast" :key="item.day">
+                <v-list-item-title>{{ item.day }}</v-list-item-title>
+
+                <v-list-item-icon>
+                  <v-icon>{{ item.icon }}</v-icon>
+                </v-list-item-icon>
+
+                <v-list-item-subtitle class="text-right">
+                  {{ item.temp }}
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+
+            <v-divider></v-divider>
+
+            <v-card-actions class="mx-auto" height="100">
+              <v-btn text> View Details </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-card>
+  </v-container>
 </template>
 
 <script lang="ts">
@@ -238,6 +244,19 @@ export default class Public extends Vue {
   selectedCedula: any
   feURL = ''
   cafeModel = { issuer: {}, recipient: {} }
+
+  steps = [
+    {
+      text: 'Dashboard',
+      disabled: false,
+      href: '/',
+    },
+    {
+      text: 'Public',
+      disabled: true,
+      href: 'breadcrumbs_link_2',
+    },
+  ]
 
   openDGI() {
     window.open(this.feURL, '_blank')

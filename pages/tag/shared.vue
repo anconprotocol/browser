@@ -1,41 +1,48 @@
 <template>
-  <v-card class="mx-auto" max-width="2000">
-    <v-list subheader>
-      <v-subheader>Recent chat</v-subheader>
+  <v-container>
+    <v-breadcrumbs :items="steps">
+      <template v-slot:divider>
+        <v-icon>mdi-chevron-right</v-icon>
+      </template>
+    </v-breadcrumbs>
+    <v-card class="mx-auto" max-width="2000">
+      <v-list subheader>
+        <v-subheader>Recent chat</v-subheader>
 
-      <v-list-item v-for="chat in recent" :key="chat.title">
-        <v-list-item-avatar>
-          <v-img :alt="`${chat.title} avatar`" :src="chat.avatar"></v-img>
-        </v-list-item-avatar>
+        <v-list-item v-for="chat in recent" :key="chat.title">
+          <v-list-item-avatar>
+            <v-img :alt="`${chat.title} avatar`" :src="chat.avatar"></v-img>
+          </v-list-item-avatar>
 
-        <v-list-item-content>
-          <v-list-item-title v-text="chat.title"></v-list-item-title>
-        </v-list-item-content>
+          <v-list-item-content>
+            <v-list-item-title v-text="chat.title"></v-list-item-title>
+          </v-list-item-content>
 
-        <v-list-item-icon>
-          <v-icon :color="chat.active ? 'deep-purple accent-4' : 'grey'">
-            mdi-message-outline
-          </v-icon>
-        </v-list-item-icon>
-      </v-list-item>
-    </v-list>
+          <v-list-item-icon>
+            <v-icon :color="chat.active ? 'deep-purple accent-4' : 'grey'">
+              mdi-message-outline
+            </v-icon>
+          </v-list-item-icon>
+        </v-list-item>
+      </v-list>
 
-    <v-divider></v-divider>
+      <v-divider></v-divider>
 
-    <v-list subheader>
-      <v-subheader>Previous chats</v-subheader>
+      <v-list subheader>
+        <v-subheader>Previous chats</v-subheader>
 
-      <v-list-item v-for="chat in previous" :key="chat.title">
-        <v-list-item-avatar>
-          <v-img :alt="`${chat.title} avatar`" :src="chat.avatar"></v-img>
-        </v-list-item-avatar>
+        <v-list-item v-for="chat in previous" :key="chat.title">
+          <v-list-item-avatar>
+            <v-img :alt="`${chat.title} avatar`" :src="chat.avatar"></v-img>
+          </v-list-item-avatar>
 
-        <v-list-item-content>
-          <v-list-item-title v-text="chat.title"></v-list-item-title>
-        </v-list-item-content>
-      </v-list-item>
-    </v-list>
-  </v-card>
+          <v-list-item-content>
+            <v-list-item-title v-text="chat.title"></v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+    </v-card>
+  </v-container>
 </template>
 
 <script lang="ts">
@@ -138,6 +145,19 @@ export default class Shared extends Vue {
     {
       title: 'Travis Howard',
       avatar: 'https://cdn.vuetifyjs.com/images/lists/5.jpg',
+    },
+  ]
+
+  steps = [
+    {
+      text: 'Dashboard',
+      disabled: false,
+      href: '/',
+    },
+    {
+      text: 'Shared',
+      disabled: true,
+      href: 'breadcrumbs_link_2',
     },
   ]
 
