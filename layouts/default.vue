@@ -55,6 +55,7 @@ import WalletConnectProvider from '@walletconnect/web3-provider'
 import { ethers } from 'ethers'
 import Web3 from 'web3'
 import { ParkyDB } from 'parkydb'
+import AnconProtocolClient from '../../lib/AnconProtocol/AnconProtocolClient'
 
 export default {
   name: 'DefaultLayout',
@@ -93,6 +94,13 @@ export default {
     const peer =
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
     try {
+      const trans = await Ancon.getTransaction()
+
+      // the pubkey from ancon
+      const getPubKey = await Ancon.getPubKey(trans)
+
+      const pubkey = getPubKey[2]
+
       await this.db.initialize({
         wakuconnect: { bootstrap: { peers: [peer] } },
         withWeb3: {

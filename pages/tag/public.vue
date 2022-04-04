@@ -181,6 +181,9 @@ import BarcodeDetector from 'barcode-detector'
 import 'pdfjs-dist/legacy/build/pdf.worker.entry'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.js'
 import { ParkyDB } from 'parkydb'
+import { v4 as uuidv4 } from 'uuid'
+import AnconProtocolClient, {
+} from '../../lib/AnconProtocol/AnconProtocolClient'
 
 const payload = {
   commitHash: 'xg8pyBr3McqYlUgxAqV0t3s6TRcP+B7MHyPTtyVKMJw=',
@@ -369,6 +372,188 @@ export default class Public extends Vue {
     // `,
     // })
     // console.log(q)
+  }
+  /**
+   * Uploads a file to Ancon protocole nodes
+   * @param {FileListObject} _file filelist object
+   * @returns {(Object|Promise)} ancon file post response object
+   */
+  async anconUploadFile(_file) {
+    const content = _file[0]
+
+    const body = new FormData()
+    body.append('file', content)
+
+    const ipfsAddRes = await fetch(
+      'https://ipfs.infura.io:5001/api/v0/add?pin=true',
+      {
+        body,
+        method: 'POST',
+      }
+    )
+
+    const ipfsAddResJSON = await ipfsAddRes.json()
+
+    const cid = ipfsAddResJSON.Hash
+
+    const imageUrl = `https://ipfs.io/ipfs/${cid}`
+    return {
+      image: imageUrl,
+      cid: cid,
+      error: false,
+    }
+  }
+  /**
+   * Initiates the nft upload & mint main process & modal state handling
+   * @param {FileListObject} _file uploaded file object
+   */
+  async createDocumentNode(_file) {
+    try {
+      // setLoading(true);
+      // setStatus(2);
+      let uuid = uuidv4()
+
+      // //Initializing Ancon instance
+      // setMintingStatus("Checking if account is enrolled...");
+
+      // const getKeyRes = await getKey(address)
+
+      // if (!getKeyRes) {
+      //   //  setMintingStatus(
+      //   //    "An enrollment error has ocurred",
+      //   //    error.message
+      //   //  );
+      //   throw new Error(
+      //     `Enrollment error, visit ${process.env.REACT_APP_ANCON_TOOLS_URL} to enroll.`
+      //   )
+      // }
+      //Subiendo archivo de imagen a Ancon Node
+      // setMintingStatus("Uploading file to Ancon nodes...");
+
+      const uploadFileRes = await this.anconUploadFile(_file)
+
+      // if (uploadFileRes.error) {
+      //   setMintingStatus("An error has ocurred", uploadFileRes.error);
+      //   throw new Error(`Error. ${uploadFileRes.error}`);
+      // }
+
+      // setMintingStatus("Requesting Ancon metadata creation...");
+      // //Subiendo metadata a Ancon Node
+      // //Create metadata
+      // const anconMetadataObject = await anconCreateMetadata(
+      //   uploadFileRes,
+      //   address,
+      //   uuid,
+      //   _file
+      // );
+      // console.log("ancon", anconMetadataObject);
+      // setMintingStatus("Creando transacción en la blockchain...");
+      // const bob = AnconNFTContract.defaultAccount;
+
+      // const getDagResponse = await fetch(
+      //   `${anconAPIurl}/v0/dag/${anconMetadataObject.proofCid}/`
+      // );
+
+      // if (getDagResponse.status === 400) {
+      //   throw new Error("Metadata error. 400 Bad Request.");
+      // }
+      // const getDagResponseJSON = await getDagResponse.json();
+      // setMintingStatus("Waiting for approval of blockchain funds...");
+
+      // let allowed = await AnconTokenContract.methods
+      //   .allowance(address, AnconNFTContract._address)
+      //   .call();
+      // console.log("allowed", allowed);
+
+      // const serviceFee = await AnconNFTContract.methods
+      //   .serviceFeeForContract()
+      //   .call();
+
+      // const max_amount = Web3.utils.toWei('100000','ether').toString();
+
+      // if (allowed == "0" && serviceFee != "0") {
+      //   let gasAmount = await AnconTokenContract.methods
+      //     .approve(AnconNFTContract._address, max_amount)
+      //     .estimateGas({ from: address });
+
+      //   await AnconTokenContract.methods
+      //     .approve(AnconNFTContract._address, max_amount)
+      //     .send({
+      //       gas: gasAmount,
+      //       from: address,
+      //     });
+      //   console.log("allowed");
+      // }
+
+      // setMintingStatus("Minting...");
+      // const royalty2 = frontValues.royalty * 100;
+      // const params = [
+      //   address, //user address
+      //   uuid, //static uuid
+      //   royalty2, //royalty fee percent from 0 to 10000, 1 = 0.01%, 10000 = 100.00%
+      // ];
+      // const gasAmount = await AnconNFTContract.methods
+      //   .mint(...params)
+      //   .estimateGas({ from: address });
+
+      // const txmint = await AnconNFTContract.methods
+      //   .mint(...params)
+      //   .send({
+      //     gas: gasAmount,
+      //     from: address,
+      //   });
+
+      // setMintingStatus("Ending...");
+
+      // const currentBlock = await web3Provider.eth.getBlockNumber();
+
+      // const response = await AnconNFTContract.getPastEvents(
+      //   "Transfer",
+      //   {
+      //     toBlock: "latest",
+      //     fromBlock: currentBlock - 10,
+      //     filter: {
+      //       from: "0x0000000000000000000000000000000000000000",
+      //       //this line to get the ones from a specific address
+      //       to: address,
+      //     },
+      //   }
+      // );
+
+      // const blockItem = response.reverse()[0];
+
+      // await sleep(11000);
+      // const getUpdatedDagRes = await fetch(
+      //   `${anconAPIurl}/v0/topics?topic=uuid:${uuid}&from=${indexerAddress}`
+      // );
+
+      // const getUpdatedDagResJSON = await getUpdatedDagRes.json();
+
+      // setStatus(3);
+      // setLoading(false);
+
+      // setSuccessData({
+      //   ...successData,
+      //   txLink:
+      //     "https://testnet.bscscan.com/tx/" +
+      //     getUpdatedDagResJSON.content.blockchainTxHash,
+      //   tokenCid: "",
+      //   creatorAddr: address,
+      //   imageCid: uploadFileRes.cid,
+      //   sourceLink: getUpdatedDagResJSON.content.sources[0],
+      //   anconTx: "",
+      //   uuidLink: `${anconAPIurl}/v0/topics?topic=uuid:${uuid}&from=${indexerAddress}`,
+      //   uuid: uuid,
+      // });
+
+      // setStep(true);
+    } catch (e) {
+      // setStatus(4);
+      // setModal(true);
+      // setMintingStatus(e.message);
+      // setLoading(false);
+      // console.log("confirmation error", e);
+    }
   }
 }
 </script>
