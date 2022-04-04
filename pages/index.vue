@@ -36,6 +36,7 @@
             <v-card-actions>
               <v-btn text nuxt to="/tag/personal"> 1001 assets, 10 credentials </v-btn>
             </v-card-actions>
+
           </v-card>
         </v-col>
       </v-row>
@@ -245,7 +246,7 @@ export default class Main extends Vue {
          network
          key
        }
-    }   
+    }
     `,
     })
     console.log(q)

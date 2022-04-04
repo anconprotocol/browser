@@ -12,6 +12,7 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
+    "noImplicitAny": false,
     "paths": {
       "~/*": ["./*"],
       "@/*": ["./*"]
