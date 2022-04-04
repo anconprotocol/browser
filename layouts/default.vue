@@ -57,6 +57,9 @@
 </template>
 
 <script>
+import WalletConnectProvider from '@walletconnect/web3-provider'
+
+
 export default {
   name: 'DefaultLayout',
   data() {
@@ -70,26 +73,6 @@ export default {
           title: 'Home',
           to: '/',
         },
-        // {
-        //   icon: 'mdi-identifier',
-        //   title: 'Registrar identidad',
-        //   to: '/identity',
-        // },
-        // {
-        //   icon: 'mdi-qrcode-scan',
-        //   title: 'Escanear',
-        //   to: '/scan',
-        // },
-        // {
-        //   icon: 'mdi-file-sign',
-        //   title: 'Documento Verificable',
-        //   to: '/sign',
-        // },
-        // {
-        //   icon: 'mdi-gamepad-square-outline',
-        //   title: 'Tokenizar',
-        //   to: '/nft',
-        // },
       ],
       miniVariant: false,
       right: true,
