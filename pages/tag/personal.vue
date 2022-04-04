@@ -28,18 +28,20 @@
     <v-row>
       <v-col dense v-for="v in items" :key="v[0]">
         <v-card class="mx-auto" max-width="344">
-          <v-img :src="v.image" height="200px"></v-img>
+          <v-img :src="v.document.image" height="200px"></v-img>
 
           <v-card-title>
-            {{ v.name }}
+            {{ v.document.name }}
           </v-card-title>
 
           <v-card-subtitle>
-            {{ v.description }}
+            {{ v.document.description }}
           </v-card-subtitle>
 
           <v-card-actions>
-            <v-btn color="orange lighten-2" text> Publish </v-btn>
+            <v-btn color="orange lighten-2" @click="createTopic" text>
+              Share
+            </v-btn>
 
             <v-spacer></v-spacer>
 
@@ -137,6 +139,10 @@ export default class Personal extends Vue {
   items: any = []
   files = []
   selectedFile: any = {}
+  address: any
+  db: any
+  pubsub: any
+  topic = ''
 
   async fetchItems() {
     const uri = `https://api.ancon.did.pa/v0/topics?topic=@uuidIndexMainnet&from=0x6502781e4024D1FeBaBc8CdD18fA74f4e1954651`
@@ -162,7 +168,10 @@ export default class Personal extends Vue {
     } as StorageAsset
 
     // @ts-ignore
-    let { id, model } = await this.db.putBlock(payload)
+    let { id, model } = await this.db.putBlock(payload, {
+      kind: 'StorageAsset',
+      topic: this.topic,
+    })
 
     if (!!model) {
       // @ts-ignore
@@ -171,15 +180,39 @@ export default class Personal extends Vue {
 
     console.log(model)
   }
+
+  async createTopic() {
+    //@ts-ignore
+    const winEthAddr = window.ethereum.selectedAddress
+    this.topic = `/xdvdigital/1/${winEthAddr}/cbor`
+
+    // Writes a DAG JSON block
+    // const id = await this.db.putBlock({ ...payload, topic })
+
+    // // Fetch an existing DAG block
+    // const res = await this.db.get(id)
+    debugger
+    const pubsub = await this.db.createTopicPubsub(this.topic)
+
+    this.pubsub = pubsub
+
+    this.pubsub != null ? this.pubsub.unsubscribe() : null
+
+    pubsub.onBlockReply$.subscribe((block) => {
+      if (block.topic == this.topic) {
+        console.log()
+      }
+    })
+  }
+
   async mounted() {
     const obs$ = await this.db.queryBlocks$((blocks) => {
-      return () => blocks.toArray()//where({ 'kind': 'StorageAsset' })
-
+      return () => blocks.toArray() //where({ 'kind': 'StorageAsset' })
     })
 
-    obs$.subscribe(async(i: any)=> {
+    obs$.subscribe(async (i: any) => {
       this.items = [...i]
-    },   console.error)
+    }, console.error)
     // const accountB = accounts[0]
     // const id = await this.bob.putBlock(payload)
     //

@@ -55,10 +55,11 @@ import WalletConnectProvider from '@walletconnect/web3-provider'
 import { ethers } from 'ethers'
 import Web3 from 'web3'
 import { ParkyDB } from 'parkydb'
-import AnconProtocolClient from '../../lib/AnconProtocol/AnconProtocolClient'
+import AnconProtocolClient from '../lib/AnconProtocol/AnconProtocolClient'
 
 export default {
   name: 'DefaultLayout',
+  Ancon: AnconProtocolClient,
   mounted: async function () {
     //  Create WalletConnect Provider
     const provider = new WalletConnectProvider({
@@ -83,7 +84,7 @@ export default {
     //  Enable session (triggers QR Code modal)
     await provider.enable()
 
-    const web3 = new Web3(provider)
+    const web3 = new Web3(window.ethereum)
 //    this.web3Provider = new ethers.providers.Web3Provider(web3.currentProvider)
     this.web3Provider = web3.currentProvider
 
@@ -94,10 +95,10 @@ export default {
     const peer =
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
     try {
-      const trans = await Ancon.getTransaction()
+      const trans = await this.Ancon.getTransaction()
 
       // the pubkey from ancon
-      const getPubKey = await Ancon.getPubKey(trans)
+      const getPubKey = await this.Ancon.getPubKey(trans)
 
       const pubkey = getPubKey[2]
 
@@ -105,7 +106,7 @@ export default {
         wakuconnect: { bootstrap: { peers: [peer] } },
         withWeb3: {
           provider: this.web3Provider,
-          defaultAddress: this.address,
+          defaultAddress: window.ethereum.selectedAddress,
           pubkey: '',
         },
       })
