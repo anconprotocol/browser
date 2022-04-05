@@ -65,6 +65,7 @@ export default {
     const provider = new WalletConnectProvider({
       infuraId: '92ed13edfad140409ac24457a9c4e22d',
     })
+
     // Subscribe to accounts change
     provider.on('accountsChanged', (accounts) => {
       console.log(accounts)
@@ -84,6 +85,7 @@ export default {
     //  Enable session (triggers QR Code modal)
     await provider.enable()
 
+    this.walletconnect = provider
     const web3 = new Web3(window.ethereum)
     //    this.web3Provider = new ethers.providers.Web3Provider(web3.currentProvider)
     this.web3Provider = web3.currentProvider
@@ -135,6 +137,7 @@ export default {
   },
   provide: function () {
     return {
+      walletconnect: this.walletconnect,
       web3: this.web3Provider,
       db: this.db,
     }
@@ -142,6 +145,7 @@ export default {
   data() {
     return {
       db: new ParkyDB(),
+      walletconnect: new WalletConnectProvider({infuraId: '92ed13edfad140409ac24457a9c4e22d'}),
       web3: '',
       network: '1',
       address: '',

@@ -39,7 +39,7 @@
           </v-card-subtitle>
 
           <v-card-actions>
-            <v-btn color="orange lighten-2" @click="pushAssetToTopic" text>
+            <v-btn color="orange lighten-2" @click="pushAssetToTopic(v.cid)" text>
               Share
             </v-btn>
 
@@ -119,7 +119,7 @@ const FilePond = vueFilePond(
     QrcodeCapture,
     FilePond,
   },
-  inject: ['db', 'web3'],
+  inject: ['db', 'web3', 'walletconnect'],
 })
 export default class Personal extends Vue {
   result = ''
@@ -189,20 +189,56 @@ export default class Personal extends Vue {
 
      // sign message {signature, digest / hash, }
 
-    const block = {
-      ...model.document,
-      kind: 'StorageBlock',
-      signature,
-      digest,
-      timestamp: new Date().getTime(),
-      issuer,
-    }
+    // const block = {
+    //   ...model.document,
+    //   kind: 'StorageBlock',
+    //   signature,
+    //   digest,
+    //   timestamp: new Date().getTime(),
+    //   issuer,
+    // }
+
+    // putBlock
   }
 
+  async postBlockToAncon(cid: string, topic: string) {
+    const model = await this.db.get(cid, null)
+
+     // sign message {signature, digest / hash, }
+
+    // const block = {
+    //   ...model.document,
+    //   kind: 'StorageBlock',
+    //   signature,
+    //   digest,
+    //   timestamp: new Date().getTime(),
+    //   issuer,
+    // }
+
+    // putBlock VerifiableStorageBlock result { ref: `xdvdigital://cid` }
+  }
+
+  async mintAsset(cid: string) {
+    const model = await this.db.get(cid, null)
+
+     // sign message {signature, digest / hash, }
+
+    // const block = {
+    //   ...model.document,
+    //   kind: 'StorageBlock',
+    //   signature,
+    //   digest,
+    //   timestamp: new Date().getTime(),
+    //   issuer,
+    // }
+
+    // putBlock VerifiableStorageBlock { network: 'did:ethr:bnbt' }
+  }
   async createTopic() {
     const w = await this.db.getWallet()
     const accountA = (await w.getAccounts())[0]
 
+    // default topic
     //@ts-ignore
     this.topic = `/xdvdigital/1/${accountA}/cbor`
 
