@@ -60,10 +60,6 @@
               <v-divider></v-divider>
 
               <v-card-text>
-                I'm a thing. But, like most politicians, he promised more than
-                he could deliver. You won't have time for sleeping, soldier, not
-                with all the bed making you'll be doing. Then we'll go with that
-                data file! Hey, you add a one and two zeros to that or we walk!
                 You're going to do his laundry? I've got to find a way to
                 escape.
                 <v-timeline align-top dense>
@@ -141,6 +137,46 @@ const FilePond = vueFilePond(
   inject: ['db', 'web3', 'walletconnect'],
 })
 export default class Personal extends Vue {
+  messages = [
+    {
+      from: 'You',
+      message:
+        'Cross chain duplicated document on Ancon Marketplace 0x541d8c31947c56697c29a11381f3ea17dff0334c2639b4bf796c4aa6f0e1c016 ',
+      time: '10:59am',
+      color: 'deep-purple lighten-1',
+    },
+    {
+      from: 'You',
+      message:
+        'Minted document on OpenSea 0x7cb3e26b09c10236ead75765ba1320a4113a587077d812850e02acb9af8fb8ad ',
+      time: '10:55am',
+      color: 'deep-purple lighten-1',
+    },
+    {
+      from: 'You',
+      message: 'Shared document with Bob',
+      time: '10:50am',
+      color: 'deep-purple lighten-1',
+    },
+    {
+      from: 'Bob',
+      message: `Liked the document`,
+      time: '10:42am',
+      color: 'green',
+    },
+    {
+      from: 'You',
+      message: 'Shared document with Bob',
+      time: '10:37am',
+      color: 'deep-purple lighten-1',
+    },
+    {
+      from: 'You',
+      message: 'Uploaded asset to personal',
+      time: '9:47am',
+      color: 'deep-purple lighten-1',
+    },
+  ]
   result = ''
   selected: any
   loading = false
@@ -255,7 +291,7 @@ export default class Personal extends Vue {
   }
   async createTopic() {
     const w = await this.db.getWallet()
-    debugger
+
     const accountA = (await w.getAccounts())[0]
 
     // default topic
@@ -296,7 +332,7 @@ export default class Personal extends Vue {
   async mounted() {
     const peer =
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
-    debugger
+
     await this.db.initialize({
       wakuconnect: { bootstrap: { peers: [peer] } },
       withWallet: {
