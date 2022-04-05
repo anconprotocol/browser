@@ -16,6 +16,7 @@
     "@walletconnect/web3-provider": "^1.7.7",
     "@zxing/browser": "^0.0.10",
     "barcode-detector": "^1.0.0",
+    "blueimp-load-image": "^5.16.0",
     "checkdigit": "^1.1.1",
     "class-validator": "^0.13.2",
     "core-js": "^3.19.3",

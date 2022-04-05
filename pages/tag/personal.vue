@@ -28,7 +28,7 @@
     <v-row>
       <v-col dense v-for="v in items" :key="v[0]">
         <v-card class="mx-auto" max-width="344">
-          <v-img :src="v.document.image" height="200px"></v-img>
+          <v-img :src="v.canvas" height="200px"></v-img>
 
           <v-card-title>
             {{ v.document.name }}
@@ -81,12 +81,16 @@ import { QrcodeCapture } from 'vue-qrcode-reader'
 import { decode } from 'jsonwebtoken'
 import { CUFEBuilder } from '../cufe'
 import { BrowserQRCodeReader } from '@zxing/browser'
+import loadImage from 'blueimp-load-image'
 import * as reader from 'promise-file-reader'
 //@ts-ignore
 import BarcodeDetector from 'barcode-detector'
 import 'pdfjs-dist/legacy/build/pdf.worker.entry'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.js'
 import { ParkyDB } from 'parkydb'
+const PromiseFileReader = require('promise-file-reader');
+ 
+
 import { StorageAsset } from '../documentModel'
 // Import Vue FilePond
 import vueFilePond from 'vue-filepond'
@@ -135,7 +139,7 @@ export default class Personal extends Vue {
       href: 'breadcrumbs_link_2',
     },
   ]
-  show: any = true
+  show: any = false
   items: any = []
   files = []
   selectedFile: any = {}
@@ -164,7 +168,7 @@ export default class Personal extends Vue {
       sources: [],
       description: '',
       timestamp: new Date().getTime(),
-      image: URL.createObjectURL(file.file),
+      image: file.file,
     } as StorageAsset
 
     // @ts-ignore
@@ -211,7 +215,13 @@ export default class Personal extends Vue {
     })
 
     obs$.subscribe(async (i: any) => {
-      this.items = [...i]
+      const p = i.map(async (x: any) => ({
+        ...x,
+        canvas: await PromiseFileReader.readAsDataURL(x.document.image),
+      }))
+
+      this.items = await Promise.all(p)
+      console.log(this.items)
     }, console.error)
     // const accountB = accounts[0]
     // const id = await this.bob.putBlock(payload)

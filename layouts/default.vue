@@ -85,28 +85,26 @@ export default {
     await provider.enable()
 
     const web3 = new Web3(window.ethereum)
-//    this.web3Provider = new ethers.providers.Web3Provider(web3.currentProvider)
+    //    this.web3Provider = new ethers.providers.Web3Provider(web3.currentProvider)
     this.web3Provider = web3.currentProvider
 
     console.log(this.web3Provider)
 
     this.db = new ParkyDB()
-    // Configure and load ParkyDB
-    const peer =
-      '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
+    const peer =    '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
     try {
-      const trans = await this.Ancon.getTransaction()
+      //   const trans = await this.Ancon.getTransaction()
 
-      // the pubkey from ancon
-      const getPubKey = await this.Ancon.getPubKey(trans)
+      //   // the pubkey from ancon
+      //   const getPubKey = await this.Ancon.getPubKey(trans)
 
-      const pubkey = getPubKey[2]
-
-      await this.db.initialize({
+      //   const pubkey = getPubKey[2]
+      // Configure and load ParkyDB
+    await this.db.initialize({
         wakuconnect: { bootstrap: { peers: [peer] } },
         withWeb3: {
           provider: this.web3Provider,
-          defaultAddress: window.ethereum.selectedAddress,
+          defaultAddress: web3.defaultAccount,
           pubkey: '',
         },
       })
