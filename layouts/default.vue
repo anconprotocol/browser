@@ -117,7 +117,9 @@ export default {
       if (localStorage.getItem('xdv:keyring_exists') === 'true') {
       }
       await this.db.initialize({
-        wakuconnect: { bootstrap: { peers: [peer] } },
+        wakuconnect: {
+          bootstrap: { peers: [peer] },
+        },
         withWallet: {
           autoLogin: true,
           password: 'zxcvb',
@@ -140,7 +142,7 @@ export default {
       db: new ParkyDB(),
       walletconnect: new WalletConnectProvider({
         rpc: { 56: 'https://bsc-dataseed.binance.org/' },
-        chainId: 56,    
+        chainId: 56,
       }),
       network: '56',
       address: '',

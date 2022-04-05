@@ -319,9 +319,9 @@ export default class Personal extends Vue {
     const base58Encode = ethers.utils.base58.encode(pubkey)
 
     const message = `#Welcome to Ancon Protocol!
-    
+
     For more information read the docs https://anconprotocol.github.io/docs/
-    
+
     To make free posts and gets to the DAG Store you have to enroll and pay the service fee
 
     This request will not trigger a blockchain transaction or cost any gas fees.
@@ -404,7 +404,8 @@ export default class Personal extends Vue {
 
     // default topic
     //@ts-ignore
-    this.topic = `/xdvdigital/1/${accountA}/dag-json`
+    // this.topic = `/xdvdigital/1/${accountA}/dag-json`
+    this.topic = `/xdvdigital/1/0xeeC58E89996496640c8b5898A7e0218E9b6E90cB/dag-json`
 
     // Writes a DAG JSON block
     // const id = await this.db.putBlock({ ...payload, topic })
@@ -427,7 +428,7 @@ export default class Personal extends Vue {
       blockCodec,
     })
 
-    if (this.pubsub != null) this.pubsub.unsubscribe()
+    // if (this.pubsub != null) this.pubsub.unsubscribe()
     this.pubsub = pubsub
 
     this.pubsub.onBlockReply$.subscribe((block) => {
