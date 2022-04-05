@@ -8,11 +8,6 @@ const AnconProtocol = require('../contracts/AnconProtocol.json')
 
 class helper {
   static getContracts(_provider) {
-    // let wallet = onboard.getState()
-    // const state = onboard.getState()
-    // const provider = new WalletConnectProvider({
-    //   infuraId: '92ed13edfad140409ac24457a9c4e22d',
-    // })
     const web3 = new Web3(_provider)
     web3.eth.defaultAccount = _provider.accounts[0]
     const anconNFTContractAddress = $nuxt.context.env.AnconNFT

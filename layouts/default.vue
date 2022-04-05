@@ -128,22 +128,6 @@ export default {
     } catch (e) {
       console.error(e)
     }
-    // // @ts-ignore
-    // let id = await this.db.putBlock(payload)
-
-    // if (typeof id !== 'string') id = id.cid
-    // const res = await this.db.get(id, null)
-    // const q = await this.db.query({
-    //   cid: id,
-    //   query: `
-    // query{
-    //    block(cid: "${id}") {
-    //      network
-    //      key
-    //    }
-    // }
-    // `,
-    // })
   },
   provide: function () {
     return {
@@ -156,7 +140,6 @@ export default {
     return {
       db: new ParkyDB(),
       walletconnect: new WalletConnectProvider({
-        // infuraId: '92ed13edfad140409ac24457a9c4e22d',
         rpc: { 56: 'https://bsc-dataseed.binance.org/' },
       }),
       web3: '',
