@@ -31,10 +31,21 @@
       </v-btn>
       <v-toolbar-title v-text="title" />
       <v-spacer />
-      <div>Network {{ network }}</div>
+      <v-row v-if="this.walletconnect.connected">
+        <div>Network {{ network }}</div>
+        <v-spacer />
+        <div>Address {{ address }}</div>
+        <v-spacer />
+      </v-row>
+
       <v-spacer />
-      <div>Address {{ address }}</div>
-      <!-- <v-btn> Connect </v-btn> -->
+
+      <v-btn v-if="this.walletconnect.connected" v-on:click="disconnect"
+        >Disconnect
+      </v-btn>
+      <v-btn v-if="!this.walletconnect.connected" v-on:click="connect">
+        Connect
+      </v-btn>
     </v-app-bar>
     <v-main>
       <v-container>
@@ -117,7 +128,6 @@ export default {
     } catch (e) {
       console.error(e)
     }
-
     // // @ts-ignore
     // let id = await this.db.putBlock(payload)
 
@@ -168,6 +178,16 @@ export default {
       show: '',
       title: 'xdv.digital [codename everdid]',
     }
+  },
+  methods: {
+    connect: function () {
+      console.log('Connect')
+      this.walletconnect.enable()
+    },
+    disconnect: function () {
+      console.log('Disconnect')
+      this.walletconnect.disconnect()
+    },
   },
 }
 </script>
