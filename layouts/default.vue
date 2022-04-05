@@ -63,7 +63,8 @@ export default {
   mounted: async function () {
     //  Create WalletConnect Provider
     const provider = new WalletConnectProvider({
-      infuraId: '92ed13edfad140409ac24457a9c4e22d',
+      // infuraId: '92ed13edfad140409ac24457a9c4e22d',
+      rpc: { 56: 'https://bsc-dataseed.binance.org/' },
     })
 
     // Subscribe to accounts change
@@ -104,7 +105,6 @@ export default {
       //   const pubkey = getPubKey[2]
       // Configure and load ParkyDB
       if (localStorage.getItem('xdv:keyring_exists') === 'true') {
-        
       }
       await this.db.initialize({
         wakuconnect: { bootstrap: { peers: [peer] } },
@@ -145,9 +145,12 @@ export default {
   data() {
     return {
       db: new ParkyDB(),
-      walletconnect: new WalletConnectProvider({infuraId: '92ed13edfad140409ac24457a9c4e22d'}),
+      walletconnect: new WalletConnectProvider({
+        // infuraId: '92ed13edfad140409ac24457a9c4e22d',
+        rpc: { 56: 'https://bsc-dataseed.binance.org/' },
+      }),
       web3: '',
-      network: '1',
+      network: '97',
       address: '',
       clipped: false,
       drawer: false,
