@@ -112,7 +112,7 @@
             <v-divider></v-divider>
 
             <v-card-actions>
-              <v-btn text> View Details </v-btn>
+              <v-btn @click="createDocumentNode" text> View Details </v-btn>
             </v-card-actions>
           </v-card>
         </v-col>
@@ -182,8 +182,9 @@ import 'pdfjs-dist/legacy/build/pdf.worker.entry'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.js'
 import { ParkyDB } from 'parkydb'
 import { v4 as uuidv4 } from 'uuid'
-import AnconProtocolClient, {
-} from '../../lib/AnconProtocol/AnconProtocolClient'
+import Web3 from 'web3'
+import AnconProtocolClient from '../../lib/AnconProtocol/AnconProtocolClient'
+import helper from '../../utils/helper'
 
 const payload = {
   commitHash: 'xg8pyBr3McqYlUgxAqV0t3s6TRcP+B7MHyPTtyVKMJw=',
@@ -230,6 +231,7 @@ const payload = {
   components: {
     QrcodeCapture,
   },
+  inject: ['db', 'web3', 'walletconnect'],
 })
 export default class Public extends Vue {
   bob = new ParkyDB()
@@ -247,6 +249,9 @@ export default class Public extends Vue {
   selectedCedula: any
   feURL = ''
   cafeModel = { issuer: {}, recipient: {} }
+  db: any
+  web3: any
+  walletconnect: any
 
   steps = [
     {
@@ -356,6 +361,7 @@ export default class Public extends Vue {
   }
 
   async mounted() {
+    await this.walletconnect.enable()
     // const accountB = accounts[0]
     // const id = await this.bob.putBlock(payload)
     // debugger
@@ -432,14 +438,15 @@ export default class Public extends Vue {
 
       const uploadFileRes = await this.anconUploadFile(_file)
 
-      // if (uploadFileRes.error) {
-      //   setMintingStatus("An error has ocurred", uploadFileRes.error);
-      //   throw new Error(`Error. ${uploadFileRes.error}`);
-      // }
+      if (uploadFileRes.error) {
+        // setMintingStatus("An error has ocurred", uploadFileRes.error);
+        throw new Error(`Error. ${uploadFileRes.error}`)
+      }
 
       // setMintingStatus("Requesting Ancon metadata creation...");
-      // //Subiendo metadata a Ancon Node
-      // //Create metadata
+
+      //Create metadata
+
       // const anconMetadataObject = await anconCreateMetadata(
       //   uploadFileRes,
       //   address,
@@ -448,7 +455,12 @@ export default class Public extends Vue {
       // );
       // console.log("ancon", anconMetadataObject);
       // setMintingStatus("Creando transacción en la blockchain...");
-      // const bob = AnconNFTContract.defaultAccount;
+
+      const { AnconNFTContract, AnconTokenContract } = helper.getContracts(
+        this.walletconnect
+      )
+
+      const bob = AnconNFTContract.defaultAccount
 
       // const getDagResponse = await fetch(
       //   `${anconAPIurl}/v0/dag/${anconMetadataObject.proofCid}/`
@@ -461,47 +473,47 @@ export default class Public extends Vue {
       // setMintingStatus("Waiting for approval of blockchain funds...");
 
       // let allowed = await AnconTokenContract.methods
-      //   .allowance(address, AnconNFTContract._address)
-      //   .call();
-      // console.log("allowed", allowed);
+      //   //@ts-ignore
+      //   .allowance(bob, AnconNFTContract._address)
+      //   .call()
+      // console.log('allowed', allowed)
+      const serviceFee = await AnconNFTContract.methods
+        .serviceFeeForContract()
+        .call()
 
-      // const serviceFee = await AnconNFTContract.methods
-      //   .serviceFeeForContract()
-      //   .call();
+      const max_amount = Web3.utils.toWei('100000', 'ether').toString()
 
-      // const max_amount = Web3.utils.toWei('100000','ether').toString();
-
-      // if (allowed == "0" && serviceFee != "0") {
+      // if (allowed == '0' && serviceFee != '0') {
       //   let gasAmount = await AnconTokenContract.methods
+      //     //@ts-ignore
       //     .approve(AnconNFTContract._address, max_amount)
-      //     .estimateGas({ from: address });
+      //     .estimateGas({ from: bob })
 
       //   await AnconTokenContract.methods
+      //     //@ts-ignore
       //     .approve(AnconNFTContract._address, max_amount)
       //     .send({
       //       gas: gasAmount,
-      //       from: address,
-      //     });
-      //   console.log("allowed");
+      //       from: bob,
+      //     })
+      //   console.log('allowed')
       // }
 
       // setMintingStatus("Minting...");
-      // const royalty2 = frontValues.royalty * 100;
-      // const params = [
-      //   address, //user address
-      //   uuid, //static uuid
-      //   royalty2, //royalty fee percent from 0 to 10000, 1 = 0.01%, 10000 = 100.00%
-      // ];
-      // const gasAmount = await AnconNFTContract.methods
-      //   .mint(...params)
-      //   .estimateGas({ from: address });
-
-      // const txmint = await AnconNFTContract.methods
-      //   .mint(...params)
-      //   .send({
-      //     gas: gasAmount,
-      //     from: address,
-      //   });
+      const royalty2 = 0
+      const params = [
+        bob, //user address
+        uuid, //static uuid
+        royalty2, //royalty fee percent from 0 to 10000, 1 = 0.01%, 10000 = 100.00%
+      ]
+      const gasAmount = await AnconNFTContract.methods
+        .mint(...params)
+        .estimateGas({ from: bob })
+      debugger
+      const txmint = await AnconNFTContract.methods.mint(...params).send({
+        gas: gasAmount,
+        from: bob,
+      })
 
       // setMintingStatus("Ending...");
 
@@ -552,7 +564,7 @@ export default class Public extends Vue {
       // setModal(true);
       // setMintingStatus(e.message);
       // setLoading(false);
-      // console.log("confirmation error", e);
+      console.log(e)
     }
   }
 }
