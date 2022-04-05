@@ -39,7 +39,11 @@
           </v-card-subtitle>
 
           <v-card-actions>
-            <v-btn color="orange lighten-2" @click="pushAssetToTopic(v.cid)" text>
+            <v-btn
+              color="orange lighten-2"
+              @click="pushAssetToTopic(v.cid)"
+              text
+            >
               Share
             </v-btn>
 
@@ -62,6 +66,21 @@
                 data file! Hey, you add a one and two zeros to that or we walk!
                 You're going to do his laundry? I've got to find a way to
                 escape.
+                <v-timeline align-top dense>
+                  <v-timeline-item
+                    v-for="message in messages"
+                    :key="message.time"
+                    :color="message.color"
+                    small
+                  >
+                    <div>
+                      <div class="font-weight-normal">
+                        <strong>{{ message.from }}</strong> @{{ message.time }}
+                      </div>
+                      <div>{{ message.message }}</div>
+                    </div>
+                  </v-timeline-item>
+                </v-timeline>
               </v-card-text>
             </div>
           </v-expand-transition>
@@ -187,7 +206,7 @@ export default class Personal extends Vue {
   async pushAssetToTopic(cid: string, topic: string) {
     const model = await this.db.get(cid, null)
 
-     // sign message {signature, digest / hash, }
+    // sign message {signature, digest / hash, }
 
     // const block = {
     //   ...model.document,
@@ -204,7 +223,7 @@ export default class Personal extends Vue {
   async postBlockToAncon(cid: string, topic: string) {
     const model = await this.db.get(cid, null)
 
-     // sign message {signature, digest / hash, }
+    // sign message {signature, digest / hash, }
 
     // const block = {
     //   ...model.document,
@@ -221,7 +240,7 @@ export default class Personal extends Vue {
   async mintAsset(cid: string) {
     const model = await this.db.get(cid, null)
 
-     // sign message {signature, digest / hash, }
+    // sign message {signature, digest / hash, }
 
     // const block = {
     //   ...model.document,
@@ -236,6 +255,7 @@ export default class Personal extends Vue {
   }
   async createTopic() {
     const w = await this.db.getWallet()
+    debugger
     const accountA = (await w.getAccounts())[0]
 
     // default topic
@@ -247,7 +267,7 @@ export default class Personal extends Vue {
 
     // // Fetch an existing DAG block
     // const res = await this.db.get(id)
-    debugger
+    // debugger
     const blockCodec = {
       name: 'cbor',
       code: '0x71',
@@ -276,6 +296,7 @@ export default class Personal extends Vue {
   async mounted() {
     const peer =
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
+    debugger
     await this.db.initialize({
       wakuconnect: { bootstrap: { peers: [peer] } },
       withWallet: {
@@ -298,7 +319,7 @@ export default class Personal extends Vue {
       this.items = await Promise.all(p)
       console.log(this.items)
     }, console.error)
-    
+
     await this.createTopic()
   }
 }
