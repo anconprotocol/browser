@@ -105,11 +105,16 @@ export default {
         test: /\.mjs$/,
         include: /node_modules/,
         type: 'javascript/auto'
-      }) 
+      })
            config.module.rules.push(     {
         test: /\.js$/,
         include: /node_modules/,
         type: 'javascript/auto'
       })
     },},
+
+    env: {
+      AnconNFT: process.env.REACT_APP_AnconNFTAddress,
+      AnconToken: process.env.REACT_APP_AnconTokenAddress
+    }
 }
