@@ -74,35 +74,34 @@ export default {
   mounted: async function () {
     //  Create WalletConnect Provider
     const provider = new WalletConnectProvider({
-      // infuraId: '92ed13edfad140409ac24457a9c4e22d',
       rpc: { 56: 'https://bsc-dataseed.binance.org/' },
+      chainId: 56,
     })
 
     // Subscribe to accounts change
     provider.on('accountsChanged', (accounts) => {
-      console.log(accounts)
       this.address = accounts[0]
     })
 
     // Subscribe to chainId change
     provider.on('chainChanged', (chainId) => {
       this.network = chainId
-      console.log(chainId)
+      //  console.log(chainId)
     })
 
     // Subscribe to session disconnection
     provider.on('disconnect', (code, reason) => {
       console.log(code, reason)
     })
+
+    this.walletconnect = provider
     //  Enable session (triggers QR Code modal)
     await provider.enable()
 
-    this.walletconnect = provider
-    const web3 = new Web3(window.ethereum)
     //    this.web3Provider = new ethers.providers.Web3Provider(web3.currentProvider)
-    this.web3Provider = web3.currentProvider
+    // this.web3Provider = web3.currentProvider
 
-    console.log(this.web3Provider)
+    // console.log(this.web3Provider)
 
     this.db = new ParkyDB()
     const peer =
@@ -132,7 +131,7 @@ export default {
   provide: function () {
     return {
       walletconnect: this.walletconnect,
-      web3: this.web3Provider,
+      web3: null,
       db: this.db,
     }
   },
@@ -141,9 +140,9 @@ export default {
       db: new ParkyDB(),
       walletconnect: new WalletConnectProvider({
         rpc: { 56: 'https://bsc-dataseed.binance.org/' },
+        chainId: 56,    
       }),
-      web3: '',
-      network: '97',
+      network: '56',
       address: '',
       clipped: false,
       drawer: false,
