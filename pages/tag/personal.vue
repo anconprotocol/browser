@@ -39,7 +39,7 @@
           </v-card-subtitle>
 
           <v-card-actions>
-            <v-btn color="orange lighten-2" @click="createTopic" text>
+            <v-btn color="orange lighten-2" @click="pushAssetToTopic" text>
               Share
             </v-btn>
 
@@ -78,18 +78,17 @@
 import { Component, Vue } from 'vue-property-decorator'
 import { QrcodeCapture } from 'vue-qrcode-reader'
 //@ts-ignore
-import { decode } from 'jsonwebtoken'
 import { CUFEBuilder } from '../cufe'
 import { BrowserQRCodeReader } from '@zxing/browser'
 import loadImage from 'blueimp-load-image'
 import * as reader from 'promise-file-reader'
 //@ts-ignore
 import BarcodeDetector from 'barcode-detector'
+import { decode, encode } from 'cbor-x'
 import 'pdfjs-dist/legacy/build/pdf.worker.entry'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.js'
-import { ParkyDB } from 'parkydb'
-const PromiseFileReader = require('promise-file-reader');
- 
+import { BlockValue, ParkyDB } from 'parkydb'
+const PromiseFileReader = require('promise-file-reader')
 
 import { StorageAsset } from '../documentModel'
 // Import Vue FilePond
@@ -107,7 +106,7 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 // Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
-import { map, merge } from 'rxjs'
+import { map, merge, tap, timestamp } from 'rxjs'
 
 // Create component
 const FilePond = vueFilePond(
@@ -185,10 +184,27 @@ export default class Personal extends Vue {
     console.log(model)
   }
 
+  async pushAssetToTopic(cid: string, topic: string) {
+    const model = await this.db.get(cid, null)
+
+     // sign message {signature, digest / hash, }
+
+    const block = {
+      ...model.document,
+      kind: 'StorageBlock',
+      signature,
+      digest,
+      timestamp: new Date().getTime(),
+      issuer,
+    }
+  }
+
   async createTopic() {
+    const w = await this.db.getWallet()
+    const accountA = (await w.getAccounts())[0]
+
     //@ts-ignore
-    const winEthAddr = window.ethereum.selectedAddress
-    this.topic = `/xdvdigital/1/${winEthAddr}/cbor`
+    this.topic = `/xdvdigital/1/${accountA}/cbor`
 
     // Writes a DAG JSON block
     // const id = await this.db.putBlock({ ...payload, topic })
@@ -196,20 +212,43 @@ export default class Personal extends Vue {
     // // Fetch an existing DAG block
     // const res = await this.db.get(id)
     debugger
-    const pubsub = await this.db.createTopicPubsub(this.topic)
+    const blockCodec = {
+      name: 'cbor',
+      code: '0x71',
+      encode: (obj: any) => encode(obj),
+      decode: (buffer: any) => decode(buffer),
+    }
+    const pubsub = await this.db.createChannelPubsub(this.topic, {
+      from: accountA,
+      middleware: {
+        incoming: [tap()],
+        outgoing: [map((v: BlockValue) => v.document)],
+      },
+      blockCodec,
+    })
 
+    if (this.pubsub != null) this.pubsub.unsubscribe()
     this.pubsub = pubsub
 
-    this.pubsub != null ? this.pubsub.unsubscribe() : null
-
-    pubsub.onBlockReply$.subscribe((block) => {
+    this.pubsub.onBlockReply$.subscribe((block) => {
       if (block.topic == this.topic) {
-        console.log()
+        console.log(block)
       }
     })
   }
 
   async mounted() {
+    const peer =
+      '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
+    await this.db.initialize({
+      wakuconnect: { bootstrap: { peers: [peer] } },
+      withWallet: {
+        autoLogin: true,
+        password: 'zxcvb',
+        // seed: ethers.Wallet.createRandom().mnemonic.phrase,
+      },
+    })
+
     const obs$ = await this.db.queryBlocks$((blocks) => {
       return () => blocks.toArray() //where({ 'kind': 'StorageAsset' })
     })
@@ -223,23 +262,8 @@ export default class Personal extends Vue {
       this.items = await Promise.all(p)
       console.log(this.items)
     }, console.error)
-    // const accountB = accounts[0]
-    // const id = await this.bob.putBlock(payload)
-    //
-
-    // const res = await this.bob.get(id, null)
-    // const q = await this.bob.query({
-    //   cid: id,
-    //   query: `
-    // query{
-    //    block(cid: "${id}") {
-    //      network
-    //      key
-    //    }
-    // }
-    // `,
-    // })
-    // console.log(q)
+    
+    await this.createTopic()
   }
 }
 </script>

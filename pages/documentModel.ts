@@ -1,4 +1,4 @@
-// Metadata asset
+// Metadata asset - Store locally
 export interface StorageAsset {
     name: string;
     kind: string;
@@ -9,17 +9,17 @@ export interface StorageAsset {
     owner: string;
 }
 
-// Storage block
+// Storage block - Web3 + Topic
 export interface StorageBlock {
     content: StorageAsset | string;
     kind: string;
-    signature: string;
+    signature: string; // Either Waku+Web3 EIP712 or eth_signMessage
     digest: string;
     timestamp: number;
     issuer: string;
 }
 
-// Ancon Node block
+// Ancon Node block - Public
 export interface VerifiableStorageBlock extends StorageBlock {
     commitHash: string;
     kind: string;
@@ -29,5 +29,4 @@ export interface VerifiableStorageBlock extends StorageBlock {
     rootKey: string;
     lastBlockHash: string;
     network: string;
-
 }

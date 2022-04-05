@@ -91,7 +91,8 @@ export default {
     console.log(this.web3Provider)
 
     this.db = new ParkyDB()
-    const peer =    '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
+    const peer =
+      '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
     try {
       //   const trans = await this.Ancon.getTransaction()
 
@@ -100,12 +101,15 @@ export default {
 
       //   const pubkey = getPubKey[2]
       // Configure and load ParkyDB
-    await this.db.initialize({
+      if (localStorage.getItem('xdv:keyring_exists') === 'true') {
+        
+      }
+      await this.db.initialize({
         wakuconnect: { bootstrap: { peers: [peer] } },
-        withWeb3: {
-          provider: this.web3Provider,
-          defaultAddress: web3.defaultAccount,
-          pubkey: '',
+        withWallet: {
+          autoLogin: true,
+          password: 'zxcvb',
+          seed: ethers.Wallet.createRandom().mnemonic.phrase,
         },
       })
     } catch (e) {
