@@ -232,6 +232,11 @@ export default class Personal extends Vue.extend({
   topic = ''
   getWalletconnect: any
   historyItems: any = {}
+  Ancon: AnconProtocolClient | undefined
+  // getWalletconnect(): any {}
+  // @ts-ignore
+  // getWalletconnect(): any {}
+  // @ts-ignore
   // getWalletconnect(): any {}
   // @ts-ignore
   // getWalletconnect(): any {}
@@ -332,9 +337,8 @@ export default class Personal extends Vue.extend({
 
     return { digest, signature }
   }
-  async postBlockToAncon(cid: string, topic: string) {
-    const model = await this.db.get(cid, null)
-
+  async postBlockToAncon(cid: string) {
+    const model = await (this as any).getDb().get(cid)
     const { signature, digest } = await this.sign(model.document)
     const block = {
       ...model.document,
@@ -344,19 +348,24 @@ export default class Personal extends Vue.extend({
       timestamp: new Date().getTime(),
       issuer: this.getWalletconnect().accounts[0],
     }
+    const w = await (this as any).getDb().getWallet()
 
+    const accountA = (await w.getAccounts())[0]
     // @ts-ignore
     const did = await this.db.createAnconDid({
       // @ts-ignore
       api: $nuxt.context.env.AnconAPI,
       chainId: this.getWalletconnect().chainId,
+      from: accountA,
     })
-    const dagblock = await this.db.createAnconBlock({
+    debugger
+    const dagblock = await (this as any).getDb().createAnconBlock({
       // @ts-ignore
       api: $nuxt.context.env.AnconAPI,
       chainId: this.getWalletconnect().chainId,
       message: block,
       topic: 'xdvdigital',
+      from: accountA,
     })
     console.log(did, dagblock)
   }
