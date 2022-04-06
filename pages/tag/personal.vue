@@ -28,7 +28,7 @@
     <v-row>
       <v-col dense v-for="v in items" :key="v[0]">
         <v-card class="mx-auto" max-width="344">
-          <v-img :src="v.canvas" height="200px"></v-img>
+          <v-img :src="v.document.image" height="200px"></v-img>
 
           <v-card-title>
             {{ v.document.name }}
@@ -59,7 +59,7 @@
 
             <v-spacer></v-spacer>
 
-            <v-btn icon @click="show = !show">
+            <v-btn icon @click="showHistory(v.cid)">
               <v-icon>{{
                 show ? 'mdi-chevron-up' : 'mdi-chevron-down'
               }}</v-icon>
@@ -74,14 +74,16 @@
                 escape.
                 <v-timeline align-top dense>
                   <v-timeline-item
-                    v-for="message in messages"
+                    v-for="message in messages.refs"
                     :key="message.time"
                     :color="message.color"
                     small
                   >
                     <div>
                       <div class="font-weight-normal">
-                        <strong>{{ message.from }}</strong> @{{ message.time }}
+                        <strong>{{ message.from }}</strong> @{{
+                          message.time | formatDate
+                        }}
                       </div>
                       <div>{{ message.message }}</div>
                     </div>
@@ -131,9 +133,11 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 // Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
-import { map, merge, tap, timestamp } from 'rxjs'
+import { map, merge, of, tap, timestamp } from 'rxjs'
 import { getPredefinedBootstrapNodes } from 'js-waku'
 import { ethers } from 'ethers'
+import Dexie, { liveQuery, Table } from 'dexie'
+import helper from '~/utils/helper'
 
 // Create component
 const FilePond = vueFilePond(
@@ -154,7 +158,11 @@ const FilePond = vueFilePond(
     'getDefaultAddress',
   ],
 })
-export default class Personal extends Vue {
+export default class Personal extends Vue.extend({
+  filters: {
+    formatDate: (date: Date) => Intl.DateTimeFormat('us-EN').format(date),
+  },
+}) {
   messages = [
     {
       from: 'You',
@@ -220,6 +228,9 @@ export default class Personal extends Vue {
   pubsub: any
   topic = ''
   getWalletconnect: any
+  historyItems: any = {}
+  // getWalletconnect(): any {}
+  // @ts-ignore
   // getWalletconnect(): any {}
   // @ts-ignore
 
@@ -243,7 +254,7 @@ export default class Personal extends Vue {
       sources: [],
       description: '',
       timestamp: new Date().getTime(),
-      image: file.file,
+      image: await PromiseFileReader.readAsDataURL(file.file),
     } as StorageAsset
 
     // @ts-ignore
@@ -262,8 +273,8 @@ export default class Personal extends Vue {
 
   async pushAssetToTopic(cid: string) {
     const model = await this.db.get(cid, null)
-    const b64 = await PromiseFileReader.readAsDataURL(model.document.image)
-    model.document.image = b64
+    // const b64 = await PromiseFileReader.readAsDataURL(model.document.image)
+    // model.document.image = b64
 
     // sign message {signature, digest / hash, }z
     const { signature, digest } = await this.sign(model.document)
@@ -300,6 +311,7 @@ export default class Personal extends Vue {
     })
     const output = await res.json()
     console.log(output)
+    this.add(cid, 'Push Asset to Topic', this.getWalletconnect().accounts[0])
   }
 
   async sign(data: any) {
@@ -425,6 +437,55 @@ export default class Personal extends Vue {
     })
   }
 
+  async showHistory(_cid) {
+    this.show = !this.show
+    this.messages = this.historyItems[_cid]
+  }
+
+  async demo(_type, _cid) {
+    switch (_type) {
+      case 1:
+        this.add(
+          _cid,
+          'Push to topic',
+          (this as any).getWalletconnect().accounts[0]
+        )
+        break
+      case 2:
+        this.add(_cid, 'Public', (this as any).getWalletconnect().accounts[0])
+        break
+      case 3:
+        this.add(_cid, 'Mint', (this as any).getWalletconnect().accounts[0])
+        break
+
+      default:
+        break
+    }
+  }
+
+  async add(_cid, _action, _user) {
+    const model = await (this as any).getDb().db.history.get({ cid: _cid })
+
+    const event = {
+      message: _action,
+      time: new Date().getTime(),
+      from: _user,
+    }
+    const init = {
+      cid: _cid,
+      refs: [event],
+    }
+    if (model) {
+      const update = {
+        cid: _cid,
+        refs: [...model.refs, event],
+      }
+      ;(this as any).getDb().db.history.update(_cid, update)
+    } else {
+      ;(this as any).getDb().db.history.put(init)
+    }
+  }
+
   async mounted() {
     const db = (this as any).getDb()
     const walletconnect = (this as any).getWalletconnect()
@@ -476,15 +537,24 @@ export default class Personal extends Vue {
     })
 
     obs$.subscribe(async (i: any) => {
-      const p = i
-        .filter((x) => x.document.kind == 'StorageAsset')
-        .map(async (x: any) => ({
-          ...x,
-          canvas: await PromiseFileReader.readAsDataURL(x.document.image),
-        }))
+      const p = i.filter((x) => x.document.kind == 'StorageAsset')
 
       this.items = await Promise.all(p)
       console.log(this.items)
+    }, console.error)
+
+    const history = await db.db.history.toArray()
+
+    liveQuery(() => history).subscribe(async (i: any) => {
+      let x
+      i.forEach((i: any) => {
+        x = {
+          [i.cid]: { ...i },
+          refs: i.refs,
+          ...x,
+        }
+      })
+      this.historyItems = x
     }, console.error)
 
     this.db = db
