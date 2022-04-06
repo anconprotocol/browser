@@ -17,6 +17,7 @@
     "@zxing/browser": "^0.0.10",
     "barcode-detector": "^1.0.0",
     "blueimp-load-image": "^5.16.0",
+    "buffer": "^6.0.3",
     "checkdigit": "^1.1.1",
     "class-validator": "^0.13.2",
     "core-js": "^3.19.3",
