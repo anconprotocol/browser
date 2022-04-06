@@ -169,8 +169,8 @@ export default {
       show: '',
       title: 'xdv.digital [codename everdid]',
       topics: [
-        '/xdvdigital/1/0xeeC58E89996496640c8b5898A7e0218E9b6E90cB/cbor',
-        '/xdvdigital/1/0x63e6EdFBA95aB3f0854fE1A93f96FAB1aa04b8Fb/cbor', //backup
+        '0xeeC58E89996496640c8b5898A7e0218E9b6E90cB',
+        '0x63e6EdFBA95aB3f0854fE1A93f96FAB1aa04b8Fb', //backup
       ],
     }
   },
@@ -195,19 +195,19 @@ export default {
         }),
       })
 
-      setInterval(async () => {
-        const res = await fetch(url, {
-          method: 'POST',
-          body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'id',
-            method: 'get_waku_v2_relay_v1_messages',
-            params: [this.topics[0]],
-          }),
-        })
-        const messages = await res.json()
-        console.log(messages)
-      }, 5000)
+      // setInterval(async () => {
+      //   const res = await fetch(url, {
+      //     method: 'POST',
+      //     body: JSON.stringify({
+      //       jsonrpc: '2.0',
+      //       id: 'id',
+      //       method: 'get_waku_v2_relay_v1_messages',
+      //       params: [this.topics[0]],
+      //     }),
+      //   })
+      //   const messages = await res.json()
+      //   console.log(messages)
+      // }, 5000)
     },
     createDefaultTopic: async function () {
       const blockCodec = {
@@ -222,14 +222,14 @@ export default {
       const accountA = (await w.getAccounts())[0]
       const defaultTopic = `/xdvdigital/1/${accountA}/cbor`
 
-      const pubsub = await this.db.createChannelPubsub(defaultTopic, {
-        from: accountA,
-        middleware: {
-          incoming: [tap()],
-          outgoing: [tap()],
-        },
-        blockCodec,
-      })
+      // const pubsub = await this.db.createChannelPubsub(defaultTopic, {
+      //   from: accountA,
+      //   middleware: {
+      //     incoming: [tap()],
+      //     outgoing: [tap()],
+      //   },
+      //   blockCodec,
+      // })
     },
   },
 }

@@ -293,15 +293,16 @@ export default class Personal extends Vue {
         id: 'id',
         method: 'post_waku_v2_relay_v1_message',
         params: [
-          defaultTopic,
+          this.getWalletconnect().accounts[0],
           {
             payload: ethers.utils.hexlify(encode(block)),
             timestamp: block.timestamp,
+            contentTopic: defaultTopic,
           },
         ],
       }),
     })
-debugger
+    debugger
     const output = await res.json()
     console.log(output)
   }
