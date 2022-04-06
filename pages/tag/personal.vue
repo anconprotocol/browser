@@ -53,11 +53,7 @@
             >
               Publish
             </v-btn>
-            <v-btn
-              color="orange lighten-2"
-              @click="mintAsset(v.cid)"
-              text
-            >
+            <v-btn color="orange lighten-2" @click="mintAsset(v.cid)" text>
               Mint
             </v-btn>
 
@@ -302,7 +298,6 @@ export default class Personal extends Vue {
         ],
       }),
     })
-    debugger
     const output = await res.json()
     console.log(output)
   }
@@ -335,51 +330,20 @@ export default class Personal extends Vue {
       issuer: this.getWalletconnect().accounts[0],
     }
 
-    const pub = ''
-    await this.createDid(pub)
-    await this.createAnconBlock(block)
-  }
-
-  async createDid(pubkey: Uint8Array) {
-    // encode the pub key
-    const base58Encode = ethers.utils.base58.encode(pubkey)
-
-    const message = `#Welcome to Ancon Protocol!
-
-    For more information read the docs https://anconprotocol.github.io/docs/
-
-    To make free posts and gets to the DAG Store you have to enroll and pay the service fee
-
-    This request will not trigger a blockchain transaction or cost any gas fees.
-    by signing this message you accept the terms and conditions of Ancon Protocol
-    `
-    const { signature, digest } = await this.sign(message)
-
-    //post to get the did
-    const payload = {
-      ethrdid: `did:ethr:${this.getWalletconnect().chainId}:${
-        this.getWalletconnect().accounts[0]
-      }`,
-      pub: base58Encode,
-      signature: signature,
-      message: message,
-    }
-
-    const requestOptions = {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }
-
-    // fetch
-    const rawResponse = await fetch(
+    // @ts-ignore
+    const did = await this.db.createAnconDid({
       // @ts-ignore
-      `${$nuxt.context.env.AnconAPI}/v0/did`,
-      requestOptions
-    )
-    //   json response
-    const response = await rawResponse.json()
-    return response
+      api: $nuxt.context.env.AnconAPI,
+      chainId: this.getWalletconnect().chainId,
+    })
+    const dagblock = await this.db.createAnconBlock({
+      // @ts-ignore
+      api: $nuxt.context.env.AnconAPI,
+      chainId: this.getWalletconnect().chainId,
+      message: block,
+      topic: 'xdvdigital',
+    })
+    console.log(did, dagblock)
   }
 
   async createAnconBlock(data: any) {
