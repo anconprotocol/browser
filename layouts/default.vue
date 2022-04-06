@@ -195,19 +195,19 @@ export default {
         }),
       })
 
-      // setInterval(async () => {
-      //   const res = await fetch(url, {
-      //     method: 'POST',
-      //     body: JSON.stringify({
-      //       jsonrpc: '2.0',
-      //       id: 'id',
-      //       method: 'get_waku_v2_relay_v1_messages',
-      //       params: [this.topics[0]],
-      //     }),
-      //   })
-      //   const messages = await res.json()
-      //   console.log(messages)
-      // }, 5000)
+      setInterval(async () => {
+        const res = await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 'id',
+            method: 'get_waku_v2_relay_v1_messages',
+            params: [this.topics[0]],
+          }),
+        })
+        const messages = await res.json()
+        console.log(messages)
+      }, 5000)
     },
     createDefaultTopic: async function () {
       const blockCodec = {
