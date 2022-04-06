@@ -136,7 +136,7 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
 import { map, merge, tap, timestamp } from 'rxjs'
-
+import { getPredefinedBootstrapNodes } from 'js-waku'
 import { ethers } from 'ethers'
 
 // Create component
@@ -261,9 +261,10 @@ export default class Personal extends Vue {
     const model = await this.db.get(cid, null)
     const b64 = await PromiseFileReader.readAsDataURL(model.document.image)
     model.document.image = b64
-    // sign message {signature, digest / hash, }
+debugger
+// sign message {signature, digest / hash, }z
     const { signature, digest } = await this.sign(model.document)
-
+debugger
     const block = {
       ...model.document,
       kind: 'StorageBlock',
@@ -397,29 +398,22 @@ export default class Personal extends Vue {
 
     // putBlock VerifiableStorageBlock { network: 'did:ethr:bnbt' }
   }
-  async createTopic() {
+  async subscribeTopics() {
     const w = await this.db.getWallet()
 
     const accountA = (await w.getAccounts())[0]
 
     // default topic
     //@ts-ignore
-    // this.topic = `/xdvdigital/1/${accountA}/dag-json`
-    this.topic = `/xdvdigital/1/0xeeC58E89996496640c8b5898A7e0218E9b6E90cB/dag-json`
+    // this.topic = `/xdvdigital/1/${accountA}/cbor`
 
-    // Writes a DAG JSON block
-    // const id = await this.db.putBlock({ ...payload, topic })
-    const dagjson = new DAGJsonService()
-    // // Fetch an existing DAG block
-    // const res = await this.db.get(id)
-    // debugger
     const blockCodec = {
-      name: 'dag-json',
-      code: '0x0129',
-      encode: async (obj: any) => (await dagjson.build(obj)).bytes,
-      decode: (buffer: any) => buffer,
+      name: 'cbor',
+      code: '0x71',
+      encode: async (obj: any) => encode(obj),
+      decode: (buffer: any) => decode(buffer),
     }
-    const pubsub = await this.db.createChannelPubsub(this.topic, {
+    const pubsub = await this.db.aggregate([this.topic], {
       from: accountA,
       middleware: {
         incoming: [tap()],
@@ -440,10 +434,35 @@ export default class Personal extends Vue {
   }
 
   async mounted() {
-    await this.walletconnect.enable()
+    this.topic = `/xdvdigital/1/0xeeC58E89996496640c8b5898A7e0218E9b6E90cB/cbor`
+
     const peer =
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
+await this.walletconnect.enable()
+    // const url = 'http://waku.did.pa:8545'
+    // await fetch(url, {
+    //   method: 'POST',
+    //   body: JSON.stringify({
+    //     jsonrpc: '2.0',
+    //     id: 'id',
+    //     method: 'post_waku_v2_relay_v1_subscriptions',
+    //     params: [[this.topic]],
+    //   }),
+    // })
 
+    // setInterval(async () => {
+    //   const res = await fetch(url, {
+    //     method: 'POST',
+    //     body: JSON.stringify({
+    //       jsonrpc: '2.0',
+    //       id: 'id',
+    //       method: 'get_waku_v2_relay_v1_messages',
+    //       params: [[this.topic]],
+    //     }),
+    //   })
+    //   const messages  = await res.json()
+    //   console.log(messages)
+    // }, 5000)
     await this.db.initialize({
       wakuconnect: { bootstrap: { peers: [peer] } },
       withWallet: {
@@ -469,7 +488,7 @@ export default class Personal extends Vue {
       console.log(this.items)
     }, console.error)
 
-    await this.createTopic()
+    await this.subscribeTopics()
   }
 }
 </script>
