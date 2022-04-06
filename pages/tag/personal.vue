@@ -158,6 +158,7 @@ const FilePond = vueFilePond(
     'getWalletconnect',
     'getDefaultTopics',
     'getDefaultAddress',
+    'getAncon',
   ],
 })
 export default class Personal extends Vue.extend({
@@ -493,6 +494,7 @@ export default class Personal extends Vue.extend({
     const walletconnect = (this as any).getWalletconnect()
     const defaultTopics = (this as any).getDefaultTopics()
     const defaultAddress = (this as any).getDefaultAddress()
+    const Ancon = (this as any).getAncon()
 
     console.log(walletconnect.connected)
 
