@@ -352,7 +352,8 @@ export default class Personal extends Vue.extend({
 
     const accountA = (await w.getAccounts())[0]
     // @ts-ignore
-    const did = await this.db.createAnconDid({
+    debugger
+    const did = await this.createAnconDid({
       // @ts-ignore
       api: $nuxt.context.env.AnconAPI,
       chainId: this.getWalletconnect().chainId,
@@ -400,7 +401,7 @@ export default class Personal extends Vue.extend({
   }
 
   async mintAsset(cid: string) {
-    const model = await this.db.get(cid, null)
+    const model = await (this as any).getDb().get(cid, null)
 
     // sign message {signature, digest / hash, }
 
@@ -497,6 +498,70 @@ export default class Personal extends Vue.extend({
       ;(this as any).getDb().db.history.put(init)
     }
   }
+
+  async createAnconDid(options) {
+    const w = this.getWalletconnect().accounts[0]
+    let from = options.from
+    debugger
+    const trans = await getTransaction(w, this.getWalletconnect())
+    const pubkey = await (this as any).getAncon().getPubKey(trans)
+    debugger
+    //Hasta aqui logré que funcionada el code
+    const base58Encode = ethers.utils.base58.encode(pubkey)
+    const message = `#Welcome to Ancon Protocol!
+
+    For more information read the docs https://anconprotocol.github.io/docs/
+
+    To make free posts and gets to the DAG Store you have to enroll and pay the service fee
+
+    This request will not trigger a blockchain transaction or cost any gas fees.
+    by signing this message you accept the terms and conditions of Ancon Protocol
+    `
+    const signature = await w.signPersonalMessage({
+      from,
+      data: ethers.utils.hashMessage(message),
+    })
+    const payload = {
+      ethrdid: `did:ethr:${options.chainId}:${from}`,
+      pub: base58Encode,
+      signature: signature,
+      message: message,
+    }
+    const requestOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+    const rawResponse = await fetch(`${options.api}/v0/did`, requestOptions)
+    return rawResponse.json()
+  }
+
+  // async createAnconBlock(options) {
+  //   const w = await this.getWallet()
+  //   let from = options.from
+  //   if (from === '') {
+  //     const acct = await w.getAccounts()
+  //     from = acct[0]
+  //   }
+  //   const signature = await w.signPersonalMessage({
+  //     from,
+  //     data: ethers_1.ethers.utils.hashMessage(JSON.stringify(options.message)),
+  //   })
+  //   const payload = {
+  //     path: '/',
+  //     from: `did:ethr:${options.chainId}:${from}`,
+  //     signature,
+  //     topic: options.topic,
+  //     data: options.message,
+  //   }
+  //   const requestOptions = {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify(payload),
+  //   }
+  //   const rawResponse = await fetch(`${options.api}/v0/dag`, requestOptions)
+  //   return rawResponse.json()
+  // }
 
   async mounted() {
     const db = (this as any).getDb()
