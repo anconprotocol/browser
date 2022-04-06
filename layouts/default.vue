@@ -202,7 +202,7 @@ export default {
             jsonrpc: '2.0',
             id: 'id',
             method: 'get_waku_v2_relay_v1_messages',
-            params: [JSON.stringify(this.topics)],
+            params: [this.topics[0]],
           }),
         })
         const messages = await res.json()

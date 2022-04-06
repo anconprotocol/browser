@@ -268,10 +268,10 @@ export default class Personal extends Vue {
     const model = await this.db.get(cid, null)
     const b64 = await PromiseFileReader.readAsDataURL(model.document.image)
     model.document.image = b64
-    debugger
+
     // sign message {signature, digest / hash, }z
     const { signature, digest } = await this.sign(model.document)
-    debugger
+
     const block = {
       ...model.document,
       kind: 'StorageBlock',
@@ -280,11 +280,30 @@ export default class Personal extends Vue {
       timestamp: new Date().getTime(),
       issuer: this.getWalletconnect().accounts[0],
     }
-    // putBlock
-    const { id, _ } = await this.db.putBlock(block, {
-      kind: 'StorageBlock',
-      topic: this.topic,
+
+    const defaultTopic = `/xdvdigital/1/${
+      this.getWalletconnect().accounts[0]
+    }/cbor`
+    // @ts-ignore
+    const url = $nuxt.context.env.WakuRPC
+    const res = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 'id',
+        method: 'post_waku_v2_relay_v1_message',
+        params: [
+          defaultTopic,
+          {
+            payload: ethers.utils.hexlify(encode(block)),
+            timestamp: block.timestamp,
+          },
+        ],
+      }),
     })
+debugger
+    const output = await res.json()
+    console.log(output)
   }
 
   async sign(data: any) {
@@ -437,7 +456,6 @@ export default class Personal extends Vue {
     this.pubsub = pubsub
 
     this.pubsub.onBlockReply$.subscribe((block) => {
-      debugger
       if (block.topic == this.topic) {
         console.log(block)
       }
@@ -451,7 +469,7 @@ export default class Personal extends Vue {
     const defaultAddress = (this as any).getDefaultAddress()
 
     console.log(walletconnect.connected)
-    debugger
+
     this.topic = `/xdvdigital/1/0xeeC58E89996496640c8b5898A7e0218E9b6E90cB/cbor`
 
     const peer =

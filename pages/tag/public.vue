@@ -509,7 +509,7 @@ export default class Public extends Vue {
       const gasAmount = await AnconNFTContract.methods
         .mint(...params)
         .estimateGas({ from: bob })
-      debugger
+      
       const txmint = await AnconNFTContract.methods.mint(...params).send({
         gas: gasAmount,
         from: bob,
