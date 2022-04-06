@@ -138,6 +138,8 @@ import { getPredefinedBootstrapNodes } from 'js-waku'
 import { ethers } from 'ethers'
 import Dexie, { liveQuery, Table } from 'dexie'
 import helper from '~/utils/helper'
+import AnconProtocolClient from '~/lib/AnconProtocol/AnconProtocolClient'
+import getTransaction from '../../lib/AnconProtocol/GetTransaction'
 
 // Create component
 const FilePond = vueFilePond(
