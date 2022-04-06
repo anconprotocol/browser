@@ -150,7 +150,13 @@ const FilePond = vueFilePond(
     QrcodeCapture,
     FilePond,
   },
-  inject: ['db', 'web3', 'walletconnect'],
+  inject: [
+    'getDb',
+    'web3',
+    'getWalletconnect',
+    'getDefaultTopics',
+    'getDefaultAddress',
+  ],
 })
 export default class Personal extends Vue {
   messages = [
@@ -217,8 +223,9 @@ export default class Personal extends Vue {
   db: any
   pubsub: any
   topic = ''
+  getWalletconnect: any
+  // getWalletconnect(): any {}
   // @ts-ignore
-  walletconnect: any
 
   async fetchItems() {
     const uri = `https://api.ancon.did.pa/v0/topics?topic=@uuidIndexMainnet&from=0x6502781e4024D1FeBaBc8CdD18fA74f4e1954651`
@@ -261,17 +268,17 @@ export default class Personal extends Vue {
     const model = await this.db.get(cid, null)
     const b64 = await PromiseFileReader.readAsDataURL(model.document.image)
     model.document.image = b64
-debugger
-// sign message {signature, digest / hash, }z
+    debugger
+    // sign message {signature, digest / hash, }z
     const { signature, digest } = await this.sign(model.document)
-debugger
+    debugger
     const block = {
       ...model.document,
       kind: 'StorageBlock',
       signature,
       digest,
       timestamp: new Date().getTime(),
-      issuer: this.walletconnect.accounts[0],
+      issuer: this.getWalletconnect().accounts[0],
     }
     // putBlock
     const { id, _ } = await this.db.putBlock(block, {
@@ -284,11 +291,11 @@ debugger
     // sign message {signature, digest / hash, }
     const digest = ethers.utils.hashMessage(JSON.stringify(data))
 
-    const res = await this.walletconnect.send({
+    const res = await this.getWalletconnect().send({
       id: 1,
       jsonrpc: '2.0',
       method: 'personal_sign',
-      params: [digest, this.walletconnect.accounts[0]],
+      params: [digest, this.getWalletconnect().accounts[0]],
     })
 
     const signature = res
@@ -305,7 +312,7 @@ debugger
       signature,
       digest,
       timestamp: new Date().getTime(),
-      issuer: this.walletconnect[0],
+      issuer: this.getWalletconnect().accounts[0],
     }
 
     // putBlock
@@ -332,7 +339,9 @@ debugger
 
     //post to get the did
     const payload = {
-      ethrdid: `did:ethr:${this.walletconnect.chainId}:${this.walletconnect.accounts[0]}`,
+      ethrdid: `did:ethr:${this.getWalletconnect().chainId}:${
+        this.getWalletconnect().accounts[0]
+      }`,
       pub: base58Encode,
       signature: signature,
       message: message,
@@ -360,7 +369,9 @@ debugger
 
     const payload = {
       path: '/',
-      from: `did:ethr:${this.walletconnect.chainId}:${this.walletconnect.accounts[0]}`,
+      from: `did:ethr:${this.getWalletconnect().chainId}:${
+        this.getWalletconnect().accounts[0]
+      }`,
       signature,
       data,
     }
@@ -434,11 +445,18 @@ debugger
   }
 
   async mounted() {
+    const db = (this as any).getDb()
+    const walletconnect = (this as any).getWalletconnect()
+    const defaultTopics = (this as any).getDefaultTopics()
+    const defaultAddress = (this as any).getDefaultAddress()
+
+    console.log(walletconnect.connected)
+    debugger
     this.topic = `/xdvdigital/1/0xeeC58E89996496640c8b5898A7e0218E9b6E90cB/cbor`
 
     const peer =
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
-await this.walletconnect.enable()
+    // await this.walletconnect.enable()
     // const url = 'http://waku.did.pa:8545'
     // await fetch(url, {
     //   method: 'POST',
@@ -463,7 +481,7 @@ await this.walletconnect.enable()
     //   const messages  = await res.json()
     //   console.log(messages)
     // }, 5000)
-    await this.db.initialize({
+    await db.initialize({
       wakuconnect: { bootstrap: { peers: [peer] } },
       withWallet: {
         autoLogin: true,
@@ -472,7 +490,7 @@ await this.walletconnect.enable()
       },
     })
 
-    const obs$ = await this.db.queryBlocks$((blocks) => {
+    const obs$ = await db.queryBlocks$((blocks) => {
       return () => blocks.toArray()
     })
 
@@ -487,6 +505,8 @@ await this.walletconnect.enable()
       this.items = await Promise.all(p)
       console.log(this.items)
     }, console.error)
+
+    this.db = db
 
     await this.subscribeTopics()
   }

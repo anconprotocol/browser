@@ -67,6 +67,8 @@ import { ethers } from 'ethers'
 import Web3 from 'web3'
 import { ParkyDB } from 'parkydb'
 import AnconProtocolClient from '../lib/AnconProtocol/AnconProtocolClient'
+import { map, merge, tap, timestamp } from 'rxjs'
+import { decode, encode } from 'cbor-x'
 
 export default {
   name: 'DefaultLayout',
@@ -129,12 +131,17 @@ export default {
     } catch (e) {
       console.error(e)
     }
+
+    await this.createDefaultTopic()
+    await this.aggregate([])
   },
   provide: function () {
     return {
-      walletconnect: this.walletconnect,
+      getWalletconnect: () => this.walletconnect,
       web3: null,
-      db: this.db,
+      getDb: () => this.db,
+      getDefaultTopics: () => this.topics,
+      getDefaultAddress: () => this.walletconnect.accounts[0],
     }
   },
   data() {
@@ -161,6 +168,10 @@ export default {
       rightDrawer: false,
       show: '',
       title: 'xdv.digital [codename everdid]',
+      topics: [
+        '/xdvdigital/1/0xeeC58E89996496640c8b5898A7e0218E9b6E90cB/cbor',
+        '/xdvdigital/1/0x63e6EdFBA95aB3f0854fE1A93f96FAB1aa04b8Fb/cbor', //backup
+      ],
     }
   },
   methods: {
@@ -171,6 +182,54 @@ export default {
     disconnect: function () {
       console.log('Disconnect')
       this.walletconnect.disconnect()
+    },
+    aggregate: async function (topics) {
+      const url = $nuxt.context.env.WakuRPC
+      await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 'id',
+          method: 'post_waku_v2_relay_v1_subscriptions',
+          params: [this.topics],
+        }),
+      })
+
+      setInterval(async () => {
+        const res = await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 'id',
+            method: 'get_waku_v2_relay_v1_messages',
+            params: [JSON.stringify(this.topics)],
+          }),
+        })
+        const messages = await res.json()
+        console.log(messages)
+      }, 5000)
+    },
+    createDefaultTopic: async function () {
+      const blockCodec = {
+        name: 'cbor',
+        code: '0x71',
+        encode: async (obj) => encode(obj),
+        decode: (buffer) => decode(buffer),
+      }
+
+      const w = await this.db.getWallet()
+
+      const accountA = (await w.getAccounts())[0]
+      const defaultTopic = `/xdvdigital/1/${accountA}/cbor`
+
+      const pubsub = await this.db.createChannelPubsub(defaultTopic, {
+        from: accountA,
+        middleware: {
+          incoming: [tap()],
+          outgoing: [tap()],
+        },
+        blockCodec,
+      })
     },
   },
 }
