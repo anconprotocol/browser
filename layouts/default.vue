@@ -134,6 +134,13 @@ export default {
 
     await this.createDefaultTopic()
     await this.aggregate([])
+
+    this.Ancon = new AnconProtocolClient(
+      this.walletconnect,
+      this.walletconnect.accounts[0]
+    )
+
+    this.Ancon.initialize()
   },
   provide: function () {
     return {
@@ -142,6 +149,7 @@ export default {
       getDb: () => this.db,
       getDefaultTopics: () => this.topics,
       getDefaultAddress: () => this.walletconnect.accounts[0],
+      getAncon: () => this.Ancon,
     }
   },
   data() {
