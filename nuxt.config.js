@@ -117,6 +117,7 @@ export default {
       AnconNFT: process.env.REACT_APP_AnconNFTAddress,
       AnconToken: process.env.REACT_APP_AnconTokenAddress,
       AnconAPI: 'https://api.ancon.did.pa/',
+      WakuRPC: 'https://api.ancon.did.pa/waku',
       InfuraIPFS: 'https://infura.ipfs.io:5001/',
       IPFS: 'https://ipfs.xdv.digital/',
       Waku: 'https://waku.did.pa/'
