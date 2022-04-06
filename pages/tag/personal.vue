@@ -48,14 +48,14 @@
             </v-btn>
             <v-btn
               color="orange lighten-2"
-              @click="pushAssetToTopic(v.cid)"
+              @click="postBlockToAncon(v.cid)"
               text
             >
               Publish
             </v-btn>
             <v-btn
               color="orange lighten-2"
-              @click="pushAssetToTopic(v.cid)"
+              @click="mintAsset(v.cid)"
               text
             >
               Mint
@@ -335,11 +335,9 @@ export default class Personal extends Vue {
       issuer: this.getWalletconnect().accounts[0],
     }
 
-    // putBlock
-    const { id, _ } = await this.db.putBlock(block, {
-      kind: 'StorageBlock',
-      topic: this.topic,
-    })
+    const pub = ''
+    await this.createDid(pub)
+    await this.createAnconBlock(block)
   }
 
   async createDid(pubkey: Uint8Array) {
