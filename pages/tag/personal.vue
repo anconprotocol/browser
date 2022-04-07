@@ -8,10 +8,10 @@
           ref="pond"
           label-idle="Drop files here..."
           v-bind:allow-multiple="false"
-          accepted-file-types="image/jpeg, image/png"
-          server="/api"
+          accepted-file-types="image/jpeg,
+        image/png"
           v-bind:files="files"
-          v-on:processfile="upload"
+          v-on:addfile="upload"
         />
       </v-col>
     </v-row>
@@ -209,6 +209,9 @@ import { StorageAsset } from '../documentModel'
 // Import Vue FilePond
 import vueFilePond from 'vue-filepond'
 
+import FilePondPluginImageFilter from 'filepond-plugin-image-filter'
+import FilePondPluginFileEncode from 'filepond-plugin-file-encode'
+
 // Import FilePond styles
 import 'filepond/dist/filepond.min.css'
 
@@ -228,11 +231,15 @@ import Dexie, { liveQuery, Table } from 'dexie'
 import helper from '~/utils/helper'
 import AnconProtocolClient from '~/lib/AnconProtocol/AnconProtocolClient'
 import getTransaction from '../../lib/AnconProtocol/GetTransaction'
+import { v4 as uuidv4 } from 'uuid'
+import Web3 from 'web3'
 
 // Create component
 const FilePond = vueFilePond(
   FilePondPluginFileValidateType,
-  FilePondPluginImagePreview
+  FilePondPluginImagePreview,
+  FilePondPluginFileEncode,
+  FilePondPluginImageFilter
 )
 
 @Component({
