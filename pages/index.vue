@@ -1,14 +1,10 @@
 <template>
   <v-container>
     <v-tabs color="pink accent-2" right>
-      <v-tab>Public</v-tab>
-      <v-tab>Share</v-tab>
-      <v-tab>Personal</v-tab>
-      <v-tab-item v-for="n in 3" :key="n">
+      <v-tab v-for="tab in tabs" :key="tab">{{ tab.title }}</v-tab>
+      <v-tab-item v-for="tab in tabs" :key="tab">
         <v-container fluid>
-          <Personal v-if="n == 1" />
-          <Shared v-if="n == 2" />
-          <Public v-if="n == 3" />
+          <component :is="tab.component"></component>
         </v-container>
       </v-tab-item>
     </v-tabs>
@@ -57,11 +53,18 @@ export default class Main extends Vue {
   feURL = ''
   cafeModel = { issuer: {}, recipient: {} }
 
-  steps = [
+  tabs = [
     {
-      text: 'Dashboard',
-      disabled: false,
-      href: '/',
+      title: 'Personal',
+      component: 'Personal',
+    },
+    {
+      title: 'Public',
+      component: 'Public',
+    },
+    {
+      title: 'Shared',
+      component: 'Shared',
     },
   ]
 
