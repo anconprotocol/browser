@@ -361,7 +361,6 @@ export default class Public extends Vue {
   }
 
   async mounted() {
-    await this.walletconnect.enable()
     // const accountB = accounts[0]
     // const id = await this.bob.putBlock(payload)
     // debugger
@@ -509,7 +508,7 @@ export default class Public extends Vue {
       const gasAmount = await AnconNFTContract.methods
         .mint(...params)
         .estimateGas({ from: bob })
-      
+
       const txmint = await AnconNFTContract.methods.mint(...params).send({
         gas: gasAmount,
         from: bob,
