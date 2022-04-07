@@ -1,10 +1,5 @@
 <template>
   <v-container>
-    <v-breadcrumbs :items="steps">
-      <template v-slot:divider>
-        <v-icon>mdi-chevron-right</v-icon>
-      </template>
-    </v-breadcrumbs>
     <v-card class="mx-auto" max-width="2000">
       <v-row>
         <v-col dense>

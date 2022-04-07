@@ -1,14 +1,5 @@
 <template>
   <v-container>
-    <v-row>
-      <v-breadcrumbs :items="steps">
-        <template v-slot:divider>
-          <v-icon>mdi-chevron-right</v-icon>
-        </template>
-      </v-breadcrumbs>
-      <v-spacer />
-      <v-btn @click="subscribe"> Subscribe </v-btn>
-    </v-row>
     <v-card class="mx-auto" max-width="2000">
       <v-list subheader>
         <v-subheader>Recent chat</v-subheader>

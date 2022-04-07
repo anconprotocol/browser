@@ -2,16 +2,6 @@
   <v-container fluid>
     <div></div>
     <v-row>
-      <v-col cols="6">
-        <v-breadcrumbs :items="steps">
-          <template v-slot:divider>
-            <v-icon>mdi-chevron-right</v-icon>
-          </template>
-        </v-breadcrumbs>
-      </v-col>
-      <v-col align="right"> </v-col
-    ></v-row>
-    <v-row>
       <v-col>
         <file-pond
           name="test"
