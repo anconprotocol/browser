@@ -143,14 +143,21 @@
 
             <v-spacer></v-spacer>
 
-            <v-btn icon @click="showHistory(v.cid)">
+            <v-btn
+              v-if="historyItems && historyItems[v.cid] != undefined"
+              icon
+              @click="showHistory(v.cid)"
+            >
               <v-icon>{{
                 show ? 'mdi-chevron-up' : 'mdi-chevron-down'
               }}</v-icon>
             </v-btn>
           </v-card-actions>
           <v-expand-transition>
-            <div v-show="show">
+            <div
+              v-show="show"
+              v-if="historyItems && historyItems[v.cid] != undefined"
+            >
               <v-divider></v-divider>
               <v-card-text>
                 History
