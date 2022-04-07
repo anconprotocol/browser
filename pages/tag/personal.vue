@@ -39,22 +39,48 @@
           </v-card-subtitle>
 
           <v-card-actions>
+            <v-bottom-sheet v-model="privacySheet">
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2">
+                  <v-icon>mdi-shield-key</v-icon>
+                </v-btn>
+              </template>
+              <v-list>
+                <v-subheader>Privacy</v-subheader>
+                <v-list-item
+                  v-for="tile in tiles"
+                  :key="tile.title"
+                  @click="privacySheet = false"
+                >
+                  <v-list-item-avatar>
+                    <v-avatar size="32px" tile>
+                      <img
+                        :src="`https://cdn.vuetifyjs.com/images/bottom-sheets/${tile.img}`"
+                        :alt="tile.title"
+                      />
+                    </v-avatar>
+                  </v-list-item-avatar>
+                  <v-list-item-title>{{ tile.title }}</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-bottom-sheet>
+
             <v-btn
+              icon
               color="orange lighten-2"
               @click="pushAssetToTopic(v.cid)"
-              text
             >
-              Push to topic
+              <v-icon>mdi-share-variant</v-icon>
             </v-btn>
             <v-btn
+              icon
               color="orange lighten-2"
               @click="postBlockToAncon(v.cid)"
-              text
             >
-              Publish
+              <v-icon>mdi-export-variant</v-icon>
             </v-btn>
-            <v-btn color="orange lighten-2" @click="mintAsset(v.cid)" text>
-              Mint
+            <v-btn icon color="orange lighten-2" @click="mintAsset(v.cid)">
+              <v-icon>mdi-collage</v-icon>
             </v-btn>
 
             <v-spacer></v-spacer>
@@ -68,10 +94,8 @@
           <v-expand-transition>
             <div v-show="show">
               <v-divider></v-divider>
-
               <v-card-text>
-                You're going to do his laundry? I've got to find a way to
-                escape.
+                History
                 <v-timeline align-top dense>
                   <v-timeline-item
                     v-for="message in messages.refs"
@@ -166,6 +190,14 @@ export default class Personal extends Vue.extend({
     formatDate: (date: Date) => Intl.DateTimeFormat('us-EN').format(date),
   },
 }) {
+      privacySheet= false
+  tiles = [
+        { img: 'keep.png', title: 'Keep' },
+        { img: 'inbox.png', title: 'Inbox' },
+        { img: 'hangouts.png', title: 'Hangouts' },
+        { img: 'messenger.png', title: 'Messenger' },
+        { img: 'google.png', title: 'Google+' },
+      ]
   messages = [
     {
       from: 'You',
@@ -285,7 +317,9 @@ export default class Personal extends Vue.extend({
     // model.document.image = b64
 
     // sign message {signature, digest / hash, }z
-    const { signature, digest } = await this.sign(JSON.stringify(model.document))
+    const { signature, digest } = await this.sign(
+      JSON.stringify(model.document)
+    )
 
     const block = {
       ...model.document,
@@ -318,7 +352,6 @@ export default class Personal extends Vue.extend({
       }),
     })
     const output = await res.json()
-    console.log(output)
     this.add(
       cid,
       'Push Asset to Topic',
@@ -362,7 +395,6 @@ export default class Personal extends Vue.extend({
       topic: 'xdvdigital',
       from: this.getWalletconnect().accounts[0],
     })
-    console.log(did, dagblock)
     this.add(
       cid,
       'Publish to ipfs',
@@ -372,7 +404,9 @@ export default class Personal extends Vue.extend({
   }
 
   async createAnconBlock(options: any) {
-    const { signature, digest } = await this.sign(JSON.stringify(options.message))
+    const { signature, digest } = await this.sign(
+      JSON.stringify(options.message)
+    )
     const payload = {
       path: '/',
       from: `did:ethr:${options.chainId}:${options.from}`,
