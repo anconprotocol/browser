@@ -1,49 +1,18 @@
 <template>
   <v-container>
+    <v-tabs color="pink accent-2" right>
+      <v-tab>Public</v-tab>
+      <v-tab>Share</v-tab>
+      <v-tab>Personal</v-tab>
+      <v-tab-item v-for="n in 3" :key="n">
+        <v-container fluid> </v-container>
+      </v-tab-item>
+    </v-tabs>
     <v-card max-width="2000" class="mx-auto">
       <v-container>
-        <v-row dense>
-          <v-col cols="12">
-            <v-card color="amber accent-4" dark>
-              <v-card-title class="text-h5"> Public </v-card-title>
-
-              <v-card-subtitle>Data economy services.</v-card-subtitle>
-
-              <v-card-actions>
-                <v-btn text nuxt to="/tag/public">
-                  21 Dapps, 80 NFTs, 5 alert topics
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12">
-            <v-card color="indigo accent-4" dark>
-              <v-card-title class="text-h5"> Shared </v-card-title>
-
-              <v-card-subtitle>Secure messaging.</v-card-subtitle>
-
-              <v-card-actions>
-                <v-btn text nuxt to="/tag/shared">
-                  16 groups (11 encrypted, 5 open)
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-col>
-          <v-col cols="12">
-            <v-card color="blue-grey accent-4" dark>
-              <v-card-title class="text-h5"> Personal </v-card-title>
-
-              <v-card-subtitle>Digital assets and credentials.</v-card-subtitle>
-
-              <v-card-actions>
-                <v-btn text nuxt to="/tag/personal">
-                  1001 assets, 10 credentials
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-col>
-        </v-row>
+        <Personal v-if="this.key == 1" />
+        <Shared v-if="this.key == 2" />
+        <Public v-if="this.key == 3" />
       </v-container>
     </v-card>
   </v-container>
@@ -62,10 +31,16 @@ import BarcodeDetector from 'barcode-detector'
 import 'pdfjs-dist/legacy/build/pdf.worker.entry'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.js'
 import { ParkyDB } from 'parkydb'
+import Public from './tag/public.vue'
+import Personal from './tag/personal.vue'
+import Shared from './tag/shared.vue'
 
 @Component({
   components: {
     QrcodeCapture,
+    Personal,
+    Public,
+    Shared,
   },
 })
 export default class Main extends Vue {
