@@ -31,12 +31,6 @@
       </v-btn>
       <v-toolbar-title v-text="title" />
       <v-spacer />
-      <v-row v-if="this.walletconnect.connected">
-        <div>Network {{ network }}</div>
-        <v-spacer />
-        <div>Address {{ address }}</div>
-        <v-spacer />
-      </v-row>
 
       <v-spacer />
 
@@ -49,6 +43,14 @@
     </v-app-bar>
     <v-main>
       <v-container>
+        <v-subheader v-if="this.walletconnect.connected"
+          >Network {{ network }} Address
+          {{
+            `${address.substring(0, 6)}...${address.substring(
+              address.length - 6
+            )}`
+          }}</v-subheader
+        >
         <Nuxt />
       </v-container>
     </v-main>
@@ -175,7 +177,7 @@ export default {
       right: true,
       rightDrawer: false,
       show: '',
-      title: 'xdv.digital [codename everdid]',
+      title: '[el segundo]',
       topics: [
         '0xeeC58E89996496640c8b5898A7e0218E9b6E90cB',
         '0x63e6EdFBA95aB3f0854fE1A93f96FAB1aa04b8Fb', //backup
