@@ -285,7 +285,7 @@ export default class Personal extends Vue.extend({
     // model.document.image = b64
 
     // sign message {signature, digest / hash, }z
-    const { signature, digest } = await this.sign(model.document)
+    const { signature, digest } = await this.sign(JSON.stringify(model.document))
 
     const block = {
       ...model.document,
@@ -319,85 +319,75 @@ export default class Personal extends Vue.extend({
     })
     const output = await res.json()
     console.log(output)
-    this.add(cid, 'Push Asset to Topic', this.getWalletconnect().accounts[0])
+    this.add(
+      cid,
+      'Push Asset to Topic',
+      this.getWalletconnect().accounts[0],
+      output
+    )
   }
 
   async sign(data: any) {
     // sign message {signature, digest / hash, }
-    const digest = ethers.utils.hashMessage(JSON.stringify(data))
+    const b = ethers.utils.hexlify(ethers.utils.toUtf8Bytes(data))
 
     const res = await this.getWalletconnect().send({
       id: 1,
       jsonrpc: '2.0',
-      method: 'personal_sign',
-      params: [digest, this.getWalletconnect().accounts[0]],
+      method: 'eth_sign',
+      params: [this.getWalletconnect().accounts[0], b],
     })
 
     const signature = res
 
-    return { digest, signature }
+    return { digest: b, signature }
   }
   async postBlockToAncon(cid: string) {
     const model = await (this as any).getDb().get(cid)
-    const { signature, digest } = await this.sign(model.document)
-    const block = {
-      ...model.document,
-      kind: 'StorageBlock',
-      signature,
-      digest,
-      timestamp: new Date().getTime(),
-      issuer: this.getWalletconnect().accounts[0],
-    }
-    const w = await (this as any).getDb().getWallet()
 
-    const accountA = (await w.getAccounts())[0]
     // @ts-ignore
-    debugger
+
     const did = await this.createAnconDid({
       // @ts-ignore
       api: $nuxt.context.env.AnconAPI,
-      chainId: this.getWalletconnect().chainId,
-      from: accountA,
+      chainId: 'bnb',
+      from: this.getWalletconnect().accounts[0],
     })
-    debugger
-    const dagblock = await (this as any).getDb().createAnconBlock({
+
+    const dagblock = await this.createAnconBlock({
       // @ts-ignore
       api: $nuxt.context.env.AnconAPI,
-      chainId: this.getWalletconnect().chainId,
-      message: block,
+      chainId: 'bnb',
+      message: model.document,
       topic: 'xdvdigital',
-      from: accountA,
+      from: this.getWalletconnect().accounts[0],
     })
     console.log(did, dagblock)
+    this.add(
+      cid,
+      'Publish to ipfs',
+      this.getWalletconnect().accounts[0],
+      dagblock
+    )
   }
 
-  async createAnconBlock(data: any) {
-    const { signature, digest } = await this.sign(data)
-
+  async createAnconBlock(options: any) {
+    const { signature, digest } = await this.sign(JSON.stringify(options.message))
     const payload = {
       path: '/',
-      from: `did:ethr:${this.getWalletconnect().chainId}:${
-        this.getWalletconnect().accounts[0]
-      }`,
+      from: `did:ethr:${options.chainId}:${options.from}`,
       signature,
-      data,
+      topic: options.topic,
+      data: options.message,
     }
-
     const requestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     }
+    const rawResponse = await fetch(`${options.api}/v0/dag`, requestOptions)
 
-    // fetch
-    const rawResponse = await fetch(
-      // @ts-ignore
-      `${$nuxt.context.env.AnconAPI}/v0/dag`,
-      requestOptions
-    )
-    //   json response
-    const response = await rawResponse.json()
-    return response
+    return rawResponse.json()
   }
 
   async mintAsset(cid: string) {
@@ -455,34 +445,14 @@ export default class Personal extends Vue.extend({
     this.messages = this.historyItems[_cid]
   }
 
-  async demo(_type, _cid) {
-    switch (_type) {
-      case 1:
-        this.add(
-          _cid,
-          'Push to topic',
-          (this as any).getWalletconnect().accounts[0]
-        )
-        break
-      case 2:
-        this.add(_cid, 'Public', (this as any).getWalletconnect().accounts[0])
-        break
-      case 3:
-        this.add(_cid, 'Mint', (this as any).getWalletconnect().accounts[0])
-        break
-
-      default:
-        break
-    }
-  }
-
-  async add(_cid, _action, _user) {
+  async add(_cid, _action, _user, metadata) {
     const model = await (this as any).getDb().db.history.get({ cid: _cid })
 
     const event = {
       message: _action,
       time: new Date().getTime(),
       from: _user,
+      metadata,
     }
     const init = {
       cid: _cid,
@@ -502,12 +472,12 @@ export default class Personal extends Vue.extend({
   async createAnconDid(options) {
     const w = this.getWalletconnect().accounts[0]
     let from = options.from
-    debugger
+
     const trans = await getTransaction(w, this.getWalletconnect())
     const pubkey = await (this as any).getAncon().getPubKey(trans)
-    debugger
+
     //Hasta aqui logré que funcionada el code
-    const base58Encode = ethers.utils.base58.encode(pubkey)
+    const base58Encode = ethers.utils.base58.encode(pubkey[2])
     const message = `#Welcome to Ancon Protocol!
 
     For more information read the docs https://anconprotocol.github.io/docs/
@@ -517,10 +487,7 @@ export default class Personal extends Vue.extend({
     This request will not trigger a blockchain transaction or cost any gas fees.
     by signing this message you accept the terms and conditions of Ancon Protocol
     `
-    const signature = await w.signPersonalMessage({
-      from,
-      data: ethers.utils.hashMessage(message),
-    })
+    const { signature } = await this.sign(message)
     const payload = {
       ethrdid: `did:ethr:${options.chainId}:${from}`,
       pub: base58Encode,
@@ -535,33 +502,6 @@ export default class Personal extends Vue.extend({
     const rawResponse = await fetch(`${options.api}/v0/did`, requestOptions)
     return rawResponse.json()
   }
-
-  // async createAnconBlock(options) {
-  //   const w = await this.getWallet()
-  //   let from = options.from
-  //   if (from === '') {
-  //     const acct = await w.getAccounts()
-  //     from = acct[0]
-  //   }
-  //   const signature = await w.signPersonalMessage({
-  //     from,
-  //     data: ethers_1.ethers.utils.hashMessage(JSON.stringify(options.message)),
-  //   })
-  //   const payload = {
-  //     path: '/',
-  //     from: `did:ethr:${options.chainId}:${from}`,
-  //     signature,
-  //     topic: options.topic,
-  //     data: options.message,
-  //   }
-  //   const requestOptions = {
-  //     method: 'POST',
-  //     headers: { 'Content-Type': 'application/json' },
-  //     body: JSON.stringify(payload),
-  //   }
-  //   const rawResponse = await fetch(`${options.api}/v0/dag`, requestOptions)
-  //   return rawResponse.json()
-  // }
 
   async mounted() {
     const db = (this as any).getDb()
