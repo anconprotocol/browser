@@ -14,13 +14,13 @@
 
 ### Required nodes
 
-![XDVD](https://user-images.githubusercontent.com/1248071/162288080-f8b6d07e-6eef-4b75-b816-875f4e9f9148.png)
-
 - Ancon Node
 - Waku Node
 
 ### Works with
 
+
+![XDVD](https://user-images.githubusercontent.com/1248071/162288080-f8b6d07e-6eef-4b75-b816-875f4e9f9148.png)
 
 
 - WalletConnect
