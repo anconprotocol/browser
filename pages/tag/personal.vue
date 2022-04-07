@@ -48,9 +48,59 @@
               <v-list>
                 <v-subheader>Privacy</v-subheader>
                 <v-list-item
-                  v-for="tile in tiles"
+                  v-for="tile in privacyTiles"
                   :key="tile.title"
-                  @click="privacySheet = false"
+                  @click="tile.click(v.cid)"
+                >
+                  <v-list-item-avatar>
+                    <v-avatar size="32px" tile>
+                      <img
+                        :src="`https://cdn.vuetifyjs.com/images/bottom-sheets/${tile.img}`"
+                        :alt="tile.title"
+                      />
+                    </v-avatar>
+                  </v-list-item-avatar>
+                  <v-list-item-title>{{ tile.title }}</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-bottom-sheet>
+            <v-bottom-sheet v-model="shareSheet">
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2">
+                  <v-icon>mdi-share-variant</v-icon>
+                </v-btn>
+              </template>
+              <v-list>
+                <v-subheader>Share</v-subheader>
+                <v-list-item
+                  v-for="tile in shareTiles"
+                  :key="tile.title"
+                  @click="tile.click(v.cid)"
+                >
+                  <v-list-item-avatar>
+                    <v-avatar size="32px" tile>
+                      <img
+                        :src="`https://cdn.vuetifyjs.com/images/bottom-sheets/${tile.img}`"
+                        :alt="tile.title"
+                      />
+                    </v-avatar>
+                  </v-list-item-avatar>
+                  <v-list-item-title>{{ tile.title }}</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-bottom-sheet>
+            <v-bottom-sheet v-model="exportSheet">
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2">
+                  <v-icon>mdi-export-variant</v-icon>
+                </v-btn>
+              </template>
+              <v-list>
+                <v-subheader>Export</v-subheader>
+                <v-list-item
+                  v-for="tile in exportTiles"
+                  :key="tile.title"
+                  @click="tile.click(v.cid)"
                 >
                   <v-list-item-avatar>
                     <v-avatar size="32px" tile>
@@ -65,23 +115,31 @@
               </v-list>
             </v-bottom-sheet>
 
-            <v-btn
-              icon
-              color="orange lighten-2"
-              @click="pushAssetToTopic(v.cid)"
-            >
-              <v-icon>mdi-share-variant</v-icon>
-            </v-btn>
-            <v-btn
-              icon
-              color="orange lighten-2"
-              @click="postBlockToAncon(v.cid)"
-            >
-              <v-icon>mdi-export-variant</v-icon>
-            </v-btn>
-            <v-btn icon color="orange lighten-2" @click="mintAsset(v.cid)">
-              <v-icon>mdi-collage</v-icon>
-            </v-btn>
+            <v-bottom-sheet v-model="mintSheet">
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2">
+                  <v-icon>mdi-collage</v-icon>
+                </v-btn>
+              </template>
+              <v-list>
+                <v-subheader>Mint</v-subheader>
+                <v-list-item
+                  v-for="tile in mintTiles"
+                  :key="tile.title"
+                  @click="mintSheet = false"
+                >
+                  <v-list-item-avatar>
+                    <v-avatar size="32px" tile>
+                      <img
+                        :src="`https://cdn.vuetifyjs.com/images/bottom-sheets/${tile.img}`"
+                        :alt="tile.title"
+                      />
+                    </v-avatar>
+                  </v-list-item-avatar>
+                  <v-list-item-title>{{ tile.title }}</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-bottom-sheet>
 
             <v-spacer></v-spacer>
 
@@ -190,14 +248,105 @@ export default class Personal extends Vue.extend({
     formatDate: (date: Date) => Intl.DateTimeFormat('us-EN').format(date),
   },
 }) {
-      privacySheet= false
-  tiles = [
-        { img: 'keep.png', title: 'Keep' },
-        { img: 'inbox.png', title: 'Inbox' },
-        { img: 'hangouts.png', title: 'Hangouts' },
-        { img: 'messenger.png', title: 'Messenger' },
-        { img: 'google.png', title: 'Google+' },
-      ]
+  snackbar = false
+  snackbarText = ''
+  privacySheet = false
+  exportSheet = false
+  shareSheet = false
+  mintSheet = false
+  privacyTiles = [
+    {
+      img: 'keep.png',
+      title: 'Android Hardware Sign',
+      click: (cid) => {
+        this.privacySheet = false
+      },
+    },
+    {
+      img: 'inbox.png',
+      title: 'iOS Hardware Sign',
+      click: (cid) => {
+        this.privacySheet = false
+      },
+    },
+    {
+      img: 'hangouts.png',
+      title: 'W3C Verified Credentials',
+      click: (cid) => {
+        this.privacySheet = false
+      },
+    },
+  ]
+  exportTiles = [
+    {
+      img: 'keep.png',
+      title: 'Ancon',
+      click: (cid) => {
+        this.exportSheet = false
+        this.postBlockToAncon(cid)
+      },
+    },
+    {
+      img: 'inbox.png',
+      title: 'IPFS',
+      click: (cid) => {
+        this.exportSheet = false
+      },
+    },
+    {
+      img: 'hangouts.png',
+      title: 'Filecoin',
+      click: (cid) => {
+        this.exportSheet = false
+      },
+    },
+  ]
+  shareTiles = [
+    {
+      img: 'keep.png',
+      title: 'Ancon Browser',
+      click: async (cid) => {
+        this.pushAssetToTopic(cid)
+      },
+    },
+    {
+      img: 'inbox.png',
+      title: 'Telegram',
+      click: (cid) => {
+        this.shareSheet = false
+      },
+    },
+    {
+      img: 'hangouts.png',
+      title: 'Whatsapp',
+      click: (cid) => {
+        this.shareSheet = false
+      },
+    },
+  ]
+  mintTiles = [
+    {
+      img: 'keep.png',
+      title: 'Ancon Marketplace',
+      click: (cid) => {
+        this.mintSheet = false
+      },
+    },
+    {
+      img: 'inbox.png',
+      title: 'Opensea',
+      click: (cid) => {
+        this.mintSheet = false
+      },
+    },
+    {
+      img: 'hangouts.png',
+      title: 'Rarible',
+      click: (cid) => {
+        this.mintSheet = false
+      },
+    },
+  ]
   messages = [
     {
       from: 'You',
@@ -312,6 +461,9 @@ export default class Personal extends Vue.extend({
   }
 
   async pushAssetToTopic(cid: string) {
+    this.shareSheet = false
+    this.snackbarText = 'Sending image   to Luis Sanchez'
+    this.snackbar = true
     const model = await this.db.get(cid, null)
     // const b64 = await PromiseFileReader.readAsDataURL(model.document.image)
     // model.document.image = b64
@@ -358,6 +510,9 @@ export default class Personal extends Vue.extend({
       this.getWalletconnect().accounts[0],
       output
     )
+
+    this.snackbarText = 'Image succesfully sent'
+    this.snackbar = true
   }
 
   async sign(data: any) {
@@ -376,6 +531,9 @@ export default class Personal extends Vue.extend({
     return { digest: b, signature }
   }
   async postBlockToAncon(cid: string) {
+    this.exportSheet = false
+    this.snackbarText = 'Exporting to Ancon Node...'
+    this.snackbar = true
     const model = await (this as any).getDb().get(cid)
 
     // @ts-ignore
@@ -401,6 +559,9 @@ export default class Personal extends Vue.extend({
       this.getWalletconnect().accounts[0],
       dagblock
     )
+
+    this.snackbarText = 'Finished export to Ancon Node'
+    this.snackbar = true
   }
 
   async createAnconBlock(options: any) {
