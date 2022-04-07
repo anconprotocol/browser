@@ -5,16 +5,13 @@
       <v-tab>Share</v-tab>
       <v-tab>Personal</v-tab>
       <v-tab-item v-for="n in 3" :key="n">
-        <v-container fluid> </v-container>
+        <v-container fluid>
+          <Personal v-if="n == 1" />
+          <Shared v-if="n == 2" />
+          <Public v-if="n == 3" />
+        </v-container>
       </v-tab-item>
     </v-tabs>
-    <v-card max-width="2000" class="mx-auto">
-      <v-container>
-        <Personal v-if="this.key == 1" />
-        <Shared v-if="this.key == 2" />
-        <Public v-if="this.key == 3" />
-      </v-container>
-    </v-card>
   </v-container>
 </template>
 
