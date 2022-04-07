@@ -98,7 +98,7 @@ export default {
 
     this.walletconnect = provider
     //  Enable session (triggers QR Code modal)
-    await provider.enable()
+    this.walletconnect.connected ? null : await this.walletconnect.enable()
 
     //    this.web3Provider = new ethers.providers.Web3Provider(web3.currentProvider)
     // this.web3Provider = web3.currentProvider
