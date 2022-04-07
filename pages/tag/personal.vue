@@ -180,6 +180,15 @@
     <v-alert type="info" v-if="this.items < 1">
       There is no documents yet. Add a document.</v-alert
     >
+    <v-snackbar v-model="snackbar">
+      {{ snackbarText }}
+
+      <template v-slot:action="{ attrs }">
+        <v-btn color="pink" text v-bind="attrs" @click="snackbar = false">
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
   </v-container>
 </template>
 
