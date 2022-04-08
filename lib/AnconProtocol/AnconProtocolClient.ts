@@ -228,7 +228,7 @@ export default class AnconProtocolClient {
 
     const recoveredAddress = ethers.utils.recoverAddress(msgBytes, sig)
 
-    return [recoveredAddress, transaction.from, pubkey]
+    return [recoveredAddress, transaction.from, pubkey, sig]
   }
 
   /**

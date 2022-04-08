@@ -932,5 +932,39 @@ export default class Personal extends Vue.extend({
     walletconnect.on('accountsChanged', () => this.bindSubscriptions)
     await this.bindSubscriptions()
   }
+
+  async subscribeTopics() {
+    const blockCodec = {
+      name: 'cbor',
+      code: '0x71',
+      encode: async (obj) => encode(obj.dag.bytes),
+      decode: (buffer) => decode(buffer.payload),
+    }
+
+    // const w = await this.db.getWallet()
+    // await w.submitPassword('zxcvb')
+    // const innerAddress = await w.getAccounts()
+
+    debugger
+    // @ts-ignore
+    const pubsub = await this.db.createTopicPubsub(this.defaultTopic, {
+      from: this.defaultAddress,
+      middleware: {
+        incoming: [tap()],
+        outgoing: [tap()],
+      },
+      blockCodec,
+    })
+
+    // if (this.pubsub != null) this.pubsub.unsubscribe()
+    this.onIncomingCancel = pubsub.onBlockReply$.subscribe((v) =>
+      this.onIncoming.next(v)
+    )
+
+    await this.db.putBlock({
+      cid: '5000sZZlhhppDpp88ppplq333wwpppppskpuuapppoiliiaaaaaaaaaaaaaalalrrppplllp',
+    })
+    debugger
+  }
 }
 </script>

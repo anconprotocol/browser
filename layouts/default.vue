@@ -74,7 +74,6 @@ import { decode, encode } from 'cbor-x'
 import Dexie, { liveQuery, Table } from 'dexie'
 import getTransaction from '../lib/AnconProtocol/GetTransaction'
 
-
 export default {
   name: 'DefaultLayout',
   Ancon: AnconProtocolClient,
@@ -107,10 +106,11 @@ export default {
               },
             },
           },
-          withWallet:{},
+          withWallet: {},
           withWeb3: {
             provider: new ethers.providers.Web3Provider(provider),
             pubkey: pubkey[2],
+            pubkeySig: pubkey[3],
             defaultAddress: accounts[0],
           },
         })
@@ -122,7 +122,7 @@ export default {
 
       this.historyBlocks()
       await this.localBlocks()
-      await this.subscribeTopics()
+      // await this.subscribeTopics()
     })
 
     // Subscribe to chainId change
@@ -206,9 +206,11 @@ export default {
   },
   methods: {
     historyBlocks: function () {
-      this.onHistoryCancel = liveQuery(async () =>
-        db.db.history.toArray()
-      ).subscribe((v) => {
+      const q = await this.db.queryBlocksByTableName$('history', (h) => {
+        return () => h.toArray()
+      })
+
+      this.onHistoryCancel = q.subscribe((v) => {
         this.onHistory.next(v)
       })
     },
@@ -220,37 +222,6 @@ export default {
       this.onPersonalCancel = q.subscribe((v) => {
         this.onPersonal.next(v)
       })
-    },
-    subscribeTopics: async function () {
-      const blockCodec = {
-        name: 'cbor',
-        code: '0x71',
-        encode: async (obj) => encode(obj.dag.bytes),
-        decode: (buffer) => decode(buffer.payload),
-      }
-
-      // const w = await this.db.getWallet()
-      // await w.submitPassword('zxcvb')
-      // const innerAddress = await w.getAccounts()
-
-      debugger
-      // @ts-ignore
-      const pubsub = await this.db.createTopicPubsub(this.defaultTopic, {
-        from: this.defaultAddress,
-        middleware: {
-          incoming: [tap()],
-          outgoing: [tap()],
-        },
-        blockCodec,
-      })
-
-      // if (this.pubsub != null) this.pubsub.unsubscribe()
-      this.onIncomingCancel = pubsub.onBlockReply$.subscribe((v) =>
-        this.onIncoming.next(v)
-      )
-
-      await this.db.putBlock({ cid: '5000sZZlhhpppp88ppplq333wwpppppskpuuapprrppplllp' })
-      debugger
     },
     connect: function () {
       console.log('Connect')

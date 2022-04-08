@@ -30,3 +30,16 @@ export interface VerifiableStorageBlock extends StorageBlock {
     lastBlockHash: string;
     network: string;
 }
+
+// History { id: topic#,  kind: 'TopicMessage', meta: payload }
+
+// TopicSubscription { topic, peerCount,  }
+
+// DataFeedSubscriptions (aka GET + Indexing)
+// { id, kind: 'DataFeed', ....}
+
+// DataKeeperTasks (aka interactive agents)
+// { id, kind: 'DataKeeper', ...}
+
+// TokenAccounting (queries royalty reports)
+// { id, kind: 'TokenAccounting', ... }
