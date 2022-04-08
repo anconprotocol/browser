@@ -86,11 +86,39 @@ export default {
     // Subscribe to accounts change
     provider.on('accountsChanged', async (accounts) => {
       this.address = accounts[0]
+      const peer =
+        '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
+      try {
+        //   const trans = await this.Ancon.getTransaction()
+
+        await this.db.initialize({
+          wakuconnect: {
+            topic: this.topics[0],
+            bootstrap: { peers: [peer] },
+            libp2p: {
+              config: {
+                pubsub: {
+                  enabled: true,
+                  emitSelf: true,
+                },
+              },
+            },
+          },
+          withWallet: {
+            autoLogin: true,
+            password: 'zxcvb',
+            //    seed: ethers.Wallet.createRandom().mnemonic.phrase,
+          },
+        })
+      } catch (e) {
+        console.error(e)
+      }
       await this.createDefaults(accounts)
-      await this.aggregate()
+      //      await this.aggregate()
 
       this.historyBlocks()
       await this.localBlocks()
+      await this.subscribeTopics()
     })
 
     // Subscribe to chainId change
@@ -113,30 +141,6 @@ export default {
     // this.web3Provider = web3.currentProvider
 
     // console.log(this.web3Provider)
-
-    const peer =
-      '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
-    try {
-      //   const trans = await this.Ancon.getTransaction()
-
-      //   // the pubkey from ancon
-      //   const getPubKey = await this.Ancon.getPubKey(trans)
-
-      //   const pubkey = getPubKey[2]
-      // Configure and load ParkyDB
-      if (localStorage.getItem('xdv:keyring_exists') === 'true') {
-      }
-      await this.db.initialize({
-        wakuconnect: { bootstrap: { peers: [peer] } },
-        withWallet: {
-          autoLogin: true,
-          password: 'zxcvb',
-          //    seed: ethers.Wallet.createRandom().mnemonic.phrase,
-        },
-      })
-    } catch (e) {
-      console.error(e)
-    }
 
     this.Ancon = new AnconProtocolClient(
       this.walletconnect,
@@ -217,12 +221,18 @@ export default {
       const blockCodec = {
         name: 'cbor',
         code: '0x71',
-        encode: async (obj) => encode(obj),
-        decode: (buffer) => decode(buffer),
+        encode: async (obj) => encode(obj.dag.bytes),
+        decode: (buffer) => decode(buffer.payload),
       }
+
+      const w = await this.db.getWallet()
+      await w.submitPassword('zxcvb')
+      const innerAddress = await w.getAccounts()
+
+      debugger
       // @ts-ignore
-      const pubsub = await this.db.aggregate([this.topic], {
-        from: this.defaultAddress,
+      const pubsub = await this.db.createChannelPubsub(this.defaultTopic, {
+        from: innerAddress[0],
         middleware: {
           incoming: [tap()],
           outgoing: [tap()],
@@ -231,7 +241,15 @@ export default {
       })
 
       // if (this.pubsub != null) this.pubsub.unsubscribe()
-      this.onIncomingCancel = pubsub.subscribe((v) => this.onIncoming.next(v))
+      this.onIncomingCancel = pubsub.onBlockReply$.subscribe((v) =>
+        this.onIncoming.next(v)
+      )
+
+      await this.db.putBlock(
+        { cid: '5000sZZlhhppppppplwwpppppskpuuapprrpppp' },
+  
+      )
+      debugger
     },
     connect: function () {
       console.log('Connect')

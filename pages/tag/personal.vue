@@ -907,6 +907,7 @@ export default class Personal extends Vue.extend({
 
     this.historySubscription.subscribe({
       next: (value: any) => {
+        debugger
         let x
         value.forEach((i) => {
           x = {
@@ -921,9 +922,7 @@ export default class Personal extends Vue.extend({
 
     this.incomingSubscriptions.subscribe({
       next: (block) => {
-        if (block.topic == this.topic) {
-          console.log(block)
-        }
+        console.log(`[incoming]`, block)
       },
     })
   }
