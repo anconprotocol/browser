@@ -239,7 +239,7 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 // Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
-import { map, merge, of, tap, timestamp } from 'rxjs'
+import { async, map, merge, of, Subject, tap, timestamp } from 'rxjs'
 import { getPredefinedBootstrapNodes } from 'js-waku'
 import { ethers } from 'ethers'
 import Dexie, { liveQuery, Table } from 'dexie'
@@ -440,14 +440,18 @@ export default class Personal extends Vue.extend({
   selectedFile: any = {}
   address: any
   db: any
-  historySubscription: any
-  personalBlocksSubscription: any
-  incomingSubscriptions: any
+  // @ts-ignore
+  historySubscription: Subject<any>
+  // @ts-ignore
+  personalBlocksSubscription: Subject<any>
+  // @ts-ignore
+  incomingSubscriptions: Subject<any>
   pubsub: any
   topic = ''
   getWalletconnect: any
   historyItems: any = {}
   Ancon: AnconProtocolClient | undefined
+  defaultTopic: string = ''
   // getWalletconnect(): any {}
   // @ts-ignore
   // getWalletconnect(): any {}
@@ -481,7 +485,7 @@ export default class Personal extends Vue.extend({
     } as StorageAsset
 
     // @ts-ignore
-    let { id, model } = await this.getDbutBlock(payload, {
+    let { id, model } = await this.getDb.putBlock(payload, {
       kind: 'StorageAsset',
       topic: this.topic,
     })
@@ -826,7 +830,6 @@ export default class Personal extends Vue.extend({
       console.log(e)
     }
   }
-  
 
   async showHistory(_cid) {
     this.show = !this.show
@@ -891,45 +894,44 @@ export default class Personal extends Vue.extend({
     return rawResponse.json()
   }
 
+  async bindSubscriptions() {
+    this.topic = this.defaultTopic
+    this.personalBlocksSubscription.subscribe({
+      next: async (value: any) => {
+        const p = value.filter((x) => x.document.kind == 'StorageAsset')
+
+        this.items = await Promise.all(p)
+        console.log(this.items)
+      },
+    })
+
+    this.historySubscription.subscribe({
+      next: (value: any) => {
+        let x
+        value.forEach((i) => {
+          x = {
+            [i.cid]: { ...i },
+            refs: i.refs,
+            ...x,
+          }
+        })
+        this.historyItems = x
+      },
+    })
+
+    this.incomingSubscriptions.subscribe({
+      next: (block) => {
+        if (block.topic == this.topic) {
+          console.log(block)
+        }
+      },
+    })
+  }
   async mounted() {
     const walletconnect = (this as any).getWalletconnect()
-    const Ancon = (this as any).getAncon()
 
-    console.log(walletconnect.connected)
-
-    this.topic = `/xdvdigital/1/0xeeC58E89996496640c8b5898A7e0218E9b6E90cB/cbor`
-
-    const peer =
-      '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
-    
-    
-    
-    this.personalBlocksSubscription.subscribe(async (i) => {
-      const p = i.filter((x) => x.document.kind == 'StorageAsset')
-
-      this.items = await Promise.all(p)
-      console.log(this.items)
-    }, console.error)
-
-    this.historySubscription.subscribe( (i) => {
-      let x
-      i.forEach((i) => {
-        x = {
-          [i.cid]: { ...i },
-          refs: i.refs,
-          ...x,
-        }
-      })
-      this.historyItems = x
-    }, console.error)
-
-
-
-    this.incomingSubscriptions.onBlockReply$.subscribe((block) => {
-      if (block.topic == this.topic) {
-        console.log(block)
-      }
-    })
+    walletconnect.on('accountsChanged', () => this.bindSubscriptions)
+    await this.bindSubscriptions()
   }
 }
 </script>

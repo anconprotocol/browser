@@ -69,14 +69,14 @@ import { ethers } from 'ethers'
 import Web3 from 'web3'
 import { ParkyDB } from 'parkydb'
 import AnconProtocolClient from '../lib/AnconProtocol/AnconProtocolClient'
-import { map, merge, tap, timestamp } from 'rxjs'
+import { map, merge, Subject, tap, timestamp } from 'rxjs'
 import { decode, encode } from 'cbor-x'
 import Dexie, { liveQuery, Table } from 'dexie'
 
 export default {
   name: 'DefaultLayout',
   Ancon: AnconProtocolClient,
-  mounted: async function () {
+  created: async function () {
     //  Create WalletConnect Provider
     const provider = new WalletConnectProvider({
       rpc: { 56: 'https://bsc-dataseed.binance.org/' },
@@ -84,13 +84,19 @@ export default {
     })
 
     // Subscribe to accounts change
-    provider.on('accountsChanged', (accounts) => {
+    provider.on('accountsChanged', async (accounts) => {
       this.address = accounts[0]
+      await this.createDefaults(accounts)
+      await this.aggregate()
+
+      this.historyBlocks()
+      await this.localBlocks()
     })
 
     // Subscribe to chainId change
     provider.on('chainChanged', (chainId) => {
       this.network = chainId
+      debugger
       //  console.log(chainId)
     })
 
@@ -120,24 +126,15 @@ export default {
       // Configure and load ParkyDB
       if (localStorage.getItem('xdv:keyring_exists') === 'true') {
       }
-await this.db.initialize({
-      wakuconnect: { bootstrap: { peers: [peer] } },
-      withWallet: {
-        autoLogin: true,
-        password: 'zxcvb',
-    //    seed: ethers.Wallet.createRandom().mnemonic.phrase,
-      },
-    })
-
-
-    
-    await this.createDefaults()
-    await this.aggregate()
-
-    await this.historyBlocks()
-    await this.localBlocks()
-    
-} catch (e) {
+      await this.db.initialize({
+        wakuconnect: { bootstrap: { peers: [peer] } },
+        withWallet: {
+          autoLogin: true,
+          password: 'zxcvb',
+          //    seed: ethers.Wallet.createRandom().mnemonic.phrase,
+        },
+      })
+    } catch (e) {
       console.error(e)
     }
 
@@ -153,9 +150,9 @@ await this.db.initialize({
       getWalletconnect: () => this.walletconnect,
       web3: null,
       getDb: this.db,
-      incomingSubscriptions: this.pubsub,
-      personalBlocksSubscription: this.personalBlocksSubscription,
-      historySubscription: this.historySubscription,
+      incomingSubscriptions: this.onIncoming,
+      personalBlocksSubscription: this.onPersonal,
+      historySubscription: this.onHistory,
       defaultTopic: this.defaultTopic,
       defaultAddress: this.defaultAddress,
       getAncon: () => this.Ancon,
@@ -165,15 +162,18 @@ await this.db.initialize({
     return {
       defaultAddress: '',
       defaultTopic: '',
-      personalBlocksSubscription: null, 
-      pubsub: null,
-      historySubscription: null,
+      onHistoryCancel: null,
+      onPersonalCancel: null,
+      onIncomingCancel: null,
+      onIncoming: new Subject(),
+      onPersonal: new Subject(),
+      onHistory: new Subject(),
       db: new ParkyDB(),
       walletconnect: new WalletConnectProvider({
         rpc: { 56: 'https://bsc-dataseed.binance.org/' },
         chainId: 56,
       }),
-      network: '56',
+      network: '',
       address: '',
       clipped: false,
       drawer: false,
@@ -197,40 +197,42 @@ await this.db.initialize({
     }
   },
   methods: {
-    historyBlocks: async function() {
-
-
-   this.historySubscription= liveQuery(async() => db.db.history.toArray())
+    historyBlocks: function () {
+      this.onHistoryCancel = liveQuery(async () =>
+        db.db.history.toArray()
+      ).subscribe((v) => {
+        this.onHistory.next(v)
+      })
     },
-   localBlocks: async function() {
-this.personalBlocksSubscription = await this.db.queryBlocks$((blocks) => {
-      return () => blocks.toArray()
-    })
+    localBlocks: async function () {
+      const q = await this.db.queryBlocks$((blocks) => {
+        return () => blocks.toArray()
+      })
 
-    
+      this.onPersonalCancel = q.subscribe((v) => {
+        this.onPersonal.next(v)
+      })
     },
-    subscribeTopics: async function() {
- 
-    const blockCodec = {
-      name: 'cbor',
-      code: '0x71',
-      encode: async (obj) => encode(obj),
-      decode: (buffer) => decode(buffer),
-    }
-    // @ts-ignore
-    const pubsub = await this.db.aggregate([this.topic], {
-      from: this.defaultAddress,
-      middleware: {
-        incoming: [tap()],
-        outgoing: [tap()],
-      },
-      blockCodec,
-    })
+    subscribeTopics: async function () {
+      const blockCodec = {
+        name: 'cbor',
+        code: '0x71',
+        encode: async (obj) => encode(obj),
+        decode: (buffer) => decode(buffer),
+      }
+      // @ts-ignore
+      const pubsub = await this.db.aggregate([this.topic], {
+        from: this.defaultAddress,
+        middleware: {
+          incoming: [tap()],
+          outgoing: [tap()],
+        },
+        blockCodec,
+      })
 
-    // if (this.pubsub != null) this.pubsub.unsubscribe()
-    this.pubsub = pubsub
-
-  },
+      // if (this.pubsub != null) this.pubsub.unsubscribe()
+      this.onIncomingCancel = pubsub.subscribe((v) => this.onIncoming.next(v))
+    },
     connect: function () {
       console.log('Connect')
       this.walletconnect.enable()
@@ -265,7 +267,7 @@ this.personalBlocksSubscription = await this.db.queryBlocks$((blocks) => {
         console.log(messages)
       }, 5000)
     },
-    createDefaults: async function () {
+    createDefaults: async function (accounts) {
       const blockCodec = {
         name: 'cbor',
         code: '0x71',
@@ -273,11 +275,8 @@ this.personalBlocksSubscription = await this.db.queryBlocks$((blocks) => {
         decode: (buffer) => decode(buffer),
       }
 
-      const w = await this.db.getWallet()
-
-      this.defaultAddress = (await w.getAccounts())[0]
+      this.defaultAddress = accounts[0]
       this.defaultTopic = `/xdvdigital/1/${this.defaultAddress}/cbor`
-
     },
   },
 }
