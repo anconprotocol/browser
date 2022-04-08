@@ -71,6 +71,7 @@ import { ParkyDB } from 'parkydb'
 import AnconProtocolClient from '../lib/AnconProtocol/AnconProtocolClient'
 import { map, merge, tap, timestamp } from 'rxjs'
 import { decode, encode } from 'cbor-x'
+import Dexie, { liveQuery, Table } from 'dexie'
 
 export default {
   name: 'DefaultLayout',
@@ -119,17 +120,26 @@ export default {
       // Configure and load ParkyDB
       if (localStorage.getItem('xdv:keyring_exists') === 'true') {
       }
-      await this.db.initialize({
-        wakuconnect: {
-          bootstrap: { peers: [peer] },
-        },
-      })
-    } catch (e) {
+await this.db.initialize({
+      wakuconnect: { bootstrap: { peers: [peer] } },
+      withWallet: {
+        autoLogin: true,
+        password: 'zxcvb',
+    //    seed: ethers.Wallet.createRandom().mnemonic.phrase,
+      },
+    })
+
+
+    
+    await this.createDefaults()
+    await this.aggregate()
+
+    await this.historyBlocks()
+    await this.localBlocks()
+    
+} catch (e) {
       console.error(e)
     }
-
-    await this.createDefaultTopic()
-    await this.aggregate([])
 
     this.Ancon = new AnconProtocolClient(
       this.walletconnect,
@@ -143,21 +153,27 @@ export default {
       getWalletconnect: () => this.walletconnect,
       web3: null,
       getDb: this.db,
-      getDbWallet: () => this.db.getWallet(),
-      getDefaultTopics: () => this.topics,
-      getDefaultAddress: () => this.walletconnect.accounts[0],
+      incomingSubscriptions: this.pubsub,
+      personalBlocksSubscription: this.personalBlocksSubscription,
+      historySubscription: this.historySubscription,
+      defaultTopic: this.defaultTopic,
+      defaultAddress: this.defaultAddress,
       getAncon: () => this.Ancon,
     }
   },
   data() {
     return {
+      defaultAddress: '',
+      defaultTopic: '',
+      personalBlocksSubscription: null, 
+      pubsub: null,
+      historySubscription: null,
       db: new ParkyDB(),
       walletconnect: new WalletConnectProvider({
         rpc: { 56: 'https://bsc-dataseed.binance.org/' },
         chainId: 56,
       }),
       network: '56',
-
       address: '',
       clipped: false,
       drawer: false,
@@ -181,6 +197,40 @@ export default {
     }
   },
   methods: {
+    historyBlocks: async function() {
+
+
+   this.historySubscription= liveQuery(async() => db.db.history.toArray())
+    },
+   localBlocks: async function() {
+this.personalBlocksSubscription = await this.db.queryBlocks$((blocks) => {
+      return () => blocks.toArray()
+    })
+
+    
+    },
+    subscribeTopics: async function() {
+ 
+    const blockCodec = {
+      name: 'cbor',
+      code: '0x71',
+      encode: async (obj) => encode(obj),
+      decode: (buffer) => decode(buffer),
+    }
+    // @ts-ignore
+    const pubsub = await this.db.aggregate([this.topic], {
+      from: this.defaultAddress,
+      middleware: {
+        incoming: [tap()],
+        outgoing: [tap()],
+      },
+      blockCodec,
+    })
+
+    // if (this.pubsub != null) this.pubsub.unsubscribe()
+    this.pubsub = pubsub
+
+  },
     connect: function () {
       console.log('Connect')
       this.walletconnect.enable()
@@ -189,7 +239,7 @@ export default {
       console.log('Disconnect')
       this.walletconnect.disconnect()
     },
-    aggregate: async function (topics) {
+    aggregate: async function () {
       const url = $nuxt.context.env.WakuRPC
       await fetch(url, {
         method: 'POST',
@@ -215,7 +265,7 @@ export default {
         console.log(messages)
       }, 5000)
     },
-    createDefaultTopic: async function () {
+    createDefaults: async function () {
       const blockCodec = {
         name: 'cbor',
         code: '0x71',
@@ -225,17 +275,9 @@ export default {
 
       const w = await this.db.getWallet()
 
-      const accountA = (await w.getAccounts())[0]
-      const defaultTopic = `/xdvdigital/1/${accountA}/cbor`
+      this.defaultAddress = (await w.getAccounts())[0]
+      this.defaultTopic = `/xdvdigital/1/${this.defaultAddress}/cbor`
 
-      // const pubsub = await this.db.createChannelPubsub(defaultTopic, {
-      //   from: accountA,
-      //   middleware: {
-      //     incoming: [tap()],
-      //     outgoing: [tap()],
-      //   },
-      //   blockCodec,
-      // })
     },
   },
 }

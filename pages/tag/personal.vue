@@ -266,9 +266,11 @@ const FilePond = vueFilePond(
     'getDb',
     'web3',
     'getWalletconnect',
-    'getDefaultTopics',
-    'getDefaultAddress',
-    'getDbWallet',
+    'defaultTopic',
+    'defaultAddress',
+    'incomingSubscriptions',
+    'personalBlocksSubscription',
+    'historySubscription',
     'getAncon',
   ],
 })
@@ -438,6 +440,9 @@ export default class Personal extends Vue.extend({
   selectedFile: any = {}
   address: any
   db: any
+  historySubscription: any
+  personalBlocksSubscription: any
+  incomingSubscriptions: any
   pubsub: any
   topic = ''
   getWalletconnect: any
@@ -821,42 +826,7 @@ export default class Personal extends Vue.extend({
       console.log(e)
     }
   }
-  async subscribeTopics() {
-    // @ts-ignore
-    const w = await this.getDbWallet()
-debugger
-    const accountA = (await w.getAccounts())[0]
-
-    // default topic
-    //@ts-ignore
-    // this.topic = `/xdvdigital/1/${accountA}/cbor`
-
-    const blockCodec = {
-      name: 'cbor',
-      code: '0x71',
-      encode: async (obj: any) => encode(obj),
-      decode: (buffer: any) => decode(buffer),
-    }
-    debugger
-    // @ts-ignore
-    const pubsub = await this.getDb.aggregate([this.topic], {
-      from: accountA,
-      middleware: {
-        incoming: [tap()],
-        outgoing: [map((v: BlockValue) => v.document)],
-      },
-      blockCodec,
-    })
-
-    // if (this.pubsub != null) this.pubsub.unsubscribe()
-    this.pubsub = pubsub
-
-    this.pubsub.onBlockReply$.subscribe((block) => {
-      if (block.topic == this.topic) {
-        console.log(block)
-      }
-    })
-  }
+  
 
   async showHistory(_cid) {
     this.show = !this.show
@@ -922,10 +892,7 @@ debugger
   }
 
   async mounted() {
-    const db = (this as any).getDb
     const walletconnect = (this as any).getWalletconnect()
-    const defaultTopics = (this as any).getDefaultTopics()
-    const defaultAddress = (this as any).getDefaultAddress()
     const Ancon = (this as any).getAncon()
 
     console.log(walletconnect.connected)
@@ -934,56 +901,19 @@ debugger
 
     const peer =
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
-    // await this.walletconnect.enable()
-    // const url = 'http://waku.did.pa:8545'
-    // await fetch(url, {
-    //   method: 'POST',
-    //   body: JSON.stringify({
-    //     jsonrpc: '2.0',
-    //     id: 'id',
-    //     method: 'post_waku_v2_relay_v1_subscriptions',
-    //     params: [[this.topic]],
-    //   }),
-    // })
-
-    // setInterval(async () => {
-    //   const res = await fetch(url, {
-    //     method: 'POST',
-    //     body: JSON.stringify({
-    //       jsonrpc: '2.0',
-    //       id: 'id',
-    //       method: 'get_waku_v2_relay_v1_messages',
-    //       params: [[this.topic]],
-    //     }),
-    //   })
-    //   const messages  = await res.json()
-    //   console.log(messages)
-    // }, 5000)
-    await db.initialize({
-      wakuconnect: { bootstrap: { peers: [peer] } },
-      withWallet: {
-        autoLogin: true,
-        password: 'zxcvb',
-        // seed: ethers.Wallet.createRandom().mnemonic.phrase,
-      },
-    })
-
-    const obs$ = await db.queryBlocks$((blocks) => {
-      return () => blocks.toArray()
-    })
-
-    obs$.subscribe(async (i: any) => {
+    
+    
+    
+    this.personalBlocksSubscription.subscribe(async (i) => {
       const p = i.filter((x) => x.document.kind == 'StorageAsset')
 
       this.items = await Promise.all(p)
       console.log(this.items)
     }, console.error)
 
-    const history = await db.db.history.toArray()
-
-    liveQuery(() => history).subscribe(async (i: any) => {
+    this.historySubscription.subscribe( (i) => {
       let x
-      i.forEach((i: any) => {
+      i.forEach((i) => {
         x = {
           [i.cid]: { ...i },
           refs: i.refs,
@@ -993,7 +923,13 @@ debugger
       this.historyItems = x
     }, console.error)
 
-    await this.subscribeTopics()
+
+
+    this.incomingSubscriptions.onBlockReply$.subscribe((block) => {
+      if (block.topic == this.topic) {
+        console.log(block)
+      }
+    })
   }
 }
 </script>
