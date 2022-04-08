@@ -72,6 +72,8 @@ import AnconProtocolClient from '../lib/AnconProtocol/AnconProtocolClient'
 import { map, merge, Subject, tap, timestamp } from 'rxjs'
 import { decode, encode } from 'cbor-x'
 import Dexie, { liveQuery, Table } from 'dexie'
+import getTransaction from '../lib/AnconProtocol/GetTransaction'
+
 
 export default {
   name: 'DefaultLayout',
@@ -91,9 +93,10 @@ export default {
       try {
         //   const trans = await this.Ancon.getTransaction()
 
+        const trans = await getTransaction(accounts[0], provider)
+        const pubkey = await this.Ancon.getPubKey(trans)
         await this.db.initialize({
           wakuconnect: {
-            topic: this.topics[0],
             bootstrap: { peers: [peer] },
             libp2p: {
               config: {
@@ -104,10 +107,11 @@ export default {
               },
             },
           },
-          withWallet: {
-            autoLogin: true,
-            password: 'zxcvb',
-            //    seed: ethers.Wallet.createRandom().mnemonic.phrase,
+          withWallet:{},
+          withWeb3: {
+            provider: new ethers.providers.Web3Provider(provider),
+            pubkey: pubkey[2],
+            defaultAddress: accounts[0],
           },
         })
       } catch (e) {
@@ -225,14 +229,14 @@ export default {
         decode: (buffer) => decode(buffer.payload),
       }
 
-      const w = await this.db.getWallet()
-      await w.submitPassword('zxcvb')
-      const innerAddress = await w.getAccounts()
+      // const w = await this.db.getWallet()
+      // await w.submitPassword('zxcvb')
+      // const innerAddress = await w.getAccounts()
 
       debugger
       // @ts-ignore
-      const pubsub = await this.db.createChannelPubsub(this.defaultTopic, {
-        from: innerAddress[0],
+      const pubsub = await this.db.createTopicPubsub(this.defaultTopic, {
+        from: this.defaultAddress,
         middleware: {
           incoming: [tap()],
           outgoing: [tap()],
@@ -245,10 +249,7 @@ export default {
         this.onIncoming.next(v)
       )
 
-      await this.db.putBlock(
-        { cid: '5000sZZlhhppppppplwwpppppskpuuapprrpppp' },
-  
-      )
+      await this.db.putBlock({ cid: '5000sZZlhhpppp88ppplq333wwpppppskpuuapprrppplllp' })
       debugger
     },
     connect: function () {
