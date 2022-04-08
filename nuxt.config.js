@@ -84,7 +84,11 @@ export default {
       },
     },
   },
-
+  loadingIndicator: {
+    name: 'circle',
+    color: '#3B8070',
+    background: 'white'
+  },
   /*
    ** Build configuration
    ** Doc: https://nuxtjs.org/api/configuration-build

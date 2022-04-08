@@ -1,8 +1,8 @@
 <template>
   <v-container>
     <v-tabs color="pink accent-2" right>
-      <v-tab v-for="tab in tabs" :key="tab">{{ tab.title }}</v-tab>
-      <v-tab-item v-for="tab in tabs" :key="tab">
+      <v-tab v-for="tab in tabs" :key="tab.title">{{ tab.title }}</v-tab>
+      <v-tab-item v-for="tab in tabs" :key="tab.title">
         <v-container fluid>
           <component :is="tab.component"></component>
         </v-container>

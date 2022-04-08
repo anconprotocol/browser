@@ -107,7 +107,6 @@ export default {
 
     // console.log(this.web3Provider)
 
-    this.db = new ParkyDB()
     const peer =
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
     try {
@@ -123,11 +122,6 @@ export default {
       await this.db.initialize({
         wakuconnect: {
           bootstrap: { peers: [peer] },
-        },
-        withWallet: {
-          autoLogin: true,
-          password: 'zxcvb',
-          seed: ethers.Wallet.createRandom().mnemonic.phrase,
         },
       })
     } catch (e) {
@@ -148,7 +142,8 @@ export default {
     return {
       getWalletconnect: () => this.walletconnect,
       web3: null,
-      getDb: () => this.db,
+      getDb: this.db,
+      getDbWallet: () => this.db.getWallet(),
       getDefaultTopics: () => this.topics,
       getDefaultAddress: () => this.walletconnect.accounts[0],
       getAncon: () => this.Ancon,
@@ -162,6 +157,7 @@ export default {
         chainId: 56,
       }),
       network: '56',
+
       address: '',
       clipped: false,
       drawer: false,

@@ -15,7 +15,22 @@
         />
       </v-col>
     </v-row>
-    <v-row>
+    <v-row
+      v-show="loading"
+      class="fill-height"
+      align-content="center"
+      justify="center"
+    >
+      <v-col class="text-subtitle-1 text-center" cols="12"> Loading... </v-col>
+      <v-col cols="6">
+        <v-progress-linear
+          color="deep-purple accent-4"
+          indeterminate
+          rounded
+          height="6"
+        ></v-progress-linear>
+      </v-col> </v-row
+    ><v-row>
       <v-col dense v-for="v in items" :key="v[0]">
         <v-card class="mx-auto" max-width="344">
           <v-img :src="v.document.image" height="200px"></v-img>
@@ -253,6 +268,7 @@ const FilePond = vueFilePond(
     'getWalletconnect',
     'getDefaultTopics',
     'getDefaultAddress',
+    'getDbWallet',
     'getAncon',
   ],
 })
@@ -460,14 +476,14 @@ export default class Personal extends Vue.extend({
     } as StorageAsset
 
     // @ts-ignore
-    let { id, model } = await this.db.putBlock(payload, {
+    let { id, model } = await this.getDbutBlock(payload, {
       kind: 'StorageAsset',
       topic: this.topic,
     })
 
     if (!!model) {
       // @ts-ignore
-      model = await this.db.get(id)
+      model = await this.getDb.get(id)
     }
 
     console.log(model)
@@ -477,7 +493,8 @@ export default class Personal extends Vue.extend({
     this.shareSheet = false
     this.snackbarText = 'Sending image   to Luis Sanchez'
     this.snackbar = true
-    const model = await this.db.get(cid, null)
+    // @ts-ignore
+    const model = await this.getDb.get(cid, null)
     // const b64 = await PromiseFileReader.readAsDataURL(model.document.image)
     // model.document.image = b64
 
@@ -547,7 +564,7 @@ export default class Personal extends Vue.extend({
     this.exportSheet = false
     this.snackbarText = 'Exporting to Ancon Node...'
     this.snackbar = true
-    const model = await (this as any).getDb().get(cid)
+    const model = await (this as any).getDb.get(cid)
 
     // @ts-ignore
 
@@ -599,7 +616,7 @@ export default class Personal extends Vue.extend({
   }
 
   async mintAsset(cid: string) {
-    const model = await (this as any).getDb().get(cid, null)
+    const model = await (this as any).getDb.get(cid, null)
 
     // sign message {signature, digest / hash, }
 
@@ -805,8 +822,9 @@ export default class Personal extends Vue.extend({
     }
   }
   async subscribeTopics() {
-    const w = await this.db.getWallet()
-
+    // @ts-ignore
+    const w = await this.getDbWallet()
+debugger
     const accountA = (await w.getAccounts())[0]
 
     // default topic
@@ -819,7 +837,9 @@ export default class Personal extends Vue.extend({
       encode: async (obj: any) => encode(obj),
       decode: (buffer: any) => decode(buffer),
     }
-    const pubsub = await this.db.aggregate([this.topic], {
+    debugger
+    // @ts-ignore
+    const pubsub = await this.getDb.aggregate([this.topic], {
       from: accountA,
       middleware: {
         incoming: [tap()],
@@ -844,7 +864,7 @@ export default class Personal extends Vue.extend({
   }
 
   async add(_cid, _action, _user, metadata) {
-    const model = await (this as any).getDb().db.history.get({ cid: _cid })
+    const model = await (this as any).getDb.db.history.get({ cid: _cid })
 
     const event = {
       message: _action,
@@ -861,9 +881,9 @@ export default class Personal extends Vue.extend({
         cid: _cid,
         refs: [...model.refs, event],
       }
-      ;(this as any).getDb().db.history.update(_cid, update)
+      ;(this as any).getDb.db.history.update(_cid, update)
     } else {
-      ;(this as any).getDb().db.history.put(init)
+      ;(this as any).getDb.db.history.put(init)
     }
   }
 
@@ -902,7 +922,7 @@ export default class Personal extends Vue.extend({
   }
 
   async mounted() {
-    const db = (this as any).getDb()
+    const db = (this as any).getDb
     const walletconnect = (this as any).getWalletconnect()
     const defaultTopics = (this as any).getDefaultTopics()
     const defaultAddress = (this as any).getDefaultAddress()
@@ -972,8 +992,6 @@ export default class Personal extends Vue.extend({
       })
       this.historyItems = x
     }, console.error)
-
-    this.db = db
 
     await this.subscribeTopics()
   }
