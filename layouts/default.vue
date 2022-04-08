@@ -122,13 +122,12 @@ export default {
 
       this.historyBlocks()
       await this.localBlocks()
-      // await this.subscribeTopics()
+      await this.subscribeTopics()
     })
 
     // Subscribe to chainId change
     provider.on('chainChanged', (chainId) => {
       this.network = chainId
-      debugger
       //  console.log(chainId)
     })
 
@@ -163,6 +162,7 @@ export default {
       historySubscription: this.onHistory,
       defaultTopic: this.defaultTopic,
       defaultAddress: this.defaultAddress,
+      currentAccountTopic: this.currentAccountTopic,
       getAncon: () => this.Ancon,
     }
   },
@@ -170,6 +170,7 @@ export default {
     return {
       defaultAddress: '',
       defaultTopic: '',
+      currentAccountTopic: null,
       onHistoryCancel: null,
       onPersonalCancel: null,
       onIncomingCancel: null,
@@ -205,8 +206,8 @@ export default {
     }
   },
   methods: {
-    historyBlocks: function () {
-      const q = await this.db.queryBlocksByTableName$('history', (h) => {
+    historyBlocks: async function () {
+      const q = await this.db.getBlocksByTableName$('history', (h) => {
         return () => h.toArray()
       })
 
@@ -267,6 +268,15 @@ export default {
 
       this.defaultAddress = accounts[0]
       this.defaultTopic = `/xdvdigital/1/${this.defaultAddress}/cbor`
+    },
+    subscribeTopics: async function () {
+      // @ts-ignore
+      const pubsub = await this.db.createTopicPubsub(this.defaultTopic)
+      this.currentAccountTopic = pubsub
+      debugger
+      this.onIncomingCancel = pubsub.onBlockReply$.subscribe((v) =>
+        this.onIncoming.next(v)
+      )
     },
   },
 }

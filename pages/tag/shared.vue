@@ -43,8 +43,9 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
 import { QrcodeCapture } from 'vue-qrcode-reader'
+import { decode, encode } from 'cbor-x'
 //@ts-ignore
-import { decode } from 'jsonwebtoken'
+
 import { CUFEBuilder } from '../cufe'
 import { BrowserQRCodeReader } from '@zxing/browser'
 import * as reader from 'promise-file-reader'
@@ -53,6 +54,7 @@ import BarcodeDetector from 'barcode-detector'
 import 'pdfjs-dist/legacy/build/pdf.worker.entry'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.js'
 import { ParkyDB } from 'parkydb'
+import { tap } from 'rxjs'
 
 const payload = {
   commitHash: 'xg8pyBr3McqYlUgxAqV0t3s6TRcP+B7MHyPTtyVKMJw=',
@@ -98,7 +100,19 @@ const payload = {
 @Component({
   components: {
     QrcodeCapture,
+    //  FilePond,
   },
+  inject: [
+    'getDb',
+    'web3',
+    'getWalletconnect',
+    'defaultTopic',
+    'defaultAddress',
+    'incomingSubscriptions',
+    'personalBlocksSubscription',
+    'historySubscription',
+    'getAncon',
+  ],
 })
 export default class Shared extends Vue {
   bob = new ParkyDB()
@@ -156,6 +170,9 @@ export default class Shared extends Vue {
     },
   ]
 
+  db: any
+  defaultAddress: any
+  aggregatorCancel: any
   subscribe() {
     console.log('Subs')
   }
@@ -169,71 +186,6 @@ export default class Shared extends Vue {
     img.width = 200
     img.height = 200
     const resultImage = await codeReader.decodeFromImageElement(img)
-  }
-
-  async loadInvoice() {
-    if (!this.selected) return
-    this.invoiceQr = this.selected.name
-    this.invoiceQRImage = URL.createObjectURL(this.selected)
-
-    const barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] })
-    const [{ rawValue }] = await barcodeDetector.detect(this.selected)
-
-    this.feURL = rawValue
-    setTimeout(() => {
-      this.decode(rawValue)
-    })
-  }
-
-  async readCAFE() {
-    const b = await reader.readAsArrayBuffer(this.selectedCafe as any)
-    const doc = await getDocument(b as any).promise
-    const page = await doc.getPage(1)
-    const result = await page.getTextContent()
-
-    const items = result.items
-      .filter((i: any) => !i.hasEOL && i.str.length > 1)
-      .map((i: any) => i.str)
-
-    this.cafeModel = {
-      issuer: {
-        name: items[3],
-        ruc: items[5],
-        dv: items[7],
-        address: items[9],
-      },
-      recipient: {
-        type: items[11],
-        name: items[13],
-        ruc: items[15],
-      },
-    }
-  }
-  selectedCafe(selectedCafe: any) {
-    throw new Error('Method not implemented.')
-  }
-  async scanCedula() {
-    if (!this.selectedCedula) return
-    // const datauri = await reader.readAsDataURL(this.selectedCedula)
-    this.cedulaQr = this.selectedCedula.name
-    this.cedulaQRImage = URL.createObjectURL(this.selectedCedula)
-
-    setTimeout(async () => {
-      const codeReader = new BrowserQRCodeReader()
-      const el = this.$refs.cedula as any
-      const img = BrowserQRCodeReader.prepareImageElement(el.image)
-      const resultImage = await codeReader.decodeFromImageElement(img)
-
-      const items = (resultImage as any).text.split('|')
-      this.cedulaId = {
-        id: items[0],
-        name: `${items[1]} ${items[2]}`,
-        dob: items[6],
-        province: items[5],
-        expiration: items[15],
-        issued: items[14],
-      }
-    })
   }
   async openMintNFT() {
     const codeReader = new BrowserQRCodeReader()
@@ -254,22 +206,45 @@ export default class Shared extends Vue {
   }
 
   async mounted() {
-    // const accountB = accounts[0]
-    // const id = await this.bob.putBlock(payload)
-    // debugger
-    // const res = await this.bob.get(id, null)
-    // const q = await this.bob.query({
-    //   cid: id,
-    //   query: `
-    // query{
-    //    block(cid: "${id}") {
-    //      network
-    //      key
-    //    }
-    // }
-    // `,
-    // })
-    // console.log(q)
+    const blockCodec = {
+      name: 'cbor',
+      code: '0x71',
+      encode: async (obj) => encode(obj.dag.bytes),
+      decode: (buffer) => decode(buffer.payload),
+    }
+    const consumer = this.db
+    const aggregator = await consumer.aggregate(
+      [`topic items stored in db.topics`],
+      {
+        from: this.defaultAddress,
+        middleware: {
+          incoming: [
+            tap(),
+            // filter(
+            //   (v: object) => v.address === '0x...' && v.event === 'Transfer'
+            // ),
+            // zip(
+            //   map((v) => v),
+            //   reduce((v, init) => (v = new BigNumber(init).add(v)))
+            // ),
+          ],
+        },
+        blockCodec,
+      }
+    )
+
+    this.aggregatorCancel = aggregator.onBlockReply$.subscribe(
+      async (payload: any) => {
+        const { v, sum } = payload
+        // 1. putBlock (put block only adds new cids)
+        // this.add(
+        //   cid,
+        //   'Push Asset to Topic',
+        //   this.getWalletconnect().accounts[0],
+        //   output
+        // )
+      }
+    )
   }
 }
 </script>

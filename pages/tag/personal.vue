@@ -272,6 +272,7 @@ const FilePond = vueFilePond(
     'personalBlocksSubscription',
     'historySubscription',
     'getAncon',
+    'currentAccountTopic'
   ],
 })
 export default class Personal extends Vue.extend({
@@ -438,7 +439,7 @@ export default class Personal extends Vue.extend({
   items: any = []
   files = []
   selectedFile: any = {}
-  address: any
+  defaultAddress: any
   db: any
   // @ts-ignore
   historySubscription: Subject<any>
@@ -452,6 +453,9 @@ export default class Personal extends Vue.extend({
   historyItems: any = {}
   Ancon: AnconProtocolClient | undefined
   defaultTopic: string = ''
+  currentAccountTopic: any
+  onAccountTopicIncomingCancel: any
+
   // getWalletconnect(): any {}
   // @ts-ignore
   // getWalletconnect(): any {}
@@ -500,57 +504,34 @@ export default class Personal extends Vue.extend({
 
   async pushAssetToTopic(cid: string) {
     this.shareSheet = false
-    this.snackbarText = 'Sending image   to Luis Sanchez'
+    this.snackbarText = 'Sending asset to topic...'
     this.snackbar = true
     // @ts-ignore
     const model = await this.getDb.get(cid, null)
-    // const b64 = await PromiseFileReader.readAsDataURL(model.document.image)
-    // model.document.image = b64
 
-    // sign message {signature, digest / hash, }z
+
+    if (model.document.kind !== 'StorageAsset') {
+      this.snackbarText = 'Invalid asset, must be stored in personal'
+      this.snackbar = true
+      return
+    }
+    // sign message
     const { signature, digest } = await this.sign(
       JSON.stringify(model.document)
     )
-
     const block = {
       ...model.document,
       kind: 'StorageBlock',
       signature,
       digest,
       timestamp: new Date().getTime(),
-      issuer: this.getWalletconnect().accounts[0],
+      issuer: this.defaultAddress,
     }
 
-    const defaultTopic = `/xdvdigital/1/${
-      this.getWalletconnect().accounts[0]
-    }/cbor`
     // @ts-ignore
-    const url = $nuxt.context.env.WakuRPC
-    const res = await fetch(url, {
-      method: 'POST',
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 'id',
-        method: 'post_waku_v2_relay_v1_message',
-        params: [
-          this.getWalletconnect().accounts[0],
-          {
-            payload: ethers.utils.hexlify(encode(block)),
-            timestamp: block.timestamp,
-            contentTopic: defaultTopic,
-          },
-        ],
-      }),
-    })
-    const output = await res.json()
-    this.add(
-      cid,
-      'Push Asset to Topic',
-      this.getWalletconnect().accounts[0],
-      output
-    )
+    const { id } = await this.getDb.putBlock(block)
 
-    this.snackbarText = 'Image succesfully sent'
+    this.snackbarText = 'Asset succesfully sent to topic'
     this.snackbar = true
   }
 
@@ -907,7 +888,7 @@ export default class Personal extends Vue.extend({
 
     this.historySubscription.subscribe({
       next: (value: any) => {
-        debugger
+        
         let x
         value.forEach((i) => {
           x = {
@@ -922,9 +903,12 @@ export default class Personal extends Vue.extend({
 
     this.incomingSubscriptions.subscribe({
       next: (block) => {
+        // TODO: switch statement or filer by topic
         console.log(`[incoming]`, block)
       },
     })
+
+  
   }
   async mounted() {
     const walletconnect = (this as any).getWalletconnect()
@@ -933,38 +917,6 @@ export default class Personal extends Vue.extend({
     await this.bindSubscriptions()
   }
 
-  async subscribeTopics() {
-    const blockCodec = {
-      name: 'cbor',
-      code: '0x71',
-      encode: async (obj) => encode(obj.dag.bytes),
-      decode: (buffer) => decode(buffer.payload),
-    }
-
-    // const w = await this.db.getWallet()
-    // await w.submitPassword('zxcvb')
-    // const innerAddress = await w.getAccounts()
-
-    debugger
-    // @ts-ignore
-    const pubsub = await this.db.createTopicPubsub(this.defaultTopic, {
-      from: this.defaultAddress,
-      middleware: {
-        incoming: [tap()],
-        outgoing: [tap()],
-      },
-      blockCodec,
-    })
-
-    // if (this.pubsub != null) this.pubsub.unsubscribe()
-    this.onIncomingCancel = pubsub.onBlockReply$.subscribe((v) =>
-      this.onIncoming.next(v)
-    )
-
-    await this.db.putBlock({
-      cid: '5000sZZlhhppDpp88ppplq333wwpppppskpuuapppoiliiaaaaaaaaaaaaaalalrrppplllp',
-    })
-    debugger
-  }
+  
 }
 </script>
