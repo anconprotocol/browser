@@ -198,7 +198,7 @@ export default {
       right: true,
       rightDrawer: false,
       show: '',
-      title: '[el segundo]',
+      title: '[el segundo -- p2p data markets -- alpha]',
       topics: [
         '0xeeC58E89996496640c8b5898A7e0218E9b6E90cB',
         '0x63e6EdFBA95aB3f0854fE1A93f96FAB1aa04b8Fb', //backup
