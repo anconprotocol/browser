@@ -90,9 +90,9 @@ export default {
       rpc: { 56: 'https://bsc-dataseed.binance.org/' },
       chainId: 1,
     })
-      const web3provider = new ethers.providers.Web3Provider(provider)
+    const web3provider = new ethers.providers.Web3Provider(provider)
 
-// Subscribe to accounts change
+    // Subscribe to accounts change
     provider.on('accountsChanged', async (accounts) => {
       this.address = accounts[0]
 
@@ -110,14 +110,14 @@ export default {
         await this.db.initialize({
           wakuconnect: {
             bootstrap: { peers: [$nuxt.context.env.WakuLibp2p] },
-            libp2p: {
-              config: {
-                pubsub: {
-                  enabled: true,
-                  //          emitSelf: true,
-                },
-              },
-            },
+            // libp2p: {
+            //   config: {
+            //     pubsub: {
+            //       enabled: true,
+            //       emitSelf: true,
+            //     },
+            //   },
+            // },
           },
           withWallet: {
             autoLogin: true,
@@ -135,7 +135,12 @@ export default {
             walletconnectProvider: provider,
             from: accounts[0],
           },
+          withIpfs: {
+            gateway: 'https://ipfs.io',
+            api: 'https://ipfs.infura.io:5001',
+          },
         })
+        this.pubkey = pubkey[2]
       } catch (e) {
         console.error(e)
       }
@@ -146,10 +151,8 @@ export default {
     })
 
     // Subscribe to chainId change
-    provider.on('chainChanged',async   (chainId) => {
- 
-        this.network = await web3provider.getNetwork()
-
+    provider.on('chainChanged', async (chainId) => {
+      this.network = await web3provider.getNetwork()
     })
 
     // Subscribe to session disconnection
@@ -192,9 +195,11 @@ export default {
       defaultAddress: '',
       defaultTopic: '',
       currentAccountTopic: null,
+      keyexPubsub: null,
       onHistoryCancel: null,
       onPersonalCancel: null,
       onIncomingCancel: null,
+      onKeyexCancel: null,
       onIncoming: new Subject(),
       onPersonal: new Subject(),
       onHistory: new Subject(),
@@ -214,9 +219,11 @@ export default {
       }),
       network: '',
       address: '',
+      keyExchangeTopic: '',
       clipped: false,
       drawer: false,
       fixed: false,
+      pubkey: '',
       items: [
         {
           icon: 'mdi-apps',
@@ -282,6 +289,7 @@ export default {
     createDefaults: async function (accounts) {
       this.defaultAddress = accounts[0]
       this.defaultTopic = `/xdvdigital/1/${this.defaultAddress}/cbor`
+      this.keyExchangeTopic = `/xdvdigital/1/${this.defaultAddress}-kex/cbor`
     },
     subscribeTopics: async function () {
       const blockCodec = {
@@ -290,6 +298,25 @@ export default {
         encode: async (obj) => encode(obj),
         decode: (buffer) => decode(buffer),
       }
+      // @ts-ignore
+      const keyex = this.keyexPubsub = await this.db.createTopicPubsub(
+        this.keyExchangeTopic,
+        {
+          blockCodec,
+          canSubscribe: true,
+          canPublish: true,
+          isKeyExchangeChannel: true,
+        }
+      )
+      this.onKeyexCancel = this.keyexPubsub.onBlockReply$.subscribe(
+        (v) => {
+          // @ts-ignore
+          if (v.decoded.payload.askForEncryptionPublicKey) {
+            keyex.publish({ encryptionPubKey: this.pubkey })
+          }
+        }
+      )
+
 
       // @ts-ignore
       const pubsub = await this.db.createTopicPubsub(this.defaultTopic, {

@@ -73,7 +73,7 @@
               <v-list>
                 <v-subheader>Share</v-subheader>
                 <v-combobox
-                  v-model="model"
+                  v-model="selectedRecipient"
                   :items="contacts"
                   :search-input.sync="search"
                   hide-selected
@@ -245,6 +245,11 @@ import AnconProtocolClient from '~/lib/AnconProtocol/AnconProtocolClient'
 import getTransaction from '../../lib/AnconProtocol/GetTransaction'
 import { v4 as uuidv4 } from 'uuid'
 import Web3 from 'web3'
+import {
+  getWhatsAppClickToChatLink,
+  shareTextToWhatsApp,
+  shareTextViaNativeSharing,
+} from 'share-text-to-whatsapp'
 
 // Create component
 const FilePond = vueFilePond(
@@ -263,15 +268,9 @@ const FilePond = vueFilePond(
   watch: {
     model: {
       handler(val, prev) {
-        if (val.length === prev.length) return
-        this.$data.model = val.map((v) => {
-          if (typeof v === 'string') {
-          
-            this.$data.contacts.push(v)
-            this.$data.nonce++
-          }
-          return v
-        })
+        this.$data.contacts.push(val)
+
+        this.$data.model = val
       },
     },
   },
@@ -353,50 +352,11 @@ export default class Personal extends Vue.extend({
       title: 'Whatsapp',
       click: (cid) => {
         this.shareSheet = false
+        this.sendTextToWhatsapp(cid)
       },
     },
   ]
   mintTiles = []
-  messages = [
-    {
-      from: 'You',
-      message:
-        'Cross chain duplicated document on Ancon Marketplace 0x541d8c31947c56697c29a11381f3ea17dff0334c2639b4bf796c4aa6f0e1c016 ',
-      time: '10:59am',
-      color: 'deep-purple lighten-1',
-    },
-    {
-      from: 'You',
-      message:
-        'Minted document on OpenSea 0x7cb3e26b09c10236ead75765ba1320a4113a587077d812850e02acb9af8fb8ad ',
-      time: '10:55am',
-      color: 'deep-purple lighten-1',
-    },
-    {
-      from: 'You',
-      message: 'Shared document with Bob',
-      time: '10:50am',
-      color: 'deep-purple lighten-1',
-    },
-    {
-      from: 'Bob',
-      message: `Liked the document`,
-      time: '10:42am',
-      color: 'green',
-    },
-    {
-      from: 'You',
-      message: 'Shared document with Bob',
-      time: '10:37am',
-      color: 'deep-purple lighten-1',
-    },
-    {
-      from: 'You',
-      message: 'Uploaded asset to personal',
-      time: '9:47am',
-      color: 'deep-purple lighten-1',
-    },
-  ]
   result = ''
   selected: any
   loading = false
@@ -437,15 +397,15 @@ export default class Personal extends Vue.extend({
   colors = ['green', 'purple', 'indigo', 'cyan', 'teal', 'orange']
   editing = null
   editingIndex = -1
-  model = null
+  selectedRecipient = '0xeeC58E89996496640c8b5898A7e0218E9b6E90cB'
   nonce = 0
 
   menu = false
   contacts = [
-
-        '0xeeC58E89996496640c8b5898A7e0218E9b6E90cB',
-        '0x63e6EdFBA95aB3f0854fE1A93f96FAB1aa04b8Fb', //backup
-     '0xc932911a1aaC9BA60FDcbe77045364A8170B7558'  ]
+    '0xeeC58E89996496640c8b5898A7e0218E9b6E90cB',
+    '0x63e6EdFBA95aB3f0854fE1A93f96FAB1aa04b8Fb', //backup
+    '0xc932911a1aaC9BA60FDcbe77045364A8170B7558',
+  ]
   x = 0
   search = null
   y = 0
@@ -509,9 +469,73 @@ export default class Personal extends Vue.extend({
     console.log(model)
   }
 
-  async pushAssetToTopic(cid: string) {
+  async sendTextToWhatsapp(cid: string) {
+    // @ts-ignore
+    const model = await this.getDb.get(cid, null)
+
+    if (model.document.kind !== 'StorageAsset') {
+      this.snackbarText = 'Invalid asset, must be stored in personal'
+      this.snackbar = true
+      return
+    }
+    // @ts-ignore
+    const cidFromIpfs = await this.getDb.ipfs.uploadFile(model.document.image)
+    // sign message
+    const { signature, digest } = await this.sign(
+      JSON.stringify(model.document)
+    )
+    const block = {
+      ...model.document,
+      image: cidFromIpfs.image,
+      kind: 'StorageBlock',
+      signature,
+      digest,
+      timestamp: new Date().getTime(),
+      issuer: this.defaultAddress,
+    }
+
+    // @ts-ignore
+    const shareCid = await this.getDb.ipfs.uploadFile(block)
+
     this.shareSheet = false
-    this.snackbarText = `Sending asset to ${this.model}...`
+    setTimeout(() => {
+      const data = {
+        message: model.document.name,
+        title: `Sharing data asset from du. app`,
+        url: shareCid.image,
+      } as any
+
+      shareTextViaNativeSharing(data, () => {
+        
+        const lnk = getWhatsAppClickToChatLink(`
+      Sharing data asset from du. app
+      ${data.url}
+      `)
+        this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
+        this.snackbar = true
+
+        window.open(lnk, '_blank')
+      })
+    }, 150)
+  }
+  async pushAssetToTopic(cid: string) {
+    // let initDepositTx
+    // let pubkey
+    // try {
+    //   initDepositTx = await getTransaction(
+    //     this.selectedRecipient,
+    //     this.getWalletconnect()
+    //   )
+    //   // @ts-ignore
+    //   pubkey = await this.getAncon().getPubKey(initDepositTx)
+    // } catch (e) {
+    //   alert(
+    //     'Must have an existing transaction to be able to use public key encryption'
+    //   )
+    // }
+
+    this.shareSheet = false
+    this.snackbarText = `Sending asset to ${this.selectedRecipient}...`
     this.snackbar = true
     const blockCodec = {
       name: 'cbor',
@@ -521,12 +545,13 @@ export default class Personal extends Vue.extend({
     }
 
     // @ts-ignore
-    const pubsub = await this.getDb.createTopicPubsub(
-      `/xdvdigital/1/${this.model}/cbor`,
+    const kex = await this.getDb.createTopicPubsub(
+      `/xdvdigital/1/${this.selectedRecipient}-kex/cbor`,
       {
         blockCodec,
         canPublish: true,
-        canSubscribe: false,
+        canSubscribe: true,
+        isKeyExchangeChannel: true,
       }
     )
 
@@ -538,12 +563,15 @@ export default class Personal extends Vue.extend({
       this.snackbar = true
       return
     }
+    // @ts-ignore
+    const cidFromIpfs = await this.getDb.ipfs.uploadFile(model.document.image)
     // // sign message
     // const { signature, digest } = await this.sign(
     //   JSON.stringify(model.document)
     // )
     const block = {
       ...model.document,
+      image: cidFromIpfs.image,
       kind: 'StorageBlock',
       // signature,
       // digest,
@@ -551,14 +579,26 @@ export default class Personal extends Vue.extend({
       issuer: this.defaultAddress,
     }
 
-    // @ts-ignore
-    pubsub.publish(block)
+    kex.onBlockReply$.subscribe(async(res: any) => {
+      if (!res.decoded.payload.encryptionPubKey) return
+      // @ts-ignore
+      const pubsub = await this.getDb.createTopicPubsub(
+        `/xdvdigital/1/${this.selectedRecipient}/cbor`,
+        {
+          blockCodec,
+          canPublish: true,
+          canSubscribe: false,
+          encryptionPubKey: res.decoded.payload.encryptionPubKey,
+        }
+      )
+      // @ts-ignore
+      pubsub.publish(block)
+      this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
+      this.snackbar = true
 
-    this.snackbarText = `Asset succesfully sent to ${this.model}`
-    this.snackbar = true
-
-
-    pubsub.close()
+      pubsub.close()
+    })
+    kex.publish({ askForEncryptionPublicKey: true })
   }
 
   async sign(data: any) {
@@ -859,7 +899,7 @@ export default class Personal extends Vue.extend({
 
     this.historySubscription.subscribe({
       next: (value: any) => {
-        debugger
+        
         this.historyItems = value.refs.slice(0, 5)
       },
     })
