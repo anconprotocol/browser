@@ -473,12 +473,6 @@ export default class Personal extends Vue.extend({
   async sendTextToWhatsapp(cid: string) {
     // @ts-ignore
     const model = await this.getDb.get(cid, null)
-
-    if (model.document.kind !== 'StorageAsset') {
-      this.snackbarText = 'Invalid asset, must be stored in personal'
-      this.snackbar = true
-      return
-    }
     // @ts-ignore
     const cidFromIpfs = await this.getDb.ipfs.uploadFile(model.document.image)
     // sign message
