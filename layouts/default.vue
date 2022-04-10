@@ -79,6 +79,8 @@ import { map, merge, Subject, tap, timestamp } from 'rxjs'
 import { decode, encode } from 'cbor-x'
 import Dexie, { liveQuery, Table } from 'dexie'
 import getTransaction from '../lib/AnconProtocol/GetTransaction'
+import loadImage from 'blueimp-load-image'
+const PromiseFileReader = require('promise-file-reader')
 
 export default {
   name: 'DefaultLayout',
@@ -136,7 +138,7 @@ export default {
             from: accounts[0],
           },
           withIpfs: {
-            gateway: 'https://ipfs.io',
+            gateway: 'https://ipfs.infura.io',
             api: 'https://ipfs.infura.io:5001',
           },
         })
@@ -299,7 +301,7 @@ export default {
         decode: (buffer) => decode(buffer),
       }
       // @ts-ignore
-      const keyex = this.keyexPubsub = await this.db.createTopicPubsub(
+      const keyex = (this.keyexPubsub = await this.db.createTopicPubsub(
         this.keyExchangeTopic,
         {
           blockCodec,
@@ -307,26 +309,25 @@ export default {
           canPublish: true,
           isKeyExchangeChannel: true,
         }
-      )
-      this.onKeyexCancel = this.keyexPubsub.onBlockReply$.subscribe(
-        (v) => {
-          // @ts-ignore
-          if (v.decoded.payload.askForEncryptionPublicKey) {
-            keyex.publish({ encryptionPubKey: this.pubkey })
-          }
+      ))
+      this.onKeyexCancel = this.keyexPubsub.onBlockReply$.subscribe((v) => {
+        // @ts-ignore
+        if (v.decoded.payload.askForEncryptionPublicKey) {
+          keyex.publish({ encryptionPubKey: this.pubkey })
         }
-      )
-
+      })
 
       // @ts-ignore
       const pubsub = await this.db.createTopicPubsub(this.defaultTopic, {
         blockCodec,
         canSubscribe: true,
+        isKeyExchangeChannel: true,
       })
       this.currentAccountTopic = pubsub
       this.onIncomingCancel = pubsub.onBlockReply$.subscribe(async (v) => {
+    
         // @ts-ignore
-        await this.db.putBlock(v.document)
+        await this.db.putBlock(v.decoded.payload)
         this.onIncoming.next(v)
       })
     },

@@ -32,17 +32,18 @@
       </v-col> </v-row
     ><v-row>
       <v-col dense v-for="v in items" :key="v[0]">
-        <v-card class="mx-auto" max-width="344">
+        <v-card class="mx-auto" max-width="360">
           <v-img :src="v.document.image" height="200px"></v-img>
 
           <v-card-title>
             {{ v.document.name }}
+      
           </v-card-title>
 
           <v-card-subtitle>
-            {{ v.document.description }}
+            {{ v.document.owner }}
           </v-card-subtitle>
-
+<v-card-text>{{ v.document.owner }}</v-card-text>
           <v-card-actions>
             <!-- <v-bottom-sheet v-model="privacySheet">
               <template v-slot:activator="{ on, attrs }">
@@ -66,7 +67,7 @@
             </v-bottom-sheet> -->
             <v-bottom-sheet v-model="shareSheet">
               <template v-slot:activator="{ on, attrs }">
-                <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2">
+                <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2" v-show="v.document.kind==='StorageAsset'">
                   <v-icon>mdi-share-variant</v-icon>
                 </v-btn>
               </template>
@@ -108,7 +109,7 @@
             </v-bottom-sheet>
             <v-bottom-sheet v-model="exportSheet">
               <template v-slot:activator="{ on, attrs }">
-                <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2">
+                <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2" v-show="v.document.kind==='StorageAsset'">
                   <v-icon>mdi-export-variant</v-icon>
                 </v-btn>
               </template>
@@ -207,7 +208,7 @@ import { QrcodeCapture } from 'vue-qrcode-reader'
 //@ts-ignore
 import { CUFEBuilder } from '../cufe'
 import { BrowserQRCodeReader } from '@zxing/browser'
-import loadImage from 'blueimp-load-image'
+
 import * as reader from 'promise-file-reader'
 //@ts-ignore
 import BarcodeDetector from 'barcode-detector'
@@ -506,7 +507,6 @@ export default class Personal extends Vue.extend({
       } as any
 
       shareTextViaNativeSharing(data, () => {
-        
         const lnk = getWhatsAppClickToChatLink(`
       Sharing data asset from du. app
       ${data.url}
@@ -579,7 +579,7 @@ export default class Personal extends Vue.extend({
       issuer: this.defaultAddress,
     }
 
-    kex.onBlockReply$.subscribe(async(res: any) => {
+    kex.onBlockReply$.subscribe(async (res: any) => {
       if (!res.decoded.payload.encryptionPubKey) return
       // @ts-ignore
       const pubsub = await this.getDb.createTopicPubsub(
@@ -588,7 +588,8 @@ export default class Personal extends Vue.extend({
           blockCodec,
           canPublish: true,
           canSubscribe: false,
-          encryptionPubKey: res.decoded.payload.encryptionPubKey,
+          // encryptionPubKey: res.decoded.payload.encryptionPubKey,
+          isKeyExchangeChannel: true,
         }
       )
       // @ts-ignore
@@ -890,7 +891,7 @@ export default class Personal extends Vue.extend({
     this.topic = this.defaultTopic
     this.personalBlocksSubscription.subscribe({
       next: async (value: any) => {
-        const p = value.filter((x) => x.document.kind == 'StorageAsset')
+        const p = value.filter((x) => x.document.kind == 'StorageAsset' || x.document.kind == 'StorageBlock')
 
         this.loading = false
         this.items = await Promise.all(p)
@@ -899,7 +900,6 @@ export default class Personal extends Vue.extend({
 
     this.historySubscription.subscribe({
       next: (value: any) => {
-        
         this.historyItems = value.refs.slice(0, 5)
       },
     })
@@ -918,5 +918,7 @@ export default class Personal extends Vue.extend({
     // walletconnect.on('accountsChanged', () => this.bindSubscriptions)
     await this.bindSubscriptions()
   }
+
+ 
 }
 </script>
