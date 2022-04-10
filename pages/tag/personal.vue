@@ -261,22 +261,19 @@ const FilePond = vueFilePond(
   },
 
   watch: {
-    // model: {
-    //   handler(val, prev) {
-    //     if (val.length === prev.length) return
-    //     this.$data.model = val.map((v) => {
-    //       if (typeof v === 'string') {
-    //         v = {
-    //           text: v,
-    //           color: this.$data.colors[this.$data.nonce - 1],
-    //         }
-    //         this.$data.contacts.push(v)
-    //         this.$data.nonce++
-    //       }
-    //       return v
-    //     })
-    //   },
-    // },
+    model: {
+      handler(val, prev) {
+        if (val.length === prev.length) return
+        this.$data.model = val.map((v) => {
+          if (typeof v === 'string') {
+          
+            this.$data.contacts.push(v)
+            this.$data.nonce++
+          }
+          return v
+        })
+      },
+    },
   },
   inject: [
     'getDb',

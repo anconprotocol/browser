@@ -86,21 +86,27 @@ export default {
   created: async function () {
     //  Create WalletConnect Provider
     const provider = new WalletConnectProvider({
+      infuraId: '92ed13edfad140409ac24457a9c4e22d',
       rpc: { 56: 'https://bsc-dataseed.binance.org/' },
-      chainId: 56,
+      chainId: 1,
     })
-
-    // Subscribe to accounts change
-    provider.on('accountsChanged', async (accounts) => {
       const web3provider = new ethers.providers.Web3Provider(provider)
-      this.address = accounts[0]
-      try {
 
+// Subscribe to accounts change
+    provider.on('accountsChanged', async (accounts) => {
+      this.address = accounts[0]
+
+      try {
+        this.initDepositTx = await getTransaction(accounts[0], provider)
+      } catch (e) {
+        alert(
+          'Must have an existing transaction to be able to use public key encryption'
+        )
+      }
+      try {
         this.network = await web3provider.getNetwork()
 
-
-        const trans = await getTransaction(accounts[0], provider)
-        const pubkey = await this.Ancon.getPubKey(trans)
+        const pubkey = await this.Ancon.getPubKey(this.initDepositTx)
         await this.db.initialize({
           wakuconnect: {
             bootstrap: { peers: [$nuxt.context.env.WakuLibp2p] },
@@ -108,7 +114,7 @@ export default {
               config: {
                 pubsub: {
                   enabled: true,
-        //          emitSelf: true,
+                  //          emitSelf: true,
                 },
               },
             },
@@ -140,9 +146,10 @@ export default {
     })
 
     // Subscribe to chainId change
-    provider.on('chainChanged', (chainId) => {
-      // this.network = chainId
-      console.log(chainId)
+    provider.on('chainChanged',async   (chainId) => {
+ 
+        this.network = await web3provider.getNetwork()
+
     })
 
     // Subscribe to session disconnection
@@ -193,8 +200,17 @@ export default {
       onHistory: new Subject(),
       db: new ParkyDB(),
       walletconnect: new WalletConnectProvider({
-        rpc: { 56: 'https://bsc-dataseed.binance.org/' },
-        chainId: 56,
+        infuraId: '92ed13edfad140409ac24457a9c4e22d',
+        rpc: {
+          56: 'https://bsc-dataseed.binance.org/',
+          97: 'https://data-seed-prebsc-2-s3.binance.org:8545/',
+          137: 'https://polygon-rpc.com/',
+          80001: 'https://matic-mumbai.chainstacklabs.com',
+          1313161554: 'https://mainnet.aurora.dev',
+          1313161555: 'https://testnet.aurora.dev',
+          100: 'https://rpc.gnosischain.com/',
+        },
+        chainId: 1,
       }),
       network: '',
       address: '',
@@ -281,8 +297,8 @@ export default {
         canSubscribe: true,
       })
       this.currentAccountTopic = pubsub
-      this.onIncomingCancel = pubsub.onBlockReply$.subscribe(async(v) =>{
-      // @ts-ignore      
+      this.onIncomingCancel = pubsub.onBlockReply$.subscribe(async (v) => {
+        // @ts-ignore
         await this.db.putBlock(v.document)
         this.onIncoming.next(v)
       })
