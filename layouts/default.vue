@@ -123,7 +123,7 @@ export default {
           },
           withWallet: {
             autoLogin: true,
-            password: 'zxcvb',
+            password: 'zxcvb', /// TODO! Remove this, use ephemeral enc keys
           },
           withWeb3: {
             provider: web3provider,
