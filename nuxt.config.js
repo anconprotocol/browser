@@ -23,8 +23,8 @@ export default {
 
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
-    titleTemplate: '%s - XDV',
-    title: 'XDV',
+    titleTemplate: '%s -  -- p2p data markets -- alpha',
+    title: 'el segundo',
     htmlAttrs: {
       lang: 'en',
     },
@@ -57,7 +57,7 @@ export default {
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
     // https://go.nuxtjs.dev/axios
-    '@nuxtjs/axios'
+    '@nuxtjs/axios',
   ],
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
@@ -87,43 +87,46 @@ export default {
   loadingIndicator: {
     name: 'circle',
     color: '#3B8070',
-    background: 'white'
+    background: 'white',
   },
   /*
    ** Build configuration
    ** Doc: https://nuxtjs.org/api/configuration-build
    */
-   build: {
+  build: {
     /*
      ** You can extend webpack config here
      */
     extend(config, ctx) {
       // transpile .mjs too
       const babelRule = config.module.rules.find(
-        rule => `${rule.test}` === "/\\.jsx?$/i"
-      );
+        (rule) => `${rule.test}` === '/\\.jsx?$/i'
+      )
       if (babelRule) {
-        babelRule.test = /\.mjs?$/i;
+        babelRule.test = /\.mjs?$/i
       }
-      config.module.rules.push(     {
+      config.module.rules.push({
         test: /\.mjs$/,
         include: /node_modules/,
-        type: 'javascript/auto'
+        type: 'javascript/auto',
       })
-           config.module.rules.push(     {
+      config.module.rules.push({
         test: /\.js$/,
         include: /node_modules/,
-        type: 'javascript/auto'
+        type: 'javascript/auto',
       })
-    },},
+    },
+  },
 
-    env: {
-      AnconNFT: process.env.REACT_APP_AnconNFTAddress,
-      AnconToken: process.env.REACT_APP_AnconTokenAddress,
-      AnconAPI: 'https://api.ancon.did.pa/',
-      WakuRPC: 'https://api.ancon.did.pa/waku',
-      InfuraIPFS: 'https://infura.ipfs.io:5001/',
-      IPFS: 'https://ipfs.xdv.digital/',
-      Waku: 'https://waku.did.pa/'
-    }
+  env: {
+    AnconNFT: process.env.REACT_APP_AnconNFTAddress,
+    AnconToken: process.env.REACT_APP_AnconTokenAddress,
+    AnconAPI: 'https://api.ancon.did.pa/',
+    WakuRPC: 'https://api.ancon.did.pa/waku',
+    InfuraIPFS: 'https://infura.ipfs.io:5001/',
+    IPFS: 'https://ipfs.xdv.digital/',
+    Waku: 'https://waku.did.pa/',
+    WakuLibp2p:
+      '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB',
+  },
 }

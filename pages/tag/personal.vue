@@ -24,7 +24,7 @@
       <v-col class="text-subtitle-1 text-center" cols="12"> Loading... </v-col>
       <v-col cols="6">
         <v-progress-linear
-          color="deep-purple accent-4"
+          color="orange accent-4"
           indeterminate
           rounded
           height="6"
@@ -44,7 +44,7 @@
           </v-card-subtitle>
 
           <v-card-actions>
-            <v-bottom-sheet v-model="privacySheet">
+            <!-- <v-bottom-sheet v-model="privacySheet">
               <template v-slot:activator="{ on, attrs }">
                 <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2">
                   <v-icon>mdi-shield-key</v-icon>
@@ -58,17 +58,12 @@
                   @click="tile.click(v.cid)"
                 >
                   <v-list-item-avatar>
-                    <v-avatar size="32px" tile>
-                      <img
-                        :src="`https://cdn.vuetifyjs.com/images/bottom-sheets/${tile.img}`"
-                        :alt="tile.title"
-                      />
-                    </v-avatar>
+<v-icon>{{ tile.img }}</v-icon>
                   </v-list-item-avatar>
                   <v-list-item-title>{{ tile.title }}</v-list-item-title>
                 </v-list-item>
               </v-list>
-            </v-bottom-sheet>
+            </v-bottom-sheet> -->
             <v-bottom-sheet v-model="shareSheet">
               <template v-slot:activator="{ on, attrs }">
                 <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2">
@@ -83,12 +78,7 @@
                   @click="tile.click(v.cid)"
                 >
                   <v-list-item-avatar>
-                    <v-avatar size="32px" tile>
-                      <img
-                        :src="`https://cdn.vuetifyjs.com/images/bottom-sheets/${tile.img}`"
-                        :alt="tile.title"
-                      />
-                    </v-avatar>
+                    <v-icon color="orange lighten-2">{{ tile.img }}</v-icon>
                   </v-list-item-avatar>
                   <v-list-item-title>{{ tile.title }}</v-list-item-title>
                 </v-list-item>
@@ -102,25 +92,97 @@
               </template>
               <v-list>
                 <v-subheader>Export</v-subheader>
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+       <v-combobox
+        v-model="model"
+        :filter="filter"
+        :hide-no-data="!search"
+        :items="items"
+        :search-input.sync="search"
+        hide-selected
+        label="Search for an option"
+        multiple
+        small-chips
+        solo
+      >
+        <template v-slot:no-data>
+          <v-list-item>
+            <span class="subheading">Create</span>
+            <v-chip :color="`${colors[nonce - 1]} lighten-3`" label small>
+              {{ search }}
+            </v-chip>
+          </v-list-item>
+        </template>
+        <template v-slot:selection="{ attrs, item, parent, selected }">
+          <v-chip
+            v-if="item === Object(item)"
+            v-bind="attrs"
+            :color="`${item.color} lighten-3`"
+            :input-value="selected"
+            label
+            small
+          >
+            <span class="pr-2">
+              {{ item.text }}
+            </span>
+            <v-icon small @click="parent.selectItem(item)"> $delete </v-icon>
+          </v-chip>
+        </template>
+        <template v-slot:item="{ index, item }">
+          <v-text-field
+            v-if="editing === item"
+            v-model="editing.text"
+            autofocus
+            flat
+            background-color="transparent"
+            hide-details
+            solo
+            @keyup.enter="edit(index, item)"
+          ></v-text-field>
+          <v-chip v-else :color="`${item.color} lighten-3`" dark label small>
+            {{ item.text }}
+          </v-chip>
+          <v-spacer></v-spacer>
+          <v-list-item-action @click.stop>
+            <v-btn icon @click.stop.prevent="edit(index, item)">
+              <v-icon>{{
+                editing !== item ? 'mdi-pencil' : 'mdi-check'
+              }}</v-icon>
+            </v-btn>
+          </v-list-item-action>
+        </template>
+      </v-combobox>
+   
                 <v-list-item
                   v-for="tile in exportTiles"
                   :key="tile.title"
                   @click="tile.click(v.cid)"
                 >
                   <v-list-item-avatar>
-                    <v-avatar size="32px" tile>
-                      <img
-                        :src="`https://cdn.vuetifyjs.com/images/bottom-sheets/${tile.img}`"
-                        :alt="tile.title"
-                      />
-                    </v-avatar>
+                    <v-icon color="orange lighten-2">{{ tile.img }}</v-icon>
                   </v-list-item-avatar>
                   <v-list-item-title>{{ tile.title }}</v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-bottom-sheet>
 
-            <v-bottom-sheet v-model="mintSheet">
+            <!-- <v-bottom-sheet v-model="mintSheet">
               <template v-slot:activator="{ on, attrs }">
                 <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2">
                   <v-icon>mdi-collage</v-icon>
@@ -134,41 +196,30 @@
                   @click="mintSheet = false"
                 >
                   <v-list-item-avatar>
-                    <v-avatar size="32px" tile>
-                      <img
-                        :src="`https://cdn.vuetifyjs.com/images/bottom-sheets/${tile.img}`"
-                        :alt="tile.title"
-                      />
+                    <v-icon>{{ tile.img }}</v-icon>
                     </v-avatar>
                   </v-list-item-avatar>
                   <v-list-item-title>{{ tile.title }}</v-list-item-title>
                 </v-list-item>
               </v-list>
-            </v-bottom-sheet>
+            </v-bottom-sheet> -->
 
             <v-spacer></v-spacer>
 
-            <v-btn
-              v-if="historyItems && historyItems[v.cid] != undefined"
-              icon
-              @click="showHistory(v.cid)"
-            >
+            <v-btn icon @click="historyBlocks(v.cid)">
               <v-icon>{{
                 show ? 'mdi-chevron-up' : 'mdi-chevron-down'
               }}</v-icon>
             </v-btn>
           </v-card-actions>
           <v-expand-transition>
-            <div
-              v-show="show"
-              v-if="historyItems && historyItems[v.cid] != undefined"
-            >
+            <div v-show="show" v-if="historyItems">
               <v-divider></v-divider>
               <v-card-text>
                 History
                 <v-timeline align-top dense>
                   <v-timeline-item
-                    v-for="message in messages.refs"
+                    v-for="message in historyItems"
                     :key="message.time"
                     :color="message.color"
                     small
@@ -189,8 +240,8 @@
         </v-card>
       </v-col>
     </v-row>
-    <v-alert type="info" v-if="this.items < 1">
-      There is no documents yet. Add a document.</v-alert
+    <v-alert type="info" v-if="this.items < 1 && !loading">
+      There are no documents yet. Add a document.</v-alert
     >
     <v-snackbar v-model="snackbar">
       {{ snackbarText }}
@@ -201,6 +252,8 @@
         </v-btn>
       </template>
     </v-snackbar>
+
+ 
   </v-container>
 </template>
 
@@ -262,6 +315,29 @@ const FilePond = vueFilePond(
     QrcodeCapture,
     FilePond,
   },
+
+  watch: {
+    model: {
+      handler(val, prev) {
+        if (val.length === prev.length) return
+
+        this.$data.model = val.map((v) => {
+          if (typeof v === 'string') {
+            v = {
+              text: v,
+              color: this.$data.colors[this.$data.nonce - 1],
+            }
+
+            this.$data.contacts.push(v)
+
+            this.$data.nonce++
+          }
+
+          return v
+        })
+      },
+    },
+  },
   inject: [
     'getDb',
     'web3',
@@ -272,7 +348,7 @@ const FilePond = vueFilePond(
     'personalBlocksSubscription',
     'historySubscription',
     'getAncon',
-    'currentAccountTopic'
+    'currentAccountTopic',
   ],
 })
 export default class Personal extends Vue.extend({
@@ -288,21 +364,7 @@ export default class Personal extends Vue.extend({
   mintSheet = false
   privacyTiles = [
     {
-      img: 'keep.png',
-      title: 'Android Hardware Sign',
-      click: (cid) => {
-        this.privacySheet = false
-      },
-    },
-    {
-      img: 'inbox.png',
-      title: 'iOS Hardware Sign',
-      click: (cid) => {
-        this.privacySheet = false
-      },
-    },
-    {
-      img: 'hangouts.png',
+      img: 'mdi-certificate',
       title: 'W3C Verified Credentials',
       click: (cid) => {
         this.privacySheet = false
@@ -311,23 +373,23 @@ export default class Personal extends Vue.extend({
   ]
   exportTiles = [
     {
-      img: 'keep.png',
-      title: 'Ancon',
+      title: 'Anchor data asset',
+      img: 'mdi-note-plus',
       click: (cid) => {
         this.exportSheet = false
         this.postBlockToAncon(cid)
       },
     },
     {
-      img: 'inbox.png',
-      title: 'IPFS',
+      title: 'Mint',
+      img: 'mdi-transition-masked',
       click: (cid) => {
         this.exportSheet = false
       },
     },
     {
-      img: 'hangouts.png',
-      title: 'Filecoin',
+      img: 'mdi-swap-horizontal',
+      title: 'Mint and sell',
       click: (cid) => {
         this.exportSheet = false
       },
@@ -335,50 +397,35 @@ export default class Personal extends Vue.extend({
   ]
   shareTiles = [
     {
-      img: 'keep.png',
-      title: 'Ancon Browser',
-      click: async (cid) => {
-        this.pushAssetToTopic(cid)
+      img: 'mdi-message',
+      title: 'Message to',
+      click:  (cid) => {
+          this.shareSheet = false
+        if (this.recipients) {
+          this.pushAssetToTopic(cid)
+          this.recipients = false
+        } else {
+
+          this.recipients = true
+        }
       },
     },
+    // {
+    //   img: 'inbox.png',
+    //   title: 'Telegram',
+    //   click: (cid) => {
+    //     this.shareSheet = false
+    //   },
+    // },
     {
-      img: 'inbox.png',
-      title: 'Telegram',
-      click: (cid) => {
-        this.shareSheet = false
-      },
-    },
-    {
-      img: 'hangouts.png',
+      img: 'mdi-whatsapp',
       title: 'Whatsapp',
       click: (cid) => {
         this.shareSheet = false
       },
     },
   ]
-  mintTiles = [
-    {
-      img: 'keep.png',
-      title: 'Ancon Marketplace',
-      click: (cid) => {
-        this.mintSheet = false
-      },
-    },
-    {
-      img: 'inbox.png',
-      title: 'Opensea',
-      click: (cid) => {
-        this.mintSheet = false
-      },
-    },
-    {
-      img: 'hangouts.png',
-      title: 'Rarible',
-      click: (cid) => {
-        this.mintSheet = false
-      },
-    },
-  ]
+  mintTiles = []
   messages = [
     {
       from: 'You',
@@ -455,15 +502,55 @@ export default class Personal extends Vue.extend({
   defaultTopic: string = ''
   currentAccountTopic: any
   onAccountTopicIncomingCancel: any
+  recipients: boolean = false
+  colors = ['green', 'purple', 'indigo', 'cyan', 'teal', 'orange']
+  editing = null
+  editingIndex = -1
+  contacts = [
+    { header: 'Select an option or create one' },
+    {
+      text: 'Foo',
+      color: 'blue',
+    },
+    {
+      text: 'Bar',
+      color: 'red',
+    },
+  ]
+  nonce = 1
 
-  // getWalletconnect(): any {}
-  // @ts-ignore
-  // getWalletconnect(): any {}
-  // @ts-ignore
-  // getWalletconnect(): any {}
-  // @ts-ignore
-  // getWalletconnect(): any {}
-  // @ts-ignore
+  menu = false
+  model = [
+    {
+      text: 'Foo',
+      color: 'blue',
+    },
+  ]
+  x = 0
+  search = null
+  y = 0
+
+  edit(index, item) {
+    if (!this.editing) {
+      this.editing = item
+      this.editingIndex = index
+    } else {
+      this.editing = null
+      this.editingIndex = -1
+    }
+  }
+  filter(item, queryText, itemText) {
+    if (item.header) return false
+
+    const hasValue = (val) => (val != null ? val : '')
+
+    const text = hasValue(itemText)
+    const query = hasValue(queryText)
+
+    return (
+      text.toString().toLowerCase().indexOf(query.toString().toLowerCase()) > -1
+    )
+  }
 
   async fetchItems() {
     const uri = `https://api.ancon.did.pa/v0/topics?topic=@uuidIndexMainnet&from=0x6502781e4024D1FeBaBc8CdD18fA74f4e1954651`
@@ -509,21 +596,20 @@ export default class Personal extends Vue.extend({
     // @ts-ignore
     const model = await this.getDb.get(cid, null)
 
-
     if (model.document.kind !== 'StorageAsset') {
       this.snackbarText = 'Invalid asset, must be stored in personal'
       this.snackbar = true
       return
     }
-    // sign message
-    const { signature, digest } = await this.sign(
-      JSON.stringify(model.document)
-    )
+    // // sign message
+    // const { signature, digest } = await this.sign(
+    //   JSON.stringify(model.document)
+    // )
     const block = {
       ...model.document,
       kind: 'StorageBlock',
-      signature,
-      digest,
+      // signature,
+      // digest,
       timestamp: new Date().getTime(),
       issuer: this.defaultAddress,
     }
@@ -558,20 +644,13 @@ export default class Personal extends Vue.extend({
 
     // @ts-ignore
 
-    const did = await this.createAnconDid({
-      // @ts-ignore
-      api: $nuxt.context.env.AnconAPI,
-      chainId: 'bnb',
-      from: this.getWalletconnect().accounts[0],
-    })
+    const did = await this.getDb.ancon.createDid()
+    // @ts-ignore
 
-    const dagblock = await this.createAnconBlock({
+    const dagblock = await this.getDb.ancon.createDagBlock({
       // @ts-ignore
-      api: $nuxt.context.env.AnconAPI,
-      chainId: 'bnb',
       message: model.document,
       topic: 'xdvdigital',
-      from: this.getWalletconnect().accounts[0],
     })
     this.add(
       cid,
@@ -582,27 +661,6 @@ export default class Personal extends Vue.extend({
 
     this.snackbarText = 'Finished export to Ancon Node'
     this.snackbar = true
-  }
-
-  async createAnconBlock(options: any) {
-    const { signature, digest } = await this.sign(
-      JSON.stringify(options.message)
-    )
-    const payload = {
-      path: '/',
-      from: `did:ethr:${options.chainId}:${options.from}`,
-      signature,
-      topic: options.topic,
-      data: options.message,
-    }
-    const requestOptions = {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }
-    const rawResponse = await fetch(`${options.api}/v0/dag`, requestOptions)
-
-    return rawResponse.json()
   }
 
   async mintAsset(cid: string) {
@@ -812,11 +870,6 @@ export default class Personal extends Vue.extend({
     }
   }
 
-  async showHistory(_cid) {
-    this.show = !this.show
-    this.messages = this.historyItems[_cid]
-  }
-
   async add(_cid, _action, _user, metadata) {
     const model = await (this as any).getDb.db.history.get({ cid: _cid })
 
@@ -841,38 +894,16 @@ export default class Personal extends Vue.extend({
     }
   }
 
-  async createAnconDid(options) {
-    const w = this.getWalletconnect().accounts[0]
-    let from = options.from
+  async historyBlocks(cid) {
+    this.show = !this.show
+    // @ts-ignore
+    const q = await this.getDb.getBlocksByTableName$('history', (h) => {
+      return () => h.where({ cid: cid }).toArray()
+    })
 
-    const trans = await getTransaction(w, this.getWalletconnect())
-    const pubkey = await (this as any).getAncon().getPubKey(trans)
-
-    //Hasta aqui logré que funcionada el code
-    const base58Encode = ethers.utils.base58.encode(pubkey[2])
-    const message = `#Welcome to Ancon Protocol!
-
-    For more information read the docs https://anconprotocol.github.io/docs/
-
-    To make free posts and gets to the DAG Store you have to enroll and pay the service fee
-
-    This request will not trigger a blockchain transaction or cost any gas fees.
-    by signing this message you accept the terms and conditions of Ancon Protocol
-    `
-    const { signature } = await this.sign(message)
-    const payload = {
-      ethrdid: `did:ethr:${options.chainId}:${from}`,
-      pub: base58Encode,
-      signature: signature,
-      message: message,
-    }
-    const requestOptions = {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }
-    const rawResponse = await fetch(`${options.api}/v0/did`, requestOptions)
-    return rawResponse.json()
+    q.subscribe((value) => {
+      if (value.length > 0) this.historyItems = value[0].refs.slice(0, 5)
+    })
   }
 
   async bindSubscriptions() {
@@ -881,23 +912,15 @@ export default class Personal extends Vue.extend({
       next: async (value: any) => {
         const p = value.filter((x) => x.document.kind == 'StorageAsset')
 
+        this.loading = false
         this.items = await Promise.all(p)
-        console.log(this.items)
       },
     })
 
     this.historySubscription.subscribe({
       next: (value: any) => {
-        
-        let x
-        value.forEach((i) => {
-          x = {
-            [i.cid]: { ...i },
-            refs: i.refs,
-            ...x,
-          }
-        })
-        this.historyItems = x
+        debugger
+        this.historyItems = value.refs.slice(0, 5)
       },
     })
 
@@ -907,16 +930,13 @@ export default class Personal extends Vue.extend({
         console.log(`[incoming]`, block)
       },
     })
-
-  
   }
   async mounted() {
+    this.loading = true
     const walletconnect = (this as any).getWalletconnect()
 
-    walletconnect.on('accountsChanged', () => this.bindSubscriptions)
+    // walletconnect.on('accountsChanged', () => this.bindSubscriptions)
     await this.bindSubscriptions()
   }
-
-  
 }
 </script>

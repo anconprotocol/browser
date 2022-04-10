@@ -206,45 +206,7 @@ export default class Shared extends Vue {
   }
 
   async mounted() {
-    const blockCodec = {
-      name: 'cbor',
-      code: '0x71',
-      encode: async (obj) => encode(obj.dag.bytes),
-      decode: (buffer) => decode(buffer.payload),
-    }
-    const consumer = this.db
-    const aggregator = await consumer.aggregate(
-      [`topic items stored in db.topics`],
-      {
-        from: this.defaultAddress,
-        middleware: {
-          incoming: [
-            tap(),
-            // filter(
-            //   (v: object) => v.address === '0x...' && v.event === 'Transfer'
-            // ),
-            // zip(
-            //   map((v) => v),
-            //   reduce((v, init) => (v = new BigNumber(init).add(v)))
-            // ),
-          ],
-        },
-        blockCodec,
-      }
-    )
 
-    this.aggregatorCancel = aggregator.onBlockReply$.subscribe(
-      async (payload: any) => {
-        const { v, sum } = payload
-        // 1. putBlock (put block only adds new cids)
-        // this.add(
-        //   cid,
-        //   'Push Asset to Topic',
-        //   this.getWalletconnect().accounts[0],
-        //   output
-        // )
-      }
-    )
   }
 }
 </script>

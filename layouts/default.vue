@@ -44,7 +44,7 @@
     <v-main>
       <v-container>
         <v-subheader v-if="this.walletconnect.connected"
-          >Network {{ network }} Address
+          >Network {{ network.name }} Address
           {{
             `${address.substring(0, 6)}...${address.substring(
               address.length - 6
@@ -86,17 +86,18 @@ export default {
 
     // Subscribe to accounts change
     provider.on('accountsChanged', async (accounts) => {
+      const web3provider = new ethers.providers.Web3Provider(provider)
       this.address = accounts[0]
-      const peer =
-        '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB'
       try {
-        //   const trans = await this.Ancon.getTransaction()
+
+        this.network = await web3provider.getNetwork()
+
 
         const trans = await getTransaction(accounts[0], provider)
         const pubkey = await this.Ancon.getPubKey(trans)
         await this.db.initialize({
           wakuconnect: {
-            bootstrap: { peers: [peer] },
+            bootstrap: { peers: [$nuxt.context.env.WakuLibp2p] },
             libp2p: {
               config: {
                 pubsub: {
@@ -106,29 +107,36 @@ export default {
               },
             },
           },
-          withWallet: {},
+          withWallet: {
+            autoLogin: true,
+            password: 'zxcvb',
+          },
           withWeb3: {
-            provider: new ethers.providers.Web3Provider(provider),
+            provider: web3provider,
             pubkey: pubkey[2],
             pubkeySig: pubkey[3],
             defaultAddress: accounts[0],
+          },
+          withAncon: {
+            pubkey: pubkey[2],
+            api: $nuxt.context.env.AnconAPI,
+            walletconnectProvider: provider,
+            from: accounts[0],
           },
         })
       } catch (e) {
         console.error(e)
       }
       await this.createDefaults(accounts)
-      //      await this.aggregate()
 
-      this.historyBlocks()
       await this.localBlocks()
       await this.subscribeTopics()
     })
 
     // Subscribe to chainId change
     provider.on('chainChanged', (chainId) => {
-      this.network = chainId
-      //  console.log(chainId)
+      // this.network = chainId
+      console.log(chainId)
     })
 
     // Subscribe to session disconnection
@@ -198,7 +206,7 @@ export default {
       right: true,
       rightDrawer: false,
       show: '',
-      title: '[el segundo -- p2p data markets -- alpha]',
+      title: 'du.',
       topics: [
         '0xeeC58E89996496640c8b5898A7e0218E9b6E90cB',
         '0x63e6EdFBA95aB3f0854fE1A93f96FAB1aa04b8Fb', //backup
@@ -206,15 +214,6 @@ export default {
     }
   },
   methods: {
-    historyBlocks: async function () {
-      const q = await this.db.getBlocksByTableName$('history', (h) => {
-        return () => h.toArray()
-      })
-
-      this.onHistoryCancel = q.subscribe((v) => {
-        this.onHistory.next(v)
-      })
-    },
     localBlocks: async function () {
       const q = await this.db.queryBlocks$((blocks) => {
         return () => blocks.toArray()
@@ -259,6 +258,10 @@ export default {
       }, 5000)
     },
     createDefaults: async function (accounts) {
+      this.defaultAddress = accounts[0]
+      this.defaultTopic = `/xdvdigital/1/${this.defaultAddress}/cbor`
+    },
+    subscribeTopics: async function () {
       const blockCodec = {
         name: 'cbor',
         code: '0x71',
@@ -266,14 +269,11 @@ export default {
         decode: (buffer) => decode(buffer),
       }
 
-      this.defaultAddress = accounts[0]
-      this.defaultTopic = `/xdvdigital/1/${this.defaultAddress}/cbor`
-    },
-    subscribeTopics: async function () {
       // @ts-ignore
-      const pubsub = await this.db.createTopicPubsub(this.defaultTopic)
+      const pubsub = await this.db.createTopicPubsub(this.defaultTopic, {
+        blockCodec,
+      })
       this.currentAccountTopic = pubsub
-      debugger
       this.onIncomingCancel = pubsub.onBlockReply$.subscribe((v) =>
         this.onIncoming.next(v)
       )
