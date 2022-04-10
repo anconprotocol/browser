@@ -24,12 +24,18 @@
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
-    <v-app-bar :clipped-left="clipped" fixed app color="pink">
+    <v-app-bar
+      :clipped-left="clipped"
+      fixed
+      app
+      color="purple darken-4"
+      class="orange--text"
+    >
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
       <v-btn icon @click.stop="miniVariant = !miniVariant">
         <v-icon>mdi-{{ `chevron-${miniVariant ? 'right' : 'left'}` }}</v-icon>
       </v-btn>
-      <v-toolbar-title v-text="title" />
+      <v-toolbar-title v-text="title" class="font-weight-black display-1" />
       <v-spacer />
 
       <v-spacer />
@@ -102,7 +108,7 @@ export default {
               config: {
                 pubsub: {
                   enabled: true,
-                  emitSelf: true,
+        //          emitSelf: true,
                 },
               },
             },
@@ -272,11 +278,14 @@ export default {
       // @ts-ignore
       const pubsub = await this.db.createTopicPubsub(this.defaultTopic, {
         blockCodec,
+        canSubscribe: true,
       })
       this.currentAccountTopic = pubsub
-      this.onIncomingCancel = pubsub.onBlockReply$.subscribe((v) =>
+      this.onIncomingCancel = pubsub.onBlockReply$.subscribe(async(v) =>{
+      // @ts-ignore      
+        await this.db.putBlock(v.document)
         this.onIncoming.next(v)
-      )
+      })
     },
   },
 }

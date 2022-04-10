@@ -1,8 +1,9 @@
-### Codename El Segundo
+## du. A data union aggregator aka universal wallet but for metaverse. WalletConnect only
+
+#### data. universal.
 
 ![xdvv](https://user-images.githubusercontent.com/1248071/162287611-f2b42052-efb1-413c-a900-d879d5740ae9.png)
 
-## A browser / aggregator aka universal wallet but for metaverse. WalletConnect only
 
 ### Tech stack for the rookies
 

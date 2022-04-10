@@ -23,8 +23,8 @@ export default {
 
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
-    titleTemplate: '%s -  -- p2p data markets -- alpha',
-    title: 'el segundo',
+    titleTemplate: '%s - alpha',
+    title: 'du. data. universal.',
     htmlAttrs: {
       lang: 'en',
     },
