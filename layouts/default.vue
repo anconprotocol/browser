@@ -2,7 +2,7 @@
   <v-app dark>
     <v-navigation-drawer
       v-model="drawer"
-      :mini-variant="miniVariant"
+      :mini-variant="true"
       :clipped="clipped"
       fixed
       app
@@ -23,6 +23,9 @@
           </v-list-item-content>
         </v-list-item>
       </v-list>
+      <!-- <v-btn icon @click.stop="miniVariant = !miniVariant" ali>
+        <v-icon>mdi-{{ `chevron-${miniVariant ? 'left' : 'right'}` }}</v-icon>
+      </v-btn> -->
     </v-navigation-drawer>
     <v-app-bar
       :clipped-left="clipped"
@@ -32,9 +35,6 @@
       class="orange--text"
     >
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
-      <v-btn icon @click.stop="miniVariant = !miniVariant">
-        <v-icon>mdi-{{ `chevron-${miniVariant ? 'right' : 'left'}` }}</v-icon>
-      </v-btn>
       <v-toolbar-title v-text="title" class="font-weight-black display-1" />
       <v-spacer />
 
@@ -366,7 +366,7 @@ export default {
       ))
       this.onKeyexCancel = this.keyexPubsub.subscribe((v) => {
         // no op
-        this.onIncoming.next(v);
+        this.onIncoming.next(v)
       })
     },
   },
