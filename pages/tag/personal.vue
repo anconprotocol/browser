@@ -166,7 +166,7 @@
 
             <v-spacer></v-spacer>
 
-            <v-btn icon @click="historyBlocks(v.cid)" v-on="on">
+            <v-btn icon @click="historyBlocks(v.cid)">
               <v-icon>{{ 'mdi-history' }}</v-icon>
             </v-btn>
           </v-card-actions>
