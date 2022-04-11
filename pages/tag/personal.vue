@@ -601,6 +601,7 @@ export default class Personal extends Vue.extend({
         `/xdvdigital/1/${this.selectedRecipient}/cbor`,
         {
           blockCodec,
+          isCRDT: true,
           canPublish: true,
           canSubscribe: true,
           encryptionPubKey: res.encryptionPublicKey,

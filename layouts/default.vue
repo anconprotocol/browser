@@ -134,14 +134,14 @@ export default {
         await this.db.initialize({
           wakuconnect: {
             bootstrap: { peers: [$nuxt.context.env.WakuLibp2p] },
-            libp2p: {
-              config: {
-                pubsub: {
-                  enabled: true,
-                  emitSelf: true,
-                },
-              },
-            },
+            // libp2p: {
+            //   config: {
+            //     pubsub: {
+            //       enabled: true,
+            //       emitSelf: true,
+            //     },
+            //   },
+            // },
           },
           withWallet: {
             autoLogin: true,
@@ -343,8 +343,9 @@ export default {
         blockCodec,
         canSubscribe: true,
         isKeyExchangeChannel: false,
-        sigKey: w.privateKey,
+        sigKey: w.privateKey, // !!! Very important
         canPublish: true,
+        isCRDT: true,
       })
       this.currentAccountTopic = pubsub
       this.onIncomingCancel = pubsub.onBlockReply$.subscribe(async (v) => {
@@ -357,6 +358,7 @@ export default {
         this.keyExchangeTopic,
         {
           blockCodec,
+          isCRDT: true,
         }
       ))
       this.onKeyexCancel = this.keyexPubsub.subscribe((v) => {
