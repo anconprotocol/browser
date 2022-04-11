@@ -166,37 +166,48 @@
 
             <v-spacer></v-spacer>
 
-            <v-btn icon @click="historyBlocks(v.cid)">
-              <v-icon>{{
-                show ? 'mdi-chevron-up' : 'mdi-chevron-down'
-              }}</v-icon>
+            <v-btn icon @click="historyBlocks(v.cid)" v-on="on">
+              <v-icon>{{ 'mdi-history' }}</v-icon>
             </v-btn>
           </v-card-actions>
-          <v-expand-transition>
-            <div v-show="show" v-if="historyItems">
-              <v-divider></v-divider>
+          <v-dialog v-model="dialog" width="600px">
+            <v-card>
+              <v-card-title>
+                <span class="text-h5">Asset History</span>
+              </v-card-title>
               <v-card-text>
-                History
-                <v-timeline align-top dense>
-                  <v-timeline-item
-                    v-for="message in historyItems"
-                    :key="message.time"
-                    :color="message.color"
-                    small
-                  >
-                    <div>
-                      <div class="font-weight-normal">
-                        <strong>{{ message.from }}</strong> @{{
-                          message.time | formatDate
-                        }}
-                      </div>
-                      <div>{{ message.message }}</div>
-                    </div>
-                  </v-timeline-item>
-                </v-timeline>
+                <div v-if="historyItems">
+                  <v-divider></v-divider>
+                  <v-card-text>
+                    History
+                    <v-timeline align-top dense>
+                      <v-timeline-item
+                        v-for="message in historyItems"
+                        :key="message.time"
+                        :color="message.color"
+                        small
+                      >
+                        <div>
+                          <div class="font-weight-normal">
+                            <strong>{{ message.from }}</strong> @{{
+                              message.time | formatDate
+                            }}
+                          </div>
+                          <div>{{ message.message }}</div>
+                        </div>
+                      </v-timeline-item>
+                    </v-timeline>
+                  </v-card-text>
+                </div>
               </v-card-text>
-            </div>
-          </v-expand-transition>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="green darken-1" text @click="dialog = false">
+                  Close
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
         </v-card>
       </v-col>
     </v-row>
@@ -406,6 +417,7 @@ export default class Personal extends Vue.extend({
     },
   ]
   show: any = false
+  dialog: any = false
   items: any = []
   files = []
   selectedFile: any = {}
@@ -903,7 +915,8 @@ export default class Personal extends Vue.extend({
   }
 
   async historyBlocks(cid) {
-    this.show = !this.show
+    // this.show = !this.show
+    this.dialog = true
     // @ts-ignore
     const q = await this.getDb.getBlocksByTableName$('history', (h) => {
       return () => h.where({ cid: cid }).toArray()
