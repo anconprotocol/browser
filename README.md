@@ -1,13 +1,16 @@
 ## du. A data union aggregator aka universal wallet but for metaverse. WalletConnect only
 
 #### data. universal.
+![localhost_3000_ (1)](https://user-images.githubusercontent.com/1248071/162639343-8cda77c3-9d16-4762-8a78-a7f825528d06.png)
 
-![xdvv](https://user-images.githubusercontent.com/1248071/162287611-f2b42052-efb1-413c-a900-d879d5740ae9.png)
-
+![localhost_3000_ (2)](https://user-images.githubusercontent.com/1248071/162639368-de87a733-db3f-42e0-92a8-65d76bfe6d18.png)
 
 ### Tech stack for the rookies
 
-![localhost_3000_tag_personal(Samsung Galaxy S20 Ultra)](https://user-images.githubusercontent.com/1248071/162288112-3231f2bf-823f-436e-9f80-203229b2a2f4.png)
+
+![localhost_3000_ (3)](https://user-images.githubusercontent.com/1248071/162639393-4fb34e1a-5c12-43c8-8dfe-c96a9a66921e.png)
+
+
 
 - ParkyDB: Dexie, IPLD DAG, Waku Connect (websockets)
 - Waku v2 RPC
