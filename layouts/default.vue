@@ -340,7 +340,7 @@ export default {
       this.onKeyexCancel = this.keyexPubsub.onBlockReply$.subscribe((v) => {
         // @ts-ignore
         if (v.decoded.payload.askForEncryptionPublicKey) {
-          keyex.publish({ encryptionPubKey: this.pubkey })
+          keyex.publish({ encryptionPubKey: 'default' })
         }
       })
 

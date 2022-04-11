@@ -21,7 +21,7 @@
       align-content="center"
       justify="center"
     >
-      <v-col class="text-subtitle-1 text-center" cols="12"> Loading... </v-col>
+      <v-col class="text-subtitle-1 text-center" cols="12"> {{ loadingText }} </v-col>
       <v-col cols="6">
         <v-progress-linear
           color="orange accent-4"
@@ -37,13 +37,12 @@
 
           <v-card-title>
             {{ v.document.name }}
-      
           </v-card-title>
 
           <v-card-subtitle>
             {{ v.document.owner }}
           </v-card-subtitle>
-<v-card-text>{{ v.document.owner }}</v-card-text>
+          <v-card-text>{{ v.document.owner }}</v-card-text>
           <v-card-actions>
             <!-- <v-bottom-sheet v-model="privacySheet">
               <template v-slot:activator="{ on, attrs }">
@@ -67,7 +66,13 @@
             </v-bottom-sheet> -->
             <v-bottom-sheet v-model="shareSheet">
               <template v-slot:activator="{ on, attrs }">
-                <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2" v-show="v.document.kind==='StorageAsset'">
+                <v-btn
+                  v-bind="attrs"
+                  v-on="on"
+                  icon
+                  color="orange lighten-2"
+                  v-show="v.document.kind === 'StorageAsset'"
+                >
                   <v-icon>mdi-share-variant</v-icon>
                 </v-btn>
               </template>
@@ -109,7 +114,13 @@
             </v-bottom-sheet>
             <v-bottom-sheet v-model="exportSheet">
               <template v-slot:activator="{ on, attrs }">
-                <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2" v-show="v.document.kind==='StorageAsset'">
+                <v-btn
+                  v-bind="attrs"
+                  v-on="on"
+                  icon
+                  color="orange lighten-2"
+                  v-show="v.document.kind === 'StorageAsset'"
+                >
                   <v-icon>mdi-export-variant</v-icon>
                 </v-btn>
               </template>
@@ -360,6 +371,9 @@ export default class Personal extends Vue.extend({
   result = ''
   selected: any
   loading = false
+  defaultLoadingText = 'Loading...'
+  signingLoadingText = 'Please sign and review message using WalletConnect...'
+  loadingText = 'Loading...'
   invoiceQr = ''
   steps = [
     {
@@ -489,14 +503,14 @@ export default class Personal extends Vue.extend({
     }
 
     // @ts-ignore
-    const shareCid = await this.getDb.ipfs.uploadFile(block)
+    //    const shareCid = await this.getDb.ipfs.uploadFile(block)
 
     this.shareSheet = false
     setTimeout(() => {
       const data = {
         message: model.document.name,
         title: `Sharing data asset from du. app`,
-        url: shareCid.image,
+        url: block.image,
       } as any
 
       shareTextViaNativeSharing(data, () => {
@@ -504,29 +518,22 @@ export default class Personal extends Vue.extend({
       Sharing data asset from du. app
       ${data.url}
       `)
+
+        this.add(
+          cid,
+          `Shared whatsapp message`,
+          this.defaultAddress,
+          block
+        )
         this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
         this.snackbar = true
 
         window.open(lnk, '_blank')
       })
-    }, 150)
+    }, 50)
   }
-  async pushAssetToTopic(cid: string) {
-    // let initDepositTx
-    // let pubkey
-    // try {
-    //   initDepositTx = await getTransaction(
-    //     this.selectedRecipient,
-    //     this.getWalletconnect()
-    //   )
-    //   // @ts-ignore
-    //   pubkey = await this.getAncon().getPubKey(initDepositTx)
-    // } catch (e) {
-    //   alert(
-    //     'Must have an existing transaction to be able to use public key encryption'
-    //   )
-    // }
 
+  async pushAssetToTopic(cid: string) {
     this.shareSheet = false
     this.snackbarText = `Sending asset to ${this.selectedRecipient}...`
     this.snackbar = true
@@ -585,6 +592,13 @@ export default class Personal extends Vue.extend({
           isKeyExchangeChannel: true,
         }
       )
+      this.add(
+        cid,
+        `Sent message to ${this.selectedRecipient}`,
+        this.defaultAddress,
+        block
+      )
+
       // @ts-ignore
       pubsub.publish(block)
       this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
@@ -596,7 +610,8 @@ export default class Personal extends Vue.extend({
   }
 
   async sign(data: any) {
-    // sign message {signature, digest / hash, }
+    this.loading = true
+    this.loadingText = this.signingLoadingText
     const b = ethers.utils.hexlify(ethers.utils.toUtf8Bytes(data))
 
     const res = await this.getWalletconnect().send({
@@ -608,6 +623,8 @@ export default class Personal extends Vue.extend({
 
     const signature = res
 
+    this.loading = false
+    this.loadingText = this.defaultLoadingText
     return { digest: b, signature }
   }
   async postBlockToAncon(cid: string) {
@@ -884,7 +901,11 @@ export default class Personal extends Vue.extend({
     this.topic = this.defaultTopic
     this.personalBlocksSubscription.subscribe({
       next: async (value: any) => {
-        const p = value.filter((x) => x.document.kind == 'StorageAsset' || x.document.kind == 'StorageBlock')
+        const p = value.filter(
+          (x) =>
+            x.document.kind == 'StorageAsset' ||
+            x.document.kind == 'StorageBlock'
+        )
 
         this.loading = false
         this.items = await Promise.all(p)
@@ -911,7 +932,5 @@ export default class Personal extends Vue.extend({
     // walletconnect.on('accountsChanged', () => this.bindSubscriptions)
     await this.bindSubscriptions()
   }
-
- 
 }
 </script>
