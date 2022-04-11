@@ -58,14 +58,14 @@ export default class Main extends Vue {
       title: 'assets',
       component: 'Personal',
     },
-    {
-      title: 'tasks',
-      component: 'Public',
-    },
-    {
-      title: 'markets',
-      component: 'Shared',
-    },
+    // {
+    //   title: 'tasks',
+    //   component: 'Public',
+    // },
+    // {
+    //   title: 'markets',
+    //   component: 'Shared',
+    // },
   ]
 
   openDGI() {

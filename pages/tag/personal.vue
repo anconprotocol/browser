@@ -21,7 +21,9 @@
       align-content="center"
       justify="center"
     >
-      <v-col class="text-subtitle-1 text-center" cols="12"> Loading... </v-col>
+      <v-col class="text-subtitle-1 text-center" cols="12">
+        {{ loadingText }}
+      </v-col>
       <v-col cols="6">
         <v-progress-linear
           color="orange accent-4"
@@ -37,13 +39,12 @@
 
           <v-card-title>
             {{ v.document.name }}
-      
           </v-card-title>
 
           <v-card-subtitle>
             {{ v.document.owner }}
           </v-card-subtitle>
-<v-card-text>{{ v.document.owner }}</v-card-text>
+          <v-card-text>{{ v.document.owner }}</v-card-text>
           <v-card-actions>
             <!-- <v-bottom-sheet v-model="privacySheet">
               <template v-slot:activator="{ on, attrs }">
@@ -67,7 +68,13 @@
             </v-bottom-sheet> -->
             <v-bottom-sheet v-model="shareSheet">
               <template v-slot:activator="{ on, attrs }">
-                <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2" v-show="v.document.kind==='StorageAsset'">
+                <v-btn
+                  v-bind="attrs"
+                  v-on="on"
+                  icon
+                  color="orange lighten-2"
+                  v-show="v.document.kind === 'StorageAsset'"
+                >
                   <v-icon>mdi-share-variant</v-icon>
                 </v-btn>
               </template>
@@ -109,7 +116,13 @@
             </v-bottom-sheet>
             <v-bottom-sheet v-model="exportSheet">
               <template v-slot:activator="{ on, attrs }">
-                <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2" v-show="v.document.kind==='StorageAsset'">
+                <v-btn
+                  v-bind="attrs"
+                  v-on="on"
+                  icon
+                  color="orange lighten-2"
+                  v-show="v.document.kind === 'StorageAsset'"
+                >
                   <v-icon>mdi-export-variant</v-icon>
                 </v-btn>
               </template>
@@ -154,36 +167,42 @@
             <v-spacer></v-spacer>
 
             <v-btn icon @click="historyBlocks(v.cid)">
-              <v-icon>{{
-                show ? 'mdi-chevron-up' : 'mdi-chevron-down'
-              }}</v-icon>
+              <v-icon>{{ 'mdi-history' }}</v-icon>
             </v-btn>
           </v-card-actions>
-          <v-expand-transition>
-            <div v-show="show" v-if="historyItems">
-              <v-divider></v-divider>
+          <v-dialog v-model="dialog" width="600px">
+            <v-card>
+              <v-card-title>
+                <span class="text-h5">Asset History</span>
+              </v-card-title>
               <v-card-text>
-                History
-                <v-timeline align-top dense>
-                  <v-timeline-item
-                    v-for="message in historyItems"
-                    :key="message.time"
-                    :color="message.color"
-                    small
-                  >
-                    <div>
-                      <div class="font-weight-normal">
-                        <strong>{{ message.from }}</strong> @{{
-                          message.time | formatDate
-                        }}
+                <div v-if="historyItems">
+                  <v-timeline align-top dense>
+                    <v-timeline-item
+                      v-for="message in historyItems"
+                      :key="message.time"
+                      :color="message.color"
+                      small
+                    >
+                      <div>
+                        <div class="font-weight-normal">
+                          <strong>{{ message.from }}</strong> @{{
+                            message.time | formatDate
+                          }}
+                        </div>
+                        <div>{{ message.message }}</div>
                       </div>
-                      <div>{{ message.message }}</div>
-                    </div>
-                  </v-timeline-item>
-                </v-timeline>
+                    </v-timeline-item>
+                  </v-timeline>
+                </div>
               </v-card-text>
-            </div>
-          </v-expand-transition>
+              <v-card-actions>
+                <v-btn color="green darken-1" text @click="dialog = false">
+                  Close
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
         </v-card>
       </v-col>
     </v-row>
@@ -237,7 +256,16 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 // Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
-import { async, map, merge, of, Subject, tap, timestamp } from 'rxjs'
+import {
+  async,
+  lastValueFrom,
+  map,
+  merge,
+  of,
+  Subject,
+  tap,
+  timestamp,
+} from 'rxjs'
 import { getPredefinedBootstrapNodes } from 'js-waku'
 import { ethers } from 'ethers'
 import Dexie, { liveQuery, Table } from 'dexie'
@@ -280,6 +308,7 @@ const FilePond = vueFilePond(
     'getWalletconnect',
     'defaultTopic',
     'defaultAddress',
+
     'incomingSubscriptions',
     'personalBlocksSubscription',
     'historySubscription',
@@ -313,7 +342,9 @@ export default class Personal extends Vue.extend({
       img: 'mdi-note-plus',
       click: (cid) => {
         this.exportSheet = false
-        this.postBlockToAncon(cid)
+        this.$nextTick(() => {
+          this.postBlockToAncon(cid)
+        })
       },
     },
     {
@@ -337,7 +368,9 @@ export default class Personal extends Vue.extend({
       title: 'Send asset',
       click: (cid) => {
         this.shareSheet = false
-        this.pushAssetToTopic(cid)
+        this.$nextTick(() => {
+          this.pushAssetToTopic(cid)
+        })
       },
     },
     // {
@@ -352,7 +385,9 @@ export default class Personal extends Vue.extend({
       title: 'Whatsapp',
       click: (cid) => {
         this.shareSheet = false
-        this.sendTextToWhatsapp(cid)
+        this.$nextTick(() => {
+          this.sendTextToWhatsapp(cid)
+        })
       },
     },
   ]
@@ -360,6 +395,9 @@ export default class Personal extends Vue.extend({
   result = ''
   selected: any
   loading = false
+  defaultLoadingText = 'Loading...'
+  signingLoadingText = 'Please sign and review message using WalletConnect...'
+  loadingText = 'Loading...'
   invoiceQr = ''
   steps = [
     {
@@ -374,6 +412,7 @@ export default class Personal extends Vue.extend({
     },
   ]
   show: any = false
+  dialog: any = false
   items: any = []
   files = []
   selectedFile: any = {}
@@ -472,8 +511,12 @@ export default class Personal extends Vue.extend({
   async sendTextToWhatsapp(cid: string) {
     // @ts-ignore
     const model = await this.getDb.get(cid, null)
+
+    const fileAsBlob = await fetch(model.document.image)
+    const file = await fileAsBlob.blob()
+
     // @ts-ignore
-    const cidFromIpfs = await this.getDb.ipfs.uploadFile(model.document.image)
+    const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
     // sign message
     const { signature, digest } = await this.sign(
       JSON.stringify(model.document)
@@ -489,14 +532,14 @@ export default class Personal extends Vue.extend({
     }
 
     // @ts-ignore
-    const shareCid = await this.getDb.ipfs.uploadFile(block)
+    //    const shareCid = await this.getDb.ipfs.uploadFile(block)
 
     this.shareSheet = false
     setTimeout(() => {
       const data = {
         message: model.document.name,
         title: `Sharing data asset from du. app`,
-        url: shareCid.image,
+        url: block.image,
       } as any
 
       shareTextViaNativeSharing(data, () => {
@@ -504,29 +547,17 @@ export default class Personal extends Vue.extend({
       Sharing data asset from du. app
       ${data.url}
       `)
+
+        this.add(cid, `Shared whatsapp message`, this.defaultAddress, block)
         this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
         this.snackbar = true
 
         window.open(lnk, '_blank')
       })
-    }, 150)
+    }, 50)
   }
-  async pushAssetToTopic(cid: string) {
-    // let initDepositTx
-    // let pubkey
-    // try {
-    //   initDepositTx = await getTransaction(
-    //     this.selectedRecipient,
-    //     this.getWalletconnect()
-    //   )
-    //   // @ts-ignore
-    //   pubkey = await this.getAncon().getPubKey(initDepositTx)
-    // } catch (e) {
-    //   alert(
-    //     'Must have an existing transaction to be able to use public key encryption'
-    //   )
-    // }
 
+  async pushAssetToTopic(cid: string) {
     this.shareSheet = false
     this.snackbarText = `Sending asset to ${this.selectedRecipient}...`
     this.snackbar = true
@@ -538,17 +569,6 @@ export default class Personal extends Vue.extend({
     }
 
     // @ts-ignore
-    const kex = await this.getDb.createTopicPubsub(
-      `/xdvdigital/1/${this.selectedRecipient}-kex/cbor`,
-      {
-        blockCodec,
-        canPublish: true,
-        canSubscribe: true,
-        isKeyExchangeChannel: true,
-      }
-    )
-
-    // @ts-ignore
     const model = await this.getDb.get(cid, null)
 
     if (model.document.kind !== 'StorageAsset') {
@@ -556,8 +576,10 @@ export default class Personal extends Vue.extend({
       this.snackbar = true
       return
     }
+    const fileAsBlob = await fetch(model.document.image)
+    const file = await fileAsBlob.blob()
     // @ts-ignore
-    const cidFromIpfs = await this.getDb.ipfs.uploadFile(model.document.image)
+    const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
     // // sign message
     // const { signature, digest } = await this.sign(
     //   JSON.stringify(model.document)
@@ -572,31 +594,48 @@ export default class Personal extends Vue.extend({
       issuer: this.defaultAddress,
     }
 
-    kex.onBlockReply$.subscribe(async (res: any) => {
-      if (!res.decoded.payload.encryptionPubKey) return
+    // @ts-ignore
+    const kex = await this.getDb.requestKeyExchangePublicKey(
+      `/xdvdigital/1/${this.selectedRecipient}-kex/cbor`,
+      {
+        blockCodec,
+      }
+    )
+
+    const sub = this.incomingSubscriptions.subscribe(async (res: any) => {
       // @ts-ignore
       const pubsub = await this.getDb.createTopicPubsub(
         `/xdvdigital/1/${this.selectedRecipient}/cbor`,
         {
           blockCodec,
+          isCRDT: true,
           canPublish: true,
-          canSubscribe: false,
-          // encryptionPubKey: res.decoded.payload.encryptionPubKey,
-          isKeyExchangeChannel: true,
+          canSubscribe: true,
+          encryptionPubKey: res.encryptionPublicKey,
         }
       )
+      //TODO: encryption public key caching
+      // @ts-ignore
+      this.add(
+        cid,
+        `Sent message to ${this.selectedRecipient}`,
+        this.defaultAddress,
+        block
+      )
+
       // @ts-ignore
       pubsub.publish(block)
       this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
       this.snackbar = true
 
       pubsub.close()
+      sub.unsubscribe()
     })
-    kex.publish({ askForEncryptionPublicKey: true })
   }
 
   async sign(data: any) {
-    // sign message {signature, digest / hash, }
+    this.loading = true
+    this.loadingText = this.signingLoadingText
     const b = ethers.utils.hexlify(ethers.utils.toUtf8Bytes(data))
 
     const res = await this.getWalletconnect().send({
@@ -608,6 +647,8 @@ export default class Personal extends Vue.extend({
 
     const signature = res
 
+    this.loading = false
+    this.loadingText = this.defaultLoadingText
     return { digest: b, signature }
   }
   async postBlockToAncon(cid: string) {
@@ -869,7 +910,8 @@ export default class Personal extends Vue.extend({
   }
 
   async historyBlocks(cid) {
-    this.show = !this.show
+    // this.show = !this.show
+    this.dialog = true
     // @ts-ignore
     const q = await this.getDb.getBlocksByTableName$('history', (h) => {
       return () => h.where({ cid: cid }).toArray()
@@ -884,7 +926,11 @@ export default class Personal extends Vue.extend({
     this.topic = this.defaultTopic
     this.personalBlocksSubscription.subscribe({
       next: async (value: any) => {
-        const p = value.filter((x) => x.document.kind == 'StorageAsset' || x.document.kind == 'StorageBlock')
+        const p = value.filter(
+          (x) =>
+            x.document.kind == 'StorageAsset' ||
+            x.document.kind == 'StorageBlock'
+        )
 
         this.loading = false
         this.items = await Promise.all(p)
@@ -911,7 +957,5 @@ export default class Personal extends Vue.extend({
     // walletconnect.on('accountsChanged', () => this.bindSubscriptions)
     await this.bindSubscriptions()
   }
-
- 
 }
 </script>
