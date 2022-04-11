@@ -302,6 +302,7 @@ const FilePond = vueFilePond(
     'getWalletconnect',
     'defaultTopic',
     'defaultAddress',
+
     'incomingSubscriptions',
     'personalBlocksSubscription',
     'historySubscription',
@@ -335,7 +336,9 @@ export default class Personal extends Vue.extend({
       img: 'mdi-note-plus',
       click: (cid) => {
         this.exportSheet = false
-        this.postBlockToAncon(cid)
+        this.$nextTick(() => {
+          this.postBlockToAncon(cid)
+        })
       },
     },
     {
@@ -359,7 +362,9 @@ export default class Personal extends Vue.extend({
       title: 'Send asset',
       click: (cid) => {
         this.shareSheet = false
-        this.pushAssetToTopic(cid)
+        this.$nextTick(() => {
+          this.pushAssetToTopic(cid)
+        })
       },
     },
     // {
@@ -374,7 +379,9 @@ export default class Personal extends Vue.extend({
       title: 'Whatsapp',
       click: (cid) => {
         this.shareSheet = false
-        this.sendTextToWhatsapp(cid)
+        this.$nextTick(() => {
+          this.sendTextToWhatsapp(cid)
+        })
       },
     },
   ]
@@ -497,8 +504,12 @@ export default class Personal extends Vue.extend({
   async sendTextToWhatsapp(cid: string) {
     // @ts-ignore
     const model = await this.getDb.get(cid, null)
+
+    const fileAsBlob = await fetch(model.document.image)
+    const file = await fileAsBlob.blob()
+
     // @ts-ignore
-    const cidFromIpfs = await this.getDb.ipfs.uploadFile(model.document.image)
+    const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
     // sign message
     const { signature, digest } = await this.sign(
       JSON.stringify(model.document)
@@ -551,14 +562,6 @@ export default class Personal extends Vue.extend({
     }
 
     // @ts-ignore
-    const kex = await this.getDb.requestKeyExchangePublicKey(
-      `/xdvdigital/1/${this.selectedRecipient}-kex/cbor`,
-      {
-        blockCodec,
-      }
-    )
-
-    // @ts-ignore
     const model = await this.getDb.get(cid, null)
 
     if (model.document.kind !== 'StorageAsset') {
@@ -566,8 +569,10 @@ export default class Personal extends Vue.extend({
       this.snackbar = true
       return
     }
+    const fileAsBlob = await fetch(model.document.image)
+    const file = await fileAsBlob.blob()
     // @ts-ignore
-    const cidFromIpfs = await this.getDb.ipfs.uploadFile(model.document.image)
+    const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
     // // sign message
     // const { signature, digest } = await this.sign(
     //   JSON.stringify(model.document)
@@ -581,43 +586,43 @@ export default class Personal extends Vue.extend({
       timestamp: new Date().getTime(),
       issuer: this.defaultAddress,
     }
+
     // @ts-ignore
-    const pubsub = await this.getDb.createTopicPubsub(
-      `/xdvdigital/1/${this.selectedRecipient}/cbor`,
+    const kex = await this.getDb.requestKeyExchangePublicKey(
+      `/xdvdigital/1/${this.selectedRecipient}-kex/cbor`,
       {
         blockCodec,
-        canSubscribe: true,
-        isCRDT: true,
       }
     )
-    const pubkey = await lastValueFrom(kex.onBlockReply$)
 
-    // @ts-ignore
-    const pubsub = await this.getDb.createTopicPubsub(
-      `/xdvdigital/1/${this.selectedRecipient}/cbor`,
-      {
-        blockCodec,
-        canPublish: true,
-        canSubscribe: true,
-        encryptionPubKey: pubkey,
-        isCRDT: true,
-      }
-    )
-    //TODO: encryption public key caching
-    // @ts-ignore
-    this.add(
-      cid,
-      `Sent message to ${this.selectedRecipient}`,
-      this.defaultAddress,
-      block
-    )
+    const sub = this.incomingSubscriptions.subscribe(async (res: any) => {
+      // @ts-ignore
+      const pubsub = await this.getDb.createTopicPubsub(
+        `/xdvdigital/1/${this.selectedRecipient}/cbor`,
+        {
+          blockCodec,
+          canPublish: true,
+          canSubscribe: true,
+          encryptionPubKey: res.encryptionPublicKey,
+        }
+      )
+      //TODO: encryption public key caching
+      // @ts-ignore
+      this.add(
+        cid,
+        `Sent message to ${this.selectedRecipient}`,
+        this.defaultAddress,
+        block
+      )
 
-    // @ts-ignore
-    pubsub.publish(block)
-    this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
-    this.snackbar = true
+      // @ts-ignore
+      pubsub.publish(block)
+      this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
+      this.snackbar = true
 
-    pubsub.close()
+      pubsub.close()
+      sub.unsubscribe()
+    })
   }
 
   async sign(data: any) {

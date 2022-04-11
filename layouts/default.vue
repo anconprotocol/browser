@@ -224,6 +224,7 @@ export default {
       onPersonalCancel: null,
       onIncomingCancel: null,
       onKeyexCancel: null,
+      onKeyex: new Subject(),
       onIncoming: new Subject(),
       onPersonal: new Subject(),
       onHistory: new Subject(),
@@ -337,7 +338,6 @@ export default {
         encode: async (obj) => encode(obj),
         decode: (buffer) => decode(buffer),
       }
-      debugger
       // @ts-ignore
       const pubsub = await this.db.createTopicPubsub(this.defaultTopic, {
         blockCodec,
@@ -357,12 +357,11 @@ export default {
         this.keyExchangeTopic,
         {
           blockCodec,
-          isCRDT: true,
         }
       ))
       this.onKeyexCancel = this.keyexPubsub.subscribe((v) => {
         // no op
-        console.log(v)
+        this.onIncoming.next(v);
       })
     },
   },
