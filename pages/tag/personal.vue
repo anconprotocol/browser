@@ -21,7 +21,9 @@
       align-content="center"
       justify="center"
     >
-      <v-col class="text-subtitle-1 text-center" cols="12"> {{ loadingText }} </v-col>
+      <v-col class="text-subtitle-1 text-center" cols="12">
+        {{ loadingText }}
+      </v-col>
       <v-col cols="6">
         <v-progress-linear
           color="orange accent-4"
@@ -519,12 +521,7 @@ export default class Personal extends Vue.extend({
       ${data.url}
       `)
 
-        this.add(
-          cid,
-          `Shared whatsapp message`,
-          this.defaultAddress,
-          block
-        )
+        this.add(cid, `Shared whatsapp message`, this.defaultAddress, block)
         this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
         this.snackbar = true
 
@@ -545,15 +542,15 @@ export default class Personal extends Vue.extend({
     }
 
     // @ts-ignore
-    const kex = await this.getDb.createTopicPubsub(
-      `/xdvdigital/1/${this.selectedRecipient}-kex/cbor`,
-      {
-        blockCodec,
-        canPublish: true,
-        canSubscribe: true,
-        isKeyExchangeChannel: true,
-      }
-    )
+    // const kex = await this.getDb.createTopicPubsub(
+    //   `/xdvdigital/1/${this.selectedRecipient}-kex/cbor`,
+    //   {
+    //     blockCodec,
+    //     canPublish: true,
+    //     canSubscribe: true,
+    //     isKeyExchangeChannel: true,
+    //   }
+    // )
 
     // @ts-ignore
     const model = await this.getDb.get(cid, null)
@@ -578,20 +575,40 @@ export default class Personal extends Vue.extend({
       timestamp: new Date().getTime(),
       issuer: this.defaultAddress,
     }
-
-    kex.onBlockReply$.subscribe(async (res: any) => {
-      if (!res.decoded.payload.encryptionPubKey) return
+    // @ts-ignore
+    const pubsub = await this.getDb.createTopicPubsub(
+      `/xdvdigital/1/${this.selectedRecipient}/cbor`,
+      {
+        blockCodec,
+        canSubscribe: true,
+        isCRDT: true,
+      }
+    )
+    // @ts-ignore
+    const kex = await this.getDb.createTopicPubsub(
+      `/xdvdigital/1/${this.selectedRecipient}-kex/cbor`,
+      {
+        blockCodec,
+        canPublish: true,
+        isCRDT: true,
+      }
+    )
+    pubsub.onBlockReply$.subscribe(async (res: any) => {
+      pubsub.close()
       // @ts-ignore
-      const pubsub = await this.getDb.createTopicPubsub(
+      const pubsub2 = await this.getDb.createTopicPubsub(
         `/xdvdigital/1/${this.selectedRecipient}/cbor`,
         {
           blockCodec,
           canPublish: true,
-          canSubscribe: false,
-          // encryptionPubKey: res.decoded.payload.encryptionPubKey,
-          isKeyExchangeChannel: true,
+          canSubscribe: true,
+          encryptionPubKey: res.decoded.publicKeyMessage.encryptionPublicKey,
+          isKeyExchangeChannel: false,
+          isCRDT: true,
         }
       )
+      //TODO: encryption public key caching
+      // @ts-ignore
       this.add(
         cid,
         `Sent message to ${this.selectedRecipient}`,
@@ -600,11 +617,11 @@ export default class Personal extends Vue.extend({
       )
 
       // @ts-ignore
-      pubsub.publish(block)
+      pubsub2.publish(block)
       this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
       this.snackbar = true
 
-      pubsub.close()
+      pubsub2.close()
     })
     kex.publish({ askForEncryptionPublicKey: true })
   }

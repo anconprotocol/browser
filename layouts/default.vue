@@ -81,6 +81,7 @@ import Dexie, { liveQuery, Table } from 'dexie'
 import getTransaction from '../lib/AnconProtocol/GetTransaction'
 import loadImage from 'blueimp-load-image'
 import { SiweMessage } from 'siwe'
+// import { generatePrivateKey, getPublicKey } from 'js-waku'
 
 const PromiseFileReader = require('promise-file-reader')
 
@@ -121,7 +122,7 @@ export default {
           `${$nuxt.context.env.AnconAPI}siwe/verify`,
           {
             body: JSON.stringify({
-              message:siweMessage,
+              message: siweMessage,
               signature,
             }),
             method: 'POST',
@@ -133,6 +134,14 @@ export default {
         await this.db.initialize({
           wakuconnect: {
             bootstrap: { peers: [$nuxt.context.env.WakuLibp2p] },
+            libp2p: {
+              config: {
+                pubsub: {
+                  enabled: true,
+                  emitSelf: true,
+                },
+              },
+            },
           },
           withWallet: {
             autoLogin: true,
@@ -141,7 +150,7 @@ export default {
           withWeb3: {
             provider: web3provider,
             pubkey: pubkey,
-      //      pubkeySig: pubkey[3],
+            //      pubkeySig: pubkey[3],
             defaultAddress: accounts[0],
           },
           withAncon: {
@@ -321,40 +330,48 @@ export default {
       return { digest: b, signature }
     },
     subscribeTopics: async function () {
+      const w = ethers.Wallet.createRandom()
       const blockCodec = {
         name: 'cbor',
         code: '0x71',
         encode: async (obj) => encode(obj),
         decode: (buffer) => decode(buffer),
       }
-      // @ts-ignore
-      const keyex = (this.keyexPubsub = await this.db.createTopicPubsub(
-        this.keyExchangeTopic,
-        {
-          blockCodec,
-          canSubscribe: true,
-          canPublish: true,
-          isKeyExchangeChannel: true,
-        }
-      ))
-      this.onKeyexCancel = this.keyexPubsub.onBlockReply$.subscribe((v) => {
-        // @ts-ignore
-        if (v.decoded.payload.askForEncryptionPublicKey) {
-          keyex.publish({ encryptionPubKey: 'default' })
-        }
-      })
-
+      debugger
       // @ts-ignore
       const pubsub = await this.db.createTopicPubsub(this.defaultTopic, {
         blockCodec,
         canSubscribe: true,
-        isKeyExchangeChannel: true,
+        isKeyExchangeChannel: false,
+        sigKey: w.privateKey,
+        canPublish: true,
       })
       this.currentAccountTopic = pubsub
       this.onIncomingCancel = pubsub.onBlockReply$.subscribe(async (v) => {
         // @ts-ignore
         await this.db.putBlock(v.decoded.payload)
         this.onIncoming.next(v)
+      })
+      // @ts-ignore
+      const keyex = (this.keyexPubsub = await this.db.createTopicPubsub(
+        this.keyExchangeTopic,
+        {
+          blockCodec,
+          canSubscribe: true,
+          canPublish: false,
+          isKeyExchangeChannel: false,
+          isCRDT: true,
+        }
+      ))
+      this.onKeyexCancel = this.keyexPubsub.onBlockReply$.subscribe((v) => {
+        // @ts-ignore
+        if (v.decoded.payload.askForEncryptionPublicKey) {
+          pubsub.publish({
+            publicKeyMessage: { encryptionPublicKey: w.publicKey },
+            isKeyExchangeChannel: true,
+          })
+          debugger
+        }
       })
     },
   },
