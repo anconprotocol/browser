@@ -330,6 +330,9 @@ export default {
 
       return { digest: b, signature }
     },
+    dataSync: async function(){
+
+    },
     subscribeTopics: async function () {
       const w = ethers.Wallet.createRandom()
       const blockCodec = {

@@ -121,6 +121,7 @@ export default {
   env: {
     AnconNFT: process.env.REACT_APP_AnconNFTAddress,
     AnconToken: process.env.REACT_APP_AnconTokenAddress,
+    Onramper: `pk_test_vce1UmxZ3fdhoOGiZBJHiUivX205TfsfAiyljF9LF_k0`,
     AnconAPI: 'https://api.ancon.did.pa/',
     WakuRPC: 'https://api.ancon.did.pa/waku',
     InfuraIPFS: 'https://infura.ipfs.io:5001/',
