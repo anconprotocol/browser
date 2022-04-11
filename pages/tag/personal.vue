@@ -250,7 +250,16 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 // Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
-import { async, map, merge, of, Subject, tap, timestamp } from 'rxjs'
+import {
+  async,
+  lastValueFrom,
+  map,
+  merge,
+  of,
+  Subject,
+  tap,
+  timestamp,
+} from 'rxjs'
 import { getPredefinedBootstrapNodes } from 'js-waku'
 import { ethers } from 'ethers'
 import Dexie, { liveQuery, Table } from 'dexie'
@@ -542,15 +551,12 @@ export default class Personal extends Vue.extend({
     }
 
     // @ts-ignore
-    // const kex = await this.getDb.createTopicPubsub(
-    //   `/xdvdigital/1/${this.selectedRecipient}-kex/cbor`,
-    //   {
-    //     blockCodec,
-    //     canPublish: true,
-    //     canSubscribe: true,
-    //     isKeyExchangeChannel: true,
-    //   }
-    // )
+    const kex = await this.getDb.requestKeyExchangePublicKey(
+      `/xdvdigital/1/${this.selectedRecipient}-kex/cbor`,
+      {
+        blockCodec,
+      }
+    )
 
     // @ts-ignore
     const model = await this.getDb.get(cid, null)
@@ -584,46 +590,34 @@ export default class Personal extends Vue.extend({
         isCRDT: true,
       }
     )
+    const pubkey = await lastValueFrom(kex.onBlockReply$)
+
     // @ts-ignore
-    const kex = await this.getDb.createTopicPubsub(
-      `/xdvdigital/1/${this.selectedRecipient}-kex/cbor`,
+    const pubsub = await this.getDb.createTopicPubsub(
+      `/xdvdigital/1/${this.selectedRecipient}/cbor`,
       {
         blockCodec,
         canPublish: true,
+        canSubscribe: true,
+        encryptionPubKey: pubkey,
         isCRDT: true,
       }
     )
-    pubsub.onBlockReply$.subscribe(async (res: any) => {
-      pubsub.close()
-      // @ts-ignore
-      const pubsub2 = await this.getDb.createTopicPubsub(
-        `/xdvdigital/1/${this.selectedRecipient}/cbor`,
-        {
-          blockCodec,
-          canPublish: true,
-          canSubscribe: true,
-          encryptionPubKey: res.decoded.publicKeyMessage.encryptionPublicKey,
-          isKeyExchangeChannel: false,
-          isCRDT: true,
-        }
-      )
-      //TODO: encryption public key caching
-      // @ts-ignore
-      this.add(
-        cid,
-        `Sent message to ${this.selectedRecipient}`,
-        this.defaultAddress,
-        block
-      )
+    //TODO: encryption public key caching
+    // @ts-ignore
+    this.add(
+      cid,
+      `Sent message to ${this.selectedRecipient}`,
+      this.defaultAddress,
+      block
+    )
 
-      // @ts-ignore
-      pubsub2.publish(block)
-      this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
-      this.snackbar = true
+    // @ts-ignore
+    pubsub.publish(block)
+    this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
+    this.snackbar = true
 
-      pubsub2.close()
-    })
-    kex.publish({ askForEncryptionPublicKey: true })
+    pubsub.close()
   }
 
   async sign(data: any) {

@@ -353,25 +353,16 @@ export default {
         this.onIncoming.next(v)
       })
       // @ts-ignore
-      const keyex = (this.keyexPubsub = await this.db.createTopicPubsub(
+      const keyex = (this.keyexPubsub = await this.db.emitKeyExchangePublicKey(
         this.keyExchangeTopic,
         {
           blockCodec,
-          canSubscribe: true,
-          canPublish: false,
-          isKeyExchangeChannel: false,
           isCRDT: true,
         }
       ))
-      this.onKeyexCancel = this.keyexPubsub.onBlockReply$.subscribe((v) => {
-        // @ts-ignore
-        if (v.decoded.payload.askForEncryptionPublicKey) {
-          pubsub.publish({
-            publicKeyMessage: { encryptionPublicKey: w.publicKey },
-            isKeyExchangeChannel: true,
-          })
-          debugger
-        }
+      this.onKeyexCancel = this.keyexPubsub.subscribe((v) => {
+        // no op
+        console.log(v)
       })
     },
   },
