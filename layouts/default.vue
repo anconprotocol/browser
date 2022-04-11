@@ -80,6 +80,8 @@ import { decode, encode } from 'cbor-x'
 import Dexie, { liveQuery, Table } from 'dexie'
 import getTransaction from '../lib/AnconProtocol/GetTransaction'
 import loadImage from 'blueimp-load-image'
+import { SiweMessage } from 'siwe'
+
 const PromiseFileReader = require('promise-file-reader')
 
 export default {
@@ -99,27 +101,38 @@ export default {
       this.address = accounts[0]
 
       try {
-        this.initDepositTx = await getTransaction(accounts[0], provider)
-      } catch (e) {
-        alert(
-          'Must have an existing transaction to be able to use public key encryption'
-        )
-      }
-      try {
+        const domain = window.location.host
+        const origin = window.location.origin
+
         this.network = await web3provider.getNetwork()
 
-        const pubkey = await this.Ancon.getPubKey(this.initDepositTx)
+        const message = new SiweMessage({
+          domain,
+          address: this.address,
+          statement: 'Sign in with Ethereum to the app.',
+          uri: origin,
+          version: '1',
+          chainId: this.network.chainId,
+        })
+        const siweMessage = message.prepareMessage()
+        const { digest, signature } = await this.sign(siweMessage)
+
+        const verifyRes = await fetch(
+          `${$nuxt.context.env.AnconAPI}siwe/verify`,
+          {
+            body: JSON.stringify({
+              message:siweMessage,
+              signature,
+            }),
+            method: 'POST',
+          }
+        )
+
+        const result = await verifyRes.json()
+        const pubkey = result.publicKey
         await this.db.initialize({
           wakuconnect: {
             bootstrap: { peers: [$nuxt.context.env.WakuLibp2p] },
-            // libp2p: {
-            //   config: {
-            //     pubsub: {
-            //       enabled: true,
-            //       emitSelf: true,
-            //     },
-            //   },
-            // },
           },
           withWallet: {
             autoLogin: true,
@@ -127,12 +140,12 @@ export default {
           },
           withWeb3: {
             provider: web3provider,
-            pubkey: pubkey[2],
-            pubkeySig: pubkey[3],
+            pubkey: pubkey,
+      //      pubkeySig: pubkey[3],
             defaultAddress: accounts[0],
           },
           withAncon: {
-            pubkey: pubkey[2],
+            pubkey: pubkey,
             api: $nuxt.context.env.AnconAPI,
             walletconnectProvider: provider,
             from: accounts[0],
@@ -142,7 +155,7 @@ export default {
             api: 'https://ipfs.infura.io:5001',
           },
         })
-        this.pubkey = pubkey[2]
+        this.pubkey = pubkey
       } catch (e) {
         console.error(e)
       }
@@ -293,6 +306,20 @@ export default {
       this.defaultTopic = `/xdvdigital/1/${this.defaultAddress}/cbor`
       this.keyExchangeTopic = `/xdvdigital/1/${this.defaultAddress}-kex/cbor`
     },
+    sign: async function (data) {
+      // sign message {signature, digest / hash, }
+      const b = ethers.utils.hexlify(ethers.utils.toUtf8Bytes(data))
+      const res = await this.walletconnect.send({
+        id: 1,
+        jsonrpc: '2.0',
+        method: 'eth_sign',
+        params: [this.walletconnect.accounts[0], b],
+      })
+
+      const signature = res
+
+      return { digest: b, signature }
+    },
     subscribeTopics: async function () {
       const blockCodec = {
         name: 'cbor',
@@ -325,7 +352,6 @@ export default {
       })
       this.currentAccountTopic = pubsub
       this.onIncomingCancel = pubsub.onBlockReply$.subscribe(async (v) => {
-    
         // @ts-ignore
         await this.db.putBlock(v.decoded.payload)
         this.onIncoming.next(v)

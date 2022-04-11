@@ -243,7 +243,6 @@ import { ethers } from 'ethers'
 import Dexie, { liveQuery, Table } from 'dexie'
 import helper from '~/utils/helper'
 import AnconProtocolClient from '~/lib/AnconProtocol/AnconProtocolClient'
-import getTransaction from '../../lib/AnconProtocol/GetTransaction'
 import { v4 as uuidv4 } from 'uuid'
 import Web3 from 'web3'
 import {
