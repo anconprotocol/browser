@@ -55,22 +55,17 @@
             `${address.substring(0, 8)}...${address.substring(
               address.length - 8
             )}`
-          }} 
-    <v-dialog
-      @click="qrDialog = true"
-      hide-overlay
-    >
-      <template v-slot:activator="{ on, attrs }">
-           <v-btn
-           v-bind="attrs"
-           v-on="on" 
-           icon><v-icon>mdi-qrcode-scan</v-icon></v-btn>
-      </template>
-      
-    <vue-qrcode :value="address" :options="{ width: 200 }"></vue-qrcode>
-    </v-dialog>
-       </v-subheader
-        >
+          }}
+          <v-dialog @click="qrDialog = true" hide-overlay>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn v-bind="attrs" v-on="on" icon
+                ><v-icon>mdi-qrcode-scan</v-icon></v-btn
+              >
+            </template>
+
+            <vue-qrcode :value="address" :options="{ width: 200 }"></vue-qrcode>
+          </v-dialog>
+        </v-subheader>
         <Nuxt />
       </v-container>
     </v-main>
@@ -80,7 +75,6 @@
         SA</span
       >
     </v-footer>
-
   </v-app>
 </template>
 
@@ -95,14 +89,14 @@ import { decode, encode } from 'cbor-x'
 import Dexie, { liveQuery, Table } from 'dexie'
 import getTransaction from '../lib/AnconProtocol/GetTransaction'
 import loadImage from 'blueimp-load-image'
-import VueQrcode from '@chenfengyuan/vue-qrcode';
+import VueQrcode from '@chenfengyuan/vue-qrcode'
 
 const PromiseFileReader = require('promise-file-reader')
 
 export default {
   name: 'DefaultLayout',
   components: {
-    VueQrcode
+    VueQrcode,
   },
   Ancon: AnconProtocolClient,
   created: async function () {
@@ -118,7 +112,6 @@ export default {
       this.address = accounts[0]
 
       try {
-
         this.network = await web3provider.getNetwork()
         await this.db.initialize({
           wakuconnect: {
@@ -150,7 +143,6 @@ export default {
             api: 'https://ipfs.infura.io:5001',
           },
         })
-
       } catch (e) {
         console.error(e)
       }
@@ -158,7 +150,6 @@ export default {
 
       await this.localBlocks()
       await this.subscribeTopics()
-
 
       this.Ancon = new AnconProtocolClient(
         this.walletconnect,
@@ -173,14 +164,9 @@ export default {
     // Subscribe to chainId change
     provider.on('chainChanged', window.location.reload)
 
+    this.walletconnect = provider
 
-
-    
-   this.walletconnect = provider
-    
     this.connect()
-
-   
   },
   provide: function () {
     return {
@@ -212,7 +198,7 @@ export default {
       onPersonal: new Subject(),
       onHistory: new Subject(),
       db: new ParkyDB(),
-      walletconnect:  new WalletConnectProvider({
+      walletconnect: new WalletConnectProvider({
         infuraId: '92ed13edfad140409ac24457a9c4e22d',
         rpc: {
           56: 'https://bsc-dataseed.binance.org/',
@@ -231,7 +217,7 @@ export default {
       clipped: false,
       drawer: false,
       fixed: false,
-      
+
       items: [
         {
           icon: 'mdi-apps',
@@ -260,8 +246,8 @@ export default {
         this.onPersonal.next(v)
       })
     },
-    connect:async function () {
-      console.log('Connect') 
+    connect: async function () {
+      console.log('Connect')
       this.walletconnect.enable()
     },
     disconnect: function () {
@@ -313,9 +299,7 @@ export default {
 
       return { digest: b, signature }
     },
-    dataSync: async function(){
-
-    },
+    dataSync: async function () {},
     subscribeTopics: async function () {
       const w = ethers.Wallet.createRandom()
       const blockCodec = {

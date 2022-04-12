@@ -15,6 +15,17 @@
         />
       </v-col>
     </v-row>
+    <v-row justify="left">
+      <v-col cols="12" sm="10" md="8">
+        <v-sheet class="py-4 px-1">
+          <v-chip-group multiple active-class="primary--text">
+            <v-chip v-for="tag in tags" :key="tag">
+              {{ tag }}
+            </v-chip>
+          </v-chip-group>
+        </v-sheet>
+      </v-col>
+    </v-row>
     <v-row
       v-show="loading"
       class="fill-height"
@@ -416,6 +427,7 @@ export default class Personal extends Vue.extend({
       href: 'breadcrumbs_link_2',
     },
   ]
+  tags = ['My Assets', 'Recieved', 'IPFS', 'Ancon', 'ERC 721']
   showQRScanner = false
   show: any = false
   dialog: any = false
@@ -614,6 +626,7 @@ export default class Personal extends Vue.extend({
         `/xdvdigital/1/${this.selectedRecipient}/cbor`,
         {
           blockCodec,
+          isCRDT: false,
           canPublish: true,
           canSubscribe: true,
           encryptionPubKey: res.encryptionPublicKey,
@@ -937,7 +950,8 @@ export default class Personal extends Vue.extend({
         const p = value.filter(
           (x) =>
             x.document.kind == 'StorageAsset' ||
-            x.document.kind == 'StorageBlock'
+            x.document.kind == 'StorageBlock' ||
+            x.document.owner == this.defaultAddress
         )
 
         this.loading = false
@@ -972,7 +986,6 @@ export default class Personal extends Vue.extend({
     const codeReader = new BrowserQRCodeReader()
     const videoInputDevices = await BrowserQRCodeReader.listVideoInputDevices()
 
-    debugger
     // choose your media device (webcam, frontal camera, back camera, etc.)
     const selectedDeviceId = videoInputDevices[0].deviceId
     console.log(`Started decode from camera with id ${selectedDeviceId}`)
