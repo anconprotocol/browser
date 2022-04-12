@@ -80,6 +80,8 @@
               </template>
               <v-list>
                 <v-subheader>Share</v-subheader>
+                <v-row><v-col xs="1"><v-btn @click="scanAddress()" icon><v-icon>mdi-qrcode-scan</v-icon></v-btn>
+                </v-col><v-col xs="11">
                 <v-combobox
                   v-model="selectedRecipient"
                   :items="contacts"
@@ -101,7 +103,7 @@
                     </v-list-item>
                   </template>
                 </v-combobox>
-
+</v-col></v-row>
                 <v-list-item
                   v-for="tile in shareTiles"
                   :key="tile.title"
@@ -225,17 +227,12 @@
 import { Component, Vue } from 'vue-property-decorator'
 import { QrcodeCapture } from 'vue-qrcode-reader'
 //@ts-ignore
-import { CUFEBuilder } from '../cufe'
-import { BrowserQRCodeReader } from '@zxing/browser'
 
-import * as reader from 'promise-file-reader'
 //@ts-ignore
-import BarcodeDetector from 'barcode-detector'
 import { decode, encode } from 'cbor-x'
 import 'pdfjs-dist/legacy/build/pdf.worker.entry'
-import { getDocument } from 'pdfjs-dist/legacy/build/pdf.js'
-import { BlockValue, DAGJsonService, ParkyDB } from 'parkydb'
 const PromiseFileReader = require('promise-file-reader')
+import { BrowserQRCodeReader } from '@zxing/browser'
 
 import { StorageAsset } from '../documentModel'
 // Import Vue FilePond
@@ -257,25 +254,17 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
 import {
-  async,
-  lastValueFrom,
-  map,
-  merge,
-  of,
   Subject,
-  tap,
-  timestamp,
 } from 'rxjs'
-import { getPredefinedBootstrapNodes } from 'js-waku'
+
+import {Siwe} from '../../lib/AnconProtocol/SIWE'
 import { ethers } from 'ethers'
-import Dexie, { liveQuery, Table } from 'dexie'
 import helper from '~/utils/helper'
 import AnconProtocolClient from '~/lib/AnconProtocol/AnconProtocolClient'
 import { v4 as uuidv4 } from 'uuid'
 import Web3 from 'web3'
 import {
   getWhatsAppClickToChatLink,
-  shareTextToWhatsApp,
   shareTextViaNativeSharing,
 } from 'share-text-to-whatsapp'
 
@@ -517,16 +506,16 @@ export default class Personal extends Vue.extend({
 
     // @ts-ignore
     const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
-    // sign message
-    const { signature, digest } = await this.sign(
-      JSON.stringify(model.document)
-    )
+    // // sign message
+    // const { signature, digest } = await this.sign(
+    //   JSON.stringify(model.document)
+    // )
     const block = {
       ...model.document,
       image: cidFromIpfs.image,
       kind: 'StorageBlock',
-      signature,
-      digest,
+      // signature,
+      // digest,
       timestamp: new Date().getTime(),
       issuer: this.defaultAddress,
     }
@@ -608,7 +597,6 @@ export default class Personal extends Vue.extend({
         `/xdvdigital/1/${this.selectedRecipient}/cbor`,
         {
           blockCodec,
-          isCRDT: true,
           canPublish: true,
           canSubscribe: true,
           encryptionPubKey: res.encryptionPublicKey,
@@ -657,19 +645,22 @@ export default class Personal extends Vue.extend({
     this.snackbar = true
     const model = await (this as any).getDb.get(cid)
 
+    const api = `{$nuxt.context.env.AnconAPI}`
+    const siwe = new Siwe(this.getWalletconnect, api)
+    
+    const pubkey = await siwe.getSIWEPublicKey()
     // @ts-ignore
-
-    const did = await this.getDb.ancon.createDid()
+    const did = await this.getDb.ancon.createDid(pubkey)
     // @ts-ignore
 
     const dagblock = await this.getDb.ancon.createDagBlock({
       // @ts-ignore
       message: model.document,
-      topic: 'xdvdigital',
+      topic: 'du.xdv.digital',
     })
     this.add(
       cid,
-      'Publish to ipfs',
+      'Publish to ancon',
       this.getWalletconnect().accounts[0],
       dagblock
     )
@@ -952,10 +943,28 @@ export default class Personal extends Vue.extend({
   }
   async mounted() {
     this.loading = true
-    const walletconnect = (this as any).getWalletconnect()
-
-    // walletconnect.on('accountsChanged', () => this.bindSubscriptions)
     await this.bindSubscriptions()
+  }
+
+  async scanAddress() {
+    const codeReader = new BrowserQRCodeReader();
+    const videoInputDevices = await BrowserQRCodeReader.listVideoInputDevices();
+
+    debugger
+    // choose your media device (webcam, frontal camera, back camera, etc.)
+    const selectedDeviceId = videoInputDevices[0].deviceId;
+    console.log(`Started decode from camera with id ${selectedDeviceId}`);
+    // const previewElem = document.querySelector('#test-area-qr-code-webcam > video');
+    // you can use the controls to stop() the scan or switchTorch() if available
+    const controls = await codeReader.decodeFromVideoDevice(selectedDeviceId, undefined, (result, error, controls) => {
+      // use the result and error values to choose your actions
+      // you can also use controls API in this scope like the controls
+      // returned from the method.
+      this.contacts.push(result as any)      
+    });
+
+  // stops scanning after 20 seconds
+  setTimeout(() => controls.stop(), 20000);
   }
 }
 </script>

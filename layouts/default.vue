@@ -52,10 +52,25 @@
         <v-subheader v-if="this.walletconnect.connected"
           >Network {{ network.name }} Address
           {{
-            `${address.substring(0, 6)}...${address.substring(
-              address.length - 6
+            `${address.substring(0, 8)}...${address.substring(
+              address.length - 8
             )}`
-          }}</v-subheader
+          }} 
+    <v-dialog
+      v-model="qrDialog"
+      fullscreen
+      hide-overlay
+    >
+      <template v-slot:activator="{ on, attrs }">
+           <v-btn
+           v-bind="attrs"
+           v-on="on" 
+           icon><v-icon>mdi-qrcode-scan</v-icon></v-btn>
+      </template>
+      
+    <vue-qrcode :value="address" :options="{ width: 200 }"></vue-qrcode>
+    </v-dialog>
+       </v-subheader
         >
         <Nuxt />
       </v-container>
@@ -66,6 +81,7 @@
         SA</span
       >
     </v-footer>
+
   </v-app>
 </template>
 
@@ -80,13 +96,15 @@ import { decode, encode } from 'cbor-x'
 import Dexie, { liveQuery, Table } from 'dexie'
 import getTransaction from '../lib/AnconProtocol/GetTransaction'
 import loadImage from 'blueimp-load-image'
-import { SiweMessage } from 'siwe'
-// import { generatePrivateKey, getPublicKey } from 'js-waku'
+import VueQrcode from '@chenfengyuan/vue-qrcode';
 
 const PromiseFileReader = require('promise-file-reader')
 
 export default {
   name: 'DefaultLayout',
+  components: {
+    VueQrcode
+  },
   Ancon: AnconProtocolClient,
   created: async function () {
     //  Create WalletConnect Provider
@@ -102,19 +120,8 @@ export default {
       this.address = accounts[0]
 
       try {
-        const domain = window.location.host
-        const origin = window.location.origin
 
         this.network = await web3provider.getNetwork()
-
-        const message = new SiweMessage({
-          domain,
-          address: this.address,
-          statement: 'Sign in with Ethereum to the app.',
-          uri: origin,
-          version: '1',
-          chainId: this.network.chainId,
-        })
         await this.db.initialize({
           wakuconnect: {
             bootstrap: { peers: [$nuxt.context.env.WakuLibp2p] },
@@ -133,12 +140,9 @@ export default {
           },
           withWeb3: {
             provider: web3provider,
-            pubkey: '',
-            //      pubkeySig: pubkey[3],
             defaultAddress: accounts[0],
           },
           withAncon: {
-            pubkey: '',
             api: $nuxt.context.env.AnconAPI,
             walletconnectProvider: provider,
             from: accounts[0],
@@ -148,7 +152,7 @@ export default {
             api: 'https://ipfs.infura.io:5001',
           },
         })
-        this.pubkey = pubkey
+
       } catch (e) {
         console.error(e)
       }
@@ -200,6 +204,7 @@ export default {
   },
   data() {
     return {
+      qrDialog: false,
       defaultAddress: '',
       defaultTopic: '',
       currentAccountTopic: null,
