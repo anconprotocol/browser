@@ -993,8 +993,8 @@ export default class Personal extends Vue.extend({
     setTimeout(() => controls.stop(), 20000)
   }
 
-  async decodeQR(res) {
-    return (cid) => {
+  async decodeQR(cid) {
+    return (res) => {
       this.selectedRecipient = res
 
       this.pushAssetToTopic(cid)
