@@ -166,7 +166,7 @@
 
             <v-spacer></v-spacer>
 
-            <v-btn icon @click="historyBlocks(v.cid)" v-on="on">
+            <v-btn icon @click="historyBlocks(v.cid)">
               <v-icon>{{ 'mdi-history' }}</v-icon>
             </v-btn>
           </v-card-actions>
@@ -177,31 +177,26 @@
               </v-card-title>
               <v-card-text>
                 <div v-if="historyItems">
-                  <v-divider></v-divider>
-                  <v-card-text>
-                    History
-                    <v-timeline align-top dense>
-                      <v-timeline-item
-                        v-for="message in historyItems"
-                        :key="message.time"
-                        :color="message.color"
-                        small
-                      >
-                        <div>
-                          <div class="font-weight-normal">
-                            <strong>{{ message.from }}</strong> @{{
-                              message.time | formatDate
-                            }}
-                          </div>
-                          <div>{{ message.message }}</div>
+                  <v-timeline align-top dense>
+                    <v-timeline-item
+                      v-for="message in historyItems"
+                      :key="message.time"
+                      :color="message.color"
+                      small
+                    >
+                      <div>
+                        <div class="font-weight-normal">
+                          <strong>{{ message.from }}</strong> @{{
+                            message.time | formatDate
+                          }}
                         </div>
-                      </v-timeline-item>
-                    </v-timeline>
-                  </v-card-text>
+                        <div>{{ message.message }}</div>
+                      </div>
+                    </v-timeline-item>
+                  </v-timeline>
                 </div>
               </v-card-text>
               <v-card-actions>
-                <v-spacer></v-spacer>
                 <v-btn color="green darken-1" text @click="dialog = false">
                   Close
                 </v-btn>
