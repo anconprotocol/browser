@@ -115,22 +115,6 @@ export default {
           version: '1',
           chainId: this.network.chainId,
         })
-        const siweMessage = message.prepareMessage()
-        const { digest, signature } = await this.sign(siweMessage)
-
-        const verifyRes = await fetch(
-          `${$nuxt.context.env.AnconAPI}siwe/verify`,
-          {
-            body: JSON.stringify({
-              message: siweMessage,
-              signature,
-            }),
-            method: 'POST',
-          }
-        )
-
-        const result = await verifyRes.json()
-        const pubkey = result.publicKey
         await this.db.initialize({
           wakuconnect: {
             bootstrap: { peers: [$nuxt.context.env.WakuLibp2p] },
@@ -149,7 +133,7 @@ export default {
           },
           withWeb3: {
             provider: web3provider,
-            pubkey: pubkey,
+            pubkey: '',
             //      pubkeySig: pubkey[3],
             defaultAddress: accounts[0],
           },
