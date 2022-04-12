@@ -66,6 +66,24 @@
                 </v-list-item>
               </v-list>
             </v-bottom-sheet> -->
+            <v-dialog @click="showQRScanner = true" hide-overlay>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn
+                  v-bind="attrs"
+                  v-on="on"
+                  icon
+                  color="orange lighten-2"
+                  v-show="v.document.kind === 'StorageAsset'"
+                  ><v-icon>mdi-qrcode-scan</v-icon>
+                </v-btn>
+              </template>
+
+              <qrcode-stream
+                key="1"
+                @decode="decodeQR(v.cid)"
+                @init="onScanQR"
+              ></qrcode-stream>
+            </v-dialog>
             <v-bottom-sheet v-model="shareSheet">
               <template v-slot:activator="{ on, attrs }">
                 <v-btn
@@ -80,8 +98,7 @@
               </template>
               <v-list>
                 <v-subheader>Share</v-subheader>
-                <v-row><v-col xs="1"><v-btn @click="scanAddress()" icon><v-icon>mdi-qrcode-scan</v-icon></v-btn>
-                </v-col><v-col xs="11">
+
                 <v-combobox
                   v-model="selectedRecipient"
                   :items="contacts"
@@ -103,7 +120,7 @@
                     </v-list-item>
                   </template>
                 </v-combobox>
-</v-col></v-row>
+
                 <v-list-item
                   v-for="tile in shareTiles"
                   :key="tile.title"
@@ -225,7 +242,7 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
-import { QrcodeCapture } from 'vue-qrcode-reader'
+import { QrcodeCapture, QrcodeStream } from 'vue-qrcode-reader'
 //@ts-ignore
 
 //@ts-ignore
@@ -253,11 +270,9 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 // Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
-import {
-  Subject,
-} from 'rxjs'
+import { Subject } from 'rxjs'
 
-import {Siwe} from '../../lib/AnconProtocol/SIWE'
+import { Siwe } from '../../lib/AnconProtocol/SIWE'
 import { ethers } from 'ethers'
 import helper from '~/utils/helper'
 import AnconProtocolClient from '~/lib/AnconProtocol/AnconProtocolClient'
@@ -280,6 +295,7 @@ const FilePond = vueFilePond(
   components: {
     QrcodeCapture,
     FilePond,
+    QrcodeStream,
   },
 
   watch: {
@@ -400,6 +416,7 @@ export default class Personal extends Vue.extend({
       href: 'breadcrumbs_link_2',
     },
   ]
+  showQRScanner = false
   show: any = false
   dialog: any = false
   items: any = []
@@ -647,7 +664,7 @@ export default class Personal extends Vue.extend({
 
     const api = `{$nuxt.context.env.AnconAPI}`
     const siwe = new Siwe(this.getWalletconnect, api)
-    
+
     const pubkey = await siwe.getSIWEPublicKey()
     // @ts-ignore
     const did = await this.getDb.ancon.createDid(pubkey)
@@ -942,29 +959,72 @@ export default class Personal extends Vue.extend({
     })
   }
   async mounted() {
-    this.loading = true
+    const cancel = setInterval(async () => {
+      if (this.getWalletconnect().connected) {
+        this.loading = true
+        clearInterval(cancel)
+      }
+    }, 200)
     await this.bindSubscriptions()
   }
 
   async scanAddress() {
-    const codeReader = new BrowserQRCodeReader();
-    const videoInputDevices = await BrowserQRCodeReader.listVideoInputDevices();
+    const codeReader = new BrowserQRCodeReader()
+    const videoInputDevices = await BrowserQRCodeReader.listVideoInputDevices()
 
     debugger
     // choose your media device (webcam, frontal camera, back camera, etc.)
-    const selectedDeviceId = videoInputDevices[0].deviceId;
-    console.log(`Started decode from camera with id ${selectedDeviceId}`);
+    const selectedDeviceId = videoInputDevices[0].deviceId
+    console.log(`Started decode from camera with id ${selectedDeviceId}`)
     // const previewElem = document.querySelector('#test-area-qr-code-webcam > video');
     // you can use the controls to stop() the scan or switchTorch() if available
-    const controls = await codeReader.decodeFromVideoDevice(selectedDeviceId, undefined, (result, error, controls) => {
-      // use the result and error values to choose your actions
-      // you can also use controls API in this scope like the controls
-      // returned from the method.
-      this.contacts.push(result as any)      
-    });
+    const controls = await codeReader.decodeFromVideoDevice(
+      selectedDeviceId,
+      undefined,
+      (result, error, controls) => {
+        // use the result and error values to choose your actions
+        // you can also use controls API in this scope like the controls
+        // returned from the method.
+        this.contacts.push(result as any)
+      }
+    )
 
-  // stops scanning after 20 seconds
-  setTimeout(() => controls.stop(), 20000);
+    // stops scanning after 20 seconds
+    setTimeout(() => controls.stop(), 20000)
+  }
+
+  async decodeQR(res) {
+    return (cid) => {
+      this.selectedRecipient = res
+
+      this.pushAssetToTopic(cid)
+    }
+  }
+
+  async onScanQR(promise) {
+    try {
+      await promise
+    } catch (error: any) {
+      if (error.name === 'NotAllowedError') {
+        this.snackbarText = 'ERROR: you need to grant camera access permission'
+      } else if (error.name === 'NotFoundError') {
+        this.snackbarText = 'ERROR: no camera on this device'
+      } else if (error.name === 'NotSupportedError') {
+        this.snackbarText = 'ERROR: secure context required (HTTPS, localhost)'
+      } else if (error.name === 'NotReadableError') {
+        this.snackbarText = 'ERROR: is the camera already in use?'
+      } else if (error.name === 'OverconstrainedError') {
+        this.snackbarText = 'ERROR: installed cameras are not suitable'
+      } else if (error.name === 'StreamApiNotSupportedError') {
+        this.snackbarText = 'ERROR: Stream API is not supported in this browser'
+      } else if (error.name === 'InsecureContextError') {
+        this.snackbarText =
+          'ERROR: Camera access is only permitted in secure context. Use HTTPS or localhost rather than HTTP.'
+      } else {
+        this.snackbarText = `ERROR: Camera error (${error.name})`
+      }
+      this.snackbar = true
+    }
   }
 }
 </script>

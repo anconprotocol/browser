@@ -57,8 +57,7 @@
             )}`
           }} 
     <v-dialog
-      v-model="qrDialog"
-      fullscreen
+      @click="qrDialog = true"
       hide-overlay
     >
       <template v-slot:activator="{ on, attrs }">
@@ -108,15 +107,14 @@ export default {
   Ancon: AnconProtocolClient,
   created: async function () {
     //  Create WalletConnect Provider
-    const provider = new WalletConnectProvider({
+    let provider = new WalletConnectProvider({
       infuraId: '92ed13edfad140409ac24457a9c4e22d',
       rpc: { 56: 'https://bsc-dataseed.binance.org/' },
       chainId: 1,
     })
     const web3provider = new ethers.providers.Web3Provider(provider)
 
-    // Subscribe to accounts change
-    provider.on('accountsChanged', async (accounts) => {
+    const bootstrap = async (accounts) => {
       this.address = accounts[0]
 
       try {
@@ -160,33 +158,29 @@ export default {
 
       await this.localBlocks()
       await this.subscribeTopics()
-    })
+
+
+      this.Ancon = new AnconProtocolClient(
+        this.walletconnect,
+        this.walletconnect.accounts[0]
+      )
+
+      this.Ancon.initialize()
+    }
+    // Subscribe to accounts change
+    provider.on('accountsChanged', bootstrap)
 
     // Subscribe to chainId change
-    provider.on('chainChanged', async (chainId) => {
-      this.network = await web3provider.getNetwork()
-    })
+    provider.on('chainChanged', window.location.reload)
 
-    // Subscribe to session disconnection
-    provider.on('disconnect', (code, reason) => {
-      console.log(code, reason)
-    })
 
-    this.walletconnect = provider
-    //  Enable session (triggers QR Code modal)
-    this.walletconnect.connected ? null : await this.walletconnect.enable()
 
-    //    this.web3Provider = new ethers.providers.Web3Provider(web3.currentProvider)
-    // this.web3Provider = web3.currentProvider
+    
+   this.walletconnect = provider
+    
+    this.connect()
 
-    // console.log(this.web3Provider)
-
-    this.Ancon = new AnconProtocolClient(
-      this.walletconnect,
-      this.walletconnect.accounts[0]
-    )
-
-    this.Ancon.initialize()
+   
   },
   provide: function () {
     return {
@@ -218,7 +212,7 @@ export default {
       onPersonal: new Subject(),
       onHistory: new Subject(),
       db: new ParkyDB(),
-      walletconnect: new WalletConnectProvider({
+      walletconnect:  new WalletConnectProvider({
         infuraId: '92ed13edfad140409ac24457a9c4e22d',
         rpc: {
           56: 'https://bsc-dataseed.binance.org/',
@@ -237,7 +231,7 @@ export default {
       clipped: false,
       drawer: false,
       fixed: false,
-      pubkey: '',
+      
       items: [
         {
           icon: 'mdi-apps',
@@ -266,8 +260,8 @@ export default {
         this.onPersonal.next(v)
       })
     },
-    connect: function () {
-      console.log('Connect')
+    connect:async function () {
+      console.log('Connect') 
       this.walletconnect.enable()
     },
     disconnect: function () {
