@@ -15,11 +15,11 @@
         />
       </v-col>
     </v-row>
-    <v-row justify="left">
+    <v-row>
       <v-col cols="12" sm="10" md="8">
         <v-sheet class="py-4 px-1">
           <v-chip-group multiple active-class="primary--text">
-            <v-chip v-for="tag in tags" :key="tag">
+            <v-chip v-for="tag in tags" :key="tag" @click="selectChip(tag)">
               {{ tag }}
             </v-chip>
           </v-chip-group>
@@ -409,7 +409,7 @@ export default class Personal extends Vue.extend({
   ]
   mintTiles = []
   result = ''
-  selected: any
+
   loading = false
   defaultLoadingText = 'Loading...'
   signingLoadingText = 'Please sign and review message using WalletConnect...'
@@ -427,7 +427,8 @@ export default class Personal extends Vue.extend({
       href: 'breadcrumbs_link_2',
     },
   ]
-  tags = ['My Assets', 'Recieved', 'IPFS', 'Ancon', 'ERC 721']
+  tags = ['My Assets', 'Received', 'IPFS', 'Ancon', 'ERC 721']
+  selectedChip = ''
   showQRScanner = false
   show: any = false
   dialog: any = false
@@ -943,16 +944,36 @@ export default class Personal extends Vue.extend({
     })
   }
 
+  async selectChip(selected) {
+    debugger
+    this.selectedChip = selected
+    await this.bindSubscriptions()
+  }
   async bindSubscriptions() {
+    debugger
     this.topic = this.defaultTopic
     this.personalBlocksSubscription.subscribe({
       next: async (value: any) => {
-        const p = value.filter(
-          (x) =>
-            x.document.kind == 'StorageAsset' ||
-            x.document.kind == 'StorageBlock' ||
-            x.document.owner == this.defaultAddress
-        )
+        const p = value.filter((x) => {
+          switch (this.selectedChip) {
+            case '':
+              x.document.kind == 'StorageAsset' ||
+                x.document.kind == 'StorageBlock' ||
+                x.document.owner != this.defaultAddress
+              break
+            case 'My Assets':
+              x.document.owner == this.defaultAddress
+              break
+            case 'Received':
+              x.document.owner != this.defaultAddress
+              break
+            default:
+              x.document.kind == 'StorageAsset' ||
+                x.document.kind == 'StorageBlock' ||
+                x.document.owner != this.defaultAddress
+              break
+          }
+        })
 
         this.loading = false
         this.items = await Promise.all(p)
