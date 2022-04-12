@@ -138,7 +138,7 @@ export default {
             defaultAddress: accounts[0],
           },
           withAncon: {
-            pubkey: pubkey,
+            pubkey: '',
             api: $nuxt.context.env.AnconAPI,
             walletconnectProvider: provider,
             from: accounts[0],
