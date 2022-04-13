@@ -18,7 +18,7 @@
     <v-row>
       <v-col cols="12" sm="10" md="8">
         <v-sheet class="py-4 px-1">
-          <v-chip-group multiple active-class="primary--text">
+          <v-chip-group active-class="primary--text">
             <v-chip v-for="tag in tags" :key="tag" @click="selectChip(tag)">
               {{ tag }}
             </v-chip>
@@ -255,6 +255,7 @@
 import { Component, Vue } from 'vue-property-decorator'
 import { QrcodeCapture, QrcodeStream } from 'vue-qrcode-reader'
 //@ts-ignore
+import { CID } from 'multiformats/cid'
 
 //@ts-ignore
 import { decode, encode } from 'cbor-x'
@@ -262,7 +263,7 @@ import 'pdfjs-dist/legacy/build/pdf.worker.entry'
 const PromiseFileReader = require('promise-file-reader')
 import { BrowserQRCodeReader } from '@zxing/browser'
 
-import { StorageAsset } from '../documentModel'
+import { IPFSBlock, StorageAsset } from '../documentModel'
 // Import Vue FilePond
 import vueFilePond from 'vue-filepond'
 
@@ -281,7 +282,7 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 // Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
-import { Subject } from 'rxjs'
+import { lastValueFrom, Subject } from 'rxjs'
 
 import { Siwe } from '../../lib/AnconProtocol/SIWE'
 import { ethers } from 'ethers'
@@ -324,7 +325,6 @@ const FilePond = vueFilePond(
     'getWalletconnect',
     'defaultTopic',
     'defaultAddress',
-
     'incomingSubscriptions',
     'personalBlocksSubscription',
     'historySubscription',
@@ -337,6 +337,14 @@ export default class Personal extends Vue.extend({
     formatDate: (date: Date) => Intl.DateTimeFormat('us-EN').format(date),
   },
 }) {
+  keys = {
+    '': 'StorageAsset',
+    'My Assets': 'StorageAsset',
+    Received: 'StorageBlock',
+    IPFS: 'IpfsBlock',
+    Ancon: 'AnconBlock',
+    'ERC-721': 'ERC721Block',
+  }
   snackbar = false
   snackbarText = ''
   privacySheet = false
@@ -353,16 +361,16 @@ export default class Personal extends Vue.extend({
     },
   ]
   exportTiles = [
-    {
-      title: 'Anchor data asset',
-      img: 'mdi-note-plus',
-      click: (cid) => {
-        this.exportSheet = false
-        this.$nextTick(() => {
-          this.postBlockToAncon(cid)
-        })
-      },
-    },
+    // {
+    //   title: 'Anchor data asset',
+    //   img: 'mdi-note-plus',
+    //   click: (cid) => {
+    //     this.exportSheet = false
+    //     this.$nextTick(() => {
+    //       this.postBlockToAncon(cid)
+    //     })
+    //   },
+    // },
     {
       title: 'Mint',
       img: 'mdi-transition-masked',
@@ -389,13 +397,26 @@ export default class Personal extends Vue.extend({
         })
       },
     },
-    // {
-    //   img: 'inbox.png',
-    //   title: 'Telegram',
-    //   click: (cid) => {
-    //     this.shareSheet = false
-    //   },
-    // },
+    {
+      img: 'mdi-cube-outline',
+      title: 'IPFS',
+      click: (cid) => {
+        this.shareSheet = false
+        this.$nextTick(() => {
+          this.sendToIpfs(cid)
+        })
+      },
+    },
+    {
+      img: 'mdi-note-plus',
+      title: 'Ancon (anchored data)',
+      click: (cid) => {
+        this.shareSheet = false
+        this.$nextTick(() => {
+          this.sendToAncon(cid)
+        })
+      },
+    },
     {
       img: 'mdi-whatsapp',
       title: 'Whatsapp',
@@ -427,7 +448,7 @@ export default class Personal extends Vue.extend({
       href: 'breadcrumbs_link_2',
     },
   ]
-  tags = ['My Assets', 'Received', 'IPFS', 'Ancon', 'ERC 721']
+  tags = ['My Assets', 'Received', 'IPFS', 'Ancon', 'ERC-721']
   selectedChip = ''
   showQRScanner = false
   show: any = false
@@ -467,6 +488,7 @@ export default class Personal extends Vue.extend({
   x = 0
   search = null
   y = 0
+  ipfs: any
 
   edit(index, item) {
     if (!this.editing) {
@@ -670,14 +692,75 @@ export default class Personal extends Vue.extend({
     this.loadingText = this.defaultLoadingText
     return { digest: b, signature }
   }
-  async postBlockToAncon(cid: string) {
-    this.exportSheet = false
-    this.snackbarText = 'Exporting to Ancon Node...'
+
+  async sendToIpfs(cid: string) {
+    this.shareSheet = false
+    this.snackbarText = 'Uploading to IPFS...'
     this.snackbar = true
     const model = await (this as any).getDb.get(cid)
 
-    const api = `{$nuxt.context.env.AnconAPI}`
-    const siwe = new Siwe(this.getWalletconnect, api)
+    const fileAsBlob = await fetch(model.document.image)
+    const file = await fileAsBlob.blob()
+
+    // @ts-ignore
+    const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
+    // sign message
+    const { signature, digest } = await this.sign(
+      JSON.stringify(model.document)
+    )
+    const block = {
+      ...model.document,
+      image: cidFromIpfs.image,
+      kind: 'StorageBlock',
+      // signature,
+      // digest,
+      timestamp: new Date().getTime(),
+      issuer: this.defaultAddress,
+    }
+
+    const body = new FormData()
+    body.append('file', JSON.stringify(block))
+
+    const ipfsAddRes = await fetch(
+      'https://ipfs.infura.io:5001/api/v0/add?pin=true',
+      {
+        body,
+        method: 'POST',
+      }
+    )
+
+    const ipfsAddResJSON = await ipfsAddRes.json()
+
+    const cidipfs = ipfsAddResJSON.Hash
+
+    this.add(cid, 'Publish to ipfs', this.getWalletconnect().accounts[0], {
+      cid: cidipfs,
+    })
+
+    // @ts-ignore
+    await this.getDb.putBlock({
+      cid: cidipfs,
+      kind: 'IpfsBlock',
+      ref: cid,
+    } as IPFSBlock)
+
+    this.snackbarText = 'Upload completed'
+    this.snackbar = true
+  }
+
+  async sendToAncon(cid: string) {
+    this.shareSheet = false
+    this.snackbarText = 'Uploading to Ancon...'
+    this.snackbar = true
+    const model = await (this as any).getDb.get(cid)
+
+    const fileAsBlob = await fetch(model.document.image)
+    const file = await fileAsBlob.blob()
+    // @ts-ignore 
+    const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
+    model.document.image = cidFromIpfs
+    const api = this.$nuxt.context.env.AnconAPI + '/'
+    const siwe = new Siwe(this.getWalletconnect(), api)
 
     const pubkey = await siwe.getSIWEPublicKey()
     // @ts-ignore
@@ -687,7 +770,9 @@ export default class Personal extends Vue.extend({
     const dagblock = await this.getDb.ancon.createDagBlock({
       // @ts-ignore
       message: model.document,
-      topic: 'du.xdv.digital',
+
+      topic: undefined,
+      // topic: 'du.xdv.digital',
     })
     this.add(
       cid,
@@ -696,7 +781,15 @@ export default class Personal extends Vue.extend({
       dagblock
     )
 
-    this.snackbarText = 'Finished export to Ancon Node'
+    // @ts-ignore
+    await this.getDb.putBlock({
+      cid: dagblock.cid,
+      // topic: 'du.xdv.digital',
+      kind: 'AnconBlock',
+      red: cid,
+    })
+
+    this.snackbarText = 'Upload completed'
     this.snackbar = true
   }
 
@@ -945,36 +1038,54 @@ export default class Personal extends Vue.extend({
   }
 
   async selectChip(selected) {
-    debugger
     this.selectedChip = selected
-    await this.bindSubscriptions()
+    // @ts-ignore
+    const blocks = await this.getDb.getBlocksByTableName$('blockdb', (b) => {
+      return () =>
+        b.where({ 'document.kind': this.keys[this.selectedChip] }).toArray()
+    })
+
+    const c = blocks.subscribe(async (i) => {
+      const loaded = await this.postFilter(i)
+      this.items = await Promise.all(loaded)
+      c.unsubscribe()
+    })
+  }
+  async postFilter(items) {
+    let r = items
+    if (this.keys[this.selectedChip] === 'IpfsBlock') {
+      r = items.map(async (i: any) => {
+        try {
+          // @ts-ignore
+          const ipfsAddRes = await fetch(`https://ipfs.infura.io/ipfs/${i.document.cid}`)
+
+          return ipfsAddRes.json()
+        } catch (e) {}
+      })
+    } else if (this.keys[this.selectedChip] === 'AnconBlock') {
+      r = items.map(async (i: any) => {
+        try {
+          const result = await fetch(
+            `${this.$nuxt.context.env.AnconAPI}/v0/dag/${i.document.cid}/`
+          )
+          const data = await result.json()
+          return data.content
+        } catch (e) {}
+      })
+    }
+
+    return r
   }
   async bindSubscriptions() {
-    debugger
     this.topic = this.defaultTopic
+
     this.personalBlocksSubscription.subscribe({
       next: async (value: any) => {
-        const p = value.filter((x) => {
-          switch (this.selectedChip) {
-            case '':
-              x.document.kind == 'StorageAsset' ||
-                x.document.kind == 'StorageBlock' ||
-                x.document.owner != this.defaultAddress
-              break
-            case 'My Assets':
-              x.document.owner == this.defaultAddress
-              break
-            case 'Received':
-              x.document.owner != this.defaultAddress
-              break
-            default:
-              x.document.kind == 'StorageAsset' ||
-                x.document.kind == 'StorageBlock' ||
-                x.document.owner != this.defaultAddress
-              break
-          }
-        })
+        let p = value.filter(
+          (x) => x.document.kind === this.keys[this.selectedChip]
+        )
 
+        this.postFilter(p)
         this.loading = false
         this.items = await Promise.all(p)
       },
@@ -1028,10 +1139,10 @@ export default class Personal extends Vue.extend({
   }
 
   async decodeQR(cid) {
-    return (res) => {
+    return async (res) => {
       this.selectedRecipient = res
 
-      this.pushAssetToTopic(cid)
+      await this.pushAssetToTopic(cid)
     }
   }
 

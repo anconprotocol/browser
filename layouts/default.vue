@@ -81,16 +81,11 @@
 <script>
 import WalletConnectProvider from '@walletconnect/web3-provider'
 import { ethers } from 'ethers'
-import Web3 from 'web3'
 import { ParkyDB } from 'parkydb'
 import AnconProtocolClient from '../lib/AnconProtocol/AnconProtocolClient'
-import { map, merge, Subject, tap, timestamp } from 'rxjs'
+import { Subject } from 'rxjs'
 import { decode, encode } from 'cbor-x'
-import Dexie, { liveQuery, Table } from 'dexie'
-import getTransaction from '../lib/AnconProtocol/GetTransaction'
-import loadImage from 'blueimp-load-image'
 import VueQrcode from '@chenfengyuan/vue-qrcode'
-
 const PromiseFileReader = require('promise-file-reader')
 
 export default {

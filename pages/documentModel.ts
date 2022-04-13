@@ -17,8 +17,34 @@ export interface StorageBlock {
     digest: string;
     timestamp: number;
     issuer: string;
+    ref: string;
 }
 
+export interface IPFSBlock {
+    cid: string;
+    kind: string;
+    ref: string;
+}
+
+export interface AnconBlock {
+    cid: string;
+    topic: string;
+    kind: string;
+    ref: string;
+}
+
+export interface ERC721Block {
+    name: string;
+    kind: string;
+    description: string;
+    metadata: string;
+    tokenAddress: string;
+    tokenId: string;
+    chainId: string;
+    minterAddress: string;
+    ownerAddress: string;
+    ref: string;
+}
 // Ancon Node block - Public
 export interface VerifiableStorageBlock extends StorageBlock {
     commitHash: string;
