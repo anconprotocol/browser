@@ -827,7 +827,7 @@ export default class Personal extends Vue.extend({
 
       this.loading = false
       this.loadingText = this.defaultLoadingText
-      debugger
+      
 
       // @ts-ignore
       pubsub.publish(block)
@@ -1256,7 +1256,7 @@ export default class Personal extends Vue.extend({
         let p = value.filter(
           (x) => x.document.kind === this.keys[this.selectedChip]
         )
-      debugger
+      
 
         this.postFilter(p)
         this.loading = false
@@ -1272,7 +1272,7 @@ export default class Personal extends Vue.extend({
 
     this.incomingSubscriptions.subscribe({
       next: (block) => {
-      debugger
+      
 
         // TODO: switch statement or filer by topic
         console.log(`[incoming]`, block)

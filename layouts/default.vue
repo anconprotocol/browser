@@ -315,7 +315,7 @@ export default {
       this.currentAccountTopic = pubsub
       this.onIncomingCancel = pubsub.onBlockReply$.subscribe(async (v) => {
         // @ts-ignore
-        debugger
+        
         await this.db.putBlock(v.decoded.payload)
         this.onIncoming.next(v)
       })
@@ -329,7 +329,7 @@ export default {
       ))
       this.onKeyexCancel = this.keyexPubsub.subscribe((v) => {
         // no op
-        debugger
+        
         this.onIncoming.next(v)
       })
 
@@ -342,9 +342,9 @@ export default {
       })
 
       sync.subscribe(async (message) => {
-        debugger
+        
         const block = decode(message.payload)
-        debugger
+        
         await this.db.putBlock(block.document)
       })
     },
