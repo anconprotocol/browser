@@ -125,7 +125,7 @@ export default {
     Onramper: `pk_test_vce1UmxZ3fdhoOGiZBJHiUivX205TfsfAiyljF9LF_k0`,
     AnconAPI: 'https://api.ancon.did.pa',
     WakuRPC: 'https://api.ancon.did.pa/waku',
-    InfuraIPFS: 'https://infura.ipfs.io:5001/',
+    InfuraIPFS: 'https://infura.ipfs.io:5001',
     IPFS: 'https://ipfs.xdv.digital/',
     Waku: 'https://waku.did.pa/',
     WakuLibp2p:

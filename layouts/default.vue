@@ -109,6 +109,7 @@ export default {
       try {
         this.network = await web3provider.getNetwork()
         await this.db.initialize({
+          enableSync: true,
           wakuconnect: {
             bootstrap: { peers: [$nuxt.context.env.WakuLibp2p] },
             // libp2p: {
@@ -121,21 +122,20 @@ export default {
             // },
           },
           withWallet: {
-            autoLogin: true,
-            password: 'zxcvb', /// TODO! Remove this, use ephemeral enc keys
+            password: '', /// Not used
           },
           withWeb3: {
             provider: web3provider,
             defaultAddress: accounts[0],
           },
           withAncon: {
-            api: $nuxt.context.env.AnconAPI,
+            api: this.$nuxt.context.env.AnconAPI,
             walletconnectProvider: provider,
             from: accounts[0],
           },
           withIpfs: {
             gateway: 'https://ipfs.infura.io',
-            api: 'https://ipfs.infura.io:5001',
+            api: this.$nuxt.context.env.IPFS,
           },
         })
       } catch (e) {
@@ -315,6 +315,7 @@ export default {
       this.currentAccountTopic = pubsub
       this.onIncomingCancel = pubsub.onBlockReply$.subscribe(async (v) => {
         // @ts-ignore
+        debugger
         await this.db.putBlock(v.decoded.payload)
         this.onIncoming.next(v)
       })
@@ -328,7 +329,23 @@ export default {
       ))
       this.onKeyexCancel = this.keyexPubsub.subscribe((v) => {
         // no op
+        debugger
         this.onIncoming.next(v)
+      })
+
+      const startTime = new Date()
+      // 7 days/week, 24 hours/day, 60min/hour, 60secs/min, 100ms/sec
+      startTime.setTime(startTime.getTime() - 7 * 24 * 60 * 60 * 1000)
+      const sync = await this.db.getSyncStore({
+        startTime,
+        endTime: new Date(),
+      })
+
+      sync.subscribe(async (message) => {
+        debugger
+        const block = decode(message.payload)
+        debugger
+        await this.db.putBlock(block.document)
       })
     },
   },

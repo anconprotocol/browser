@@ -385,7 +385,7 @@ export default class Public extends Vue {
     body.append('file', content)
 
     const ipfsAddRes = await fetch(
-      'https://ipfs.infura.io:5001/api/v0/add?pin=true',
+      `${this.$nuxt.context.env.IPFS}api/v0/add?pin=true`,
       {
         body,
         method: 'POST',

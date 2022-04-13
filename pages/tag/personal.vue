@@ -9,9 +9,9 @@
           label-idle="Drop files here..."
           v-bind:allow-multiple="false"
           accepted-file-types="image/jpeg,
-        image/png"
+        image/png, image/gif, application/pdf"
           v-bind:files="files"
-          v-on:addfile="upload"
+          v-on:addfile="handleUpload"
         />
       </v-col>
     </v-row>
@@ -46,16 +46,20 @@
     ><v-row>
       <v-col dense v-for="v in items" :key="v[0]">
         <v-card class="mx-auto" max-width="360">
-          <v-img :src="v.document.image" height="200px"></v-img>
+          <v-img
+            :src="v.document.image"
+            height="200px"
+            @click="infoAsset(v)"
+          ></v-img>
 
           <v-card-title>
             {{ v.document.name }}
           </v-card-title>
 
           <v-card-subtitle>
-            {{ v.document.owner }}
+            {{ getOwner(v.document.owner) }}
           </v-card-subtitle>
-          <v-card-text>{{ v.document.owner }}</v-card-text>
+          <v-card-text>{{ v.document.description }}</v-card-text>
           <v-card-actions>
             <!-- <v-bottom-sheet v-model="privacySheet">
               <template v-slot:activator="{ on, attrs }">
@@ -199,8 +203,136 @@
             <v-btn icon @click="historyBlocks(v.cid)">
               <v-icon>{{ 'mdi-history' }}</v-icon>
             </v-btn>
+            <!-- 
+            <v-tooltip bottom color="primary">
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn icon color="primary" dark v-bind="attrs" v-on="on"
+                  ><v-icon>mdi-information</v-icon></v-btn
+                >
+              </template>
+              <div>cid {{ v.cid }}</div>
+              <div>description {{ v.description }}</div>
+              <div>owner {{ v.document.owner }}</div>
+            </v-tooltip> -->
           </v-card-actions>
-          <v-dialog v-model="dialog" width="600px">
+
+          <v-dialog v-model="editDialog" max-width="600px">
+            <v-card>
+              <v-card-title>
+                <span class="text-h5">Edit Asset</span>
+              </v-card-title>
+              <v-card-text>
+                <v-form>
+                  <v-container>
+                    <v-row>
+                      <v-col cols="12" sm="12">
+                        <v-text-field
+                          v-model="selectedEdit.options.description"
+                          label="Description"
+                          solo-inverted
+                        ></v-text-field>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col cols="12" sm="12">
+                        <v-text-field
+                          v-model="selectedEdit.options.sources"
+                          label="Sources (separate by comma)"
+                          solo-inverted
+                        ></v-text-field>
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </v-form>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn color="orange accent-4" text @click="upload">
+                  Save
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+
+          <v-dialog v-model="infoDialog" max-width="600px">
+            <v-card>
+              <v-card-title>
+                <span class="text-h5">Asset Information</span>
+              </v-card-title>
+              <v-card-text>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>Cid</v-list-item-title>
+                    <v-list-item-subtitle>{{
+                      selectedInfoItem.meta.cid
+                    }}</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>Kind</v-list-item-title>
+                    <v-list-item-subtitle>{{
+                      selectedInfoItem.document.kind
+                    }}</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>Reference</v-list-item-title>
+                    <v-list-item-subtitle>{{
+                      selectedInfoItem.ref
+                    }}</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>Owner</v-list-item-title>
+                    <v-list-item-subtitle>{{
+                      selectedInfoItem.document.owner
+                    }}</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>Name</v-list-item-title>
+                    <v-list-item-subtitle>{{
+                      selectedInfoItem.document.name
+                    }}</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>Description</v-list-item-title>
+                    <v-list-item-subtitle>{{
+                      selectedInfoItem.document.description
+                    }}</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>Last modified</v-list-item-title>
+                    <v-list-item-subtitle>{{
+                      selectedInfoItem.document.timestamp | formatDate
+                    }}</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>Sources</v-list-item-title>
+                    <v-list-item-subtitle>{{
+                      selectedInfoItem.document.sources
+                    }}</v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn color="orange accent-4" text @click="infoAsset()">
+                  Close
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+
+          <v-dialog v-model="dialog" max-width="600px">
             <v-card>
               <v-card-title>
                 <span class="text-h5">Asset History</span>
@@ -282,7 +414,7 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 // Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
-import { lastValueFrom, Subject } from 'rxjs'
+import { debounce, lastValueFrom, Subject } from 'rxjs'
 
 import { Siwe } from '../../lib/AnconProtocol/SIWE'
 import { ethers } from 'ethers'
@@ -344,6 +476,10 @@ export default class Personal extends Vue.extend({
     IPFS: 'IpfsBlock',
     Ancon: 'AnconBlock',
     'ERC-721': 'ERC721Block',
+  }
+  editItem = {
+    description: '',
+    sources: '',
   }
   snackbar = false
   snackbarText = ''
@@ -456,6 +592,7 @@ export default class Personal extends Vue.extend({
   items: any = []
   files = []
   selectedFile: any = {}
+  selectedInfoItem: any = { document: {}, meta: { ref: '' } }
   defaultAddress: any
   db: any
   // @ts-ignore
@@ -488,7 +625,11 @@ export default class Personal extends Vue.extend({
   x = 0
   search = null
   y = 0
-  ipfs: any
+  editDialog = false
+  selectedEdit: any = {
+    options: {},
+  }
+  infoDialog: any = false
 
   edit(index, item) {
     if (!this.editing) {
@@ -522,17 +663,33 @@ export default class Personal extends Vue.extend({
   }
 
   async handleFilePondInit() {}
-  async upload(err, file) {
-    this.selectedFile = file.file
 
+  async handleUpload(err, file) {
+    this.selectedFile = file
+    this.selectedEdit = {
+      options: {
+        description: '',
+        sources: '',
+      },
+    }
+    if (this.editDialog) {
+      this.editDialog = false
+    } else {
+      this.editDialog = true
+    }
+  }
+  async upload() {
+    this.editDialog = false
+
+    const { source } = this.selectedFile
     const payload = {
-      name: this.selectedFile.name,
+      name: source.name,
       kind: 'StorageAsset',
-      owner: '',
-      sources: [],
-      description: '',
-      timestamp: new Date().getTime(),
-      image: await PromiseFileReader.readAsDataURL(file.file),
+      owner: this.getWalletconnect().accounts[0],
+      sources: this.selectedEdit.options.sources.split(','),
+      description: this.selectedEdit.options.description,
+      timestamp: source.lastModifiedDate.getTime(),
+      image: await PromiseFileReader.readAsDataURL(source),
     } as StorageAsset
 
     // @ts-ignore
@@ -540,7 +697,6 @@ export default class Personal extends Vue.extend({
       kind: 'StorageAsset',
       topic: this.topic,
     })
-
     if (!!model) {
       // @ts-ignore
       model = await this.getDb.get(id)
@@ -599,6 +755,9 @@ export default class Personal extends Vue.extend({
   }
 
   async pushAssetToTopic(cid: string) {
+    this.loading = true
+    this.loadingText = this.signingLoadingText
+
     this.shareSheet = false
     this.snackbarText = `Sending asset to ${this.selectedRecipient}...`
     this.snackbar = true
@@ -643,16 +802,18 @@ export default class Personal extends Vue.extend({
       }
     )
 
-    const sub = this.incomingSubscriptions.subscribe(async (res: any) => {
+    const sub = kex.pipe(debounce((i: any)=>{
+      return i
+    })).subscribe(async (encryptionPubKey: any) => {
       // @ts-ignore
       const pubsub = await this.getDb.createTopicPubsub(
         `/xdvdigital/1/${this.selectedRecipient}/cbor`,
         {
           blockCodec,
-          isCRDT: false,
-          canPublish: true,
+          isKeyExchangeChannel: false,
+          canPublish: true,          
           canSubscribe: true,
-          encryptionPubKey: res.encryptionPublicKey,
+          // encryptionPubKey,
         }
       )
       //TODO: encryption public key caching
@@ -664,13 +825,17 @@ export default class Personal extends Vue.extend({
         block
       )
 
+      this.loading = false
+      this.loadingText = this.defaultLoadingText
+      debugger
+
       // @ts-ignore
       pubsub.publish(block)
       this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
       this.snackbar = true
 
-      pubsub.close()
-      sub.unsubscribe()
+      // pubsub.close()
+      // sub.unsubscribe()
     })
   }
 
@@ -722,7 +887,7 @@ export default class Personal extends Vue.extend({
     body.append('file', JSON.stringify(block))
 
     const ipfsAddRes = await fetch(
-      'https://ipfs.infura.io:5001/api/v0/add?pin=true',
+      `${this.$nuxt.context.env.IPFS}api/v0/add?pin=true`,
       {
         body,
         method: 'POST',
@@ -753,12 +918,14 @@ export default class Personal extends Vue.extend({
     this.snackbarText = 'Uploading to Ancon...'
     this.snackbar = true
     const model = await (this as any).getDb.get(cid)
+    this.loading = true
+    this.loadingText = this.signingLoadingText
 
     const fileAsBlob = await fetch(model.document.image)
     const file = await fileAsBlob.blob()
-    // @ts-ignore 
+    // @ts-ignore
     const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
-    model.document.image = cidFromIpfs
+    model.document.image = cidFromIpfs.image
     const api = this.$nuxt.context.env.AnconAPI + '/'
     const siwe = new Siwe(this.getWalletconnect(), api)
 
@@ -770,7 +937,6 @@ export default class Personal extends Vue.extend({
     const dagblock = await this.getDb.ancon.createDagBlock({
       // @ts-ignore
       message: model.document,
-
       topic: undefined,
       // topic: 'du.xdv.digital',
     })
@@ -786,8 +952,10 @@ export default class Personal extends Vue.extend({
       cid: dagblock.cid,
       // topic: 'du.xdv.digital',
       kind: 'AnconBlock',
-      red: cid,
+      ref: cid,
     })
+    this.loading = false
+    this.loadingText = this.defaultLoadingText
 
     this.snackbarText = 'Upload completed'
     this.snackbar = true
@@ -1057,9 +1225,12 @@ export default class Personal extends Vue.extend({
       r = items.map(async (i: any) => {
         try {
           // @ts-ignore
-          const ipfsAddRes = await fetch(`https://ipfs.infura.io/ipfs/${i.document.cid}`)
+          const ipfsAddRes = await fetch(
+            `https://ipfs.infura.io/ipfs/${i.document.cid}`
+          )
 
-          return ipfsAddRes.json()
+          const data = await ipfsAddRes.json()
+          return { document: data, ...i.document }
         } catch (e) {}
       })
     } else if (this.keys[this.selectedChip] === 'AnconBlock') {
@@ -1069,7 +1240,8 @@ export default class Personal extends Vue.extend({
             `${this.$nuxt.context.env.AnconAPI}/v0/dag/${i.document.cid}/`
           )
           const data = await result.json()
-          return data.content
+
+          return { document: data.content, ...i.document }
         } catch (e) {}
       })
     }
@@ -1084,6 +1256,7 @@ export default class Personal extends Vue.extend({
         let p = value.filter(
           (x) => x.document.kind === this.keys[this.selectedChip]
         )
+      debugger
 
         this.postFilter(p)
         this.loading = false
@@ -1099,6 +1272,8 @@ export default class Personal extends Vue.extend({
 
     this.incomingSubscriptions.subscribe({
       next: (block) => {
+      debugger
+
         // TODO: switch statement or filer by topic
         console.log(`[incoming]`, block)
       },
@@ -1112,6 +1287,20 @@ export default class Personal extends Vue.extend({
       }
     }, 200)
     await this.bindSubscriptions()
+  }
+
+  async infoAsset(item: any) {
+    if (this.infoDialog) {
+      this.infoDialog = false
+    } else {
+      this.selectedInfoItem = {
+        ...item,
+        meta: {
+          cid: item.cid,
+        },
+      }
+      this.infoDialog = true
+    }
   }
 
   async scanAddress() {
@@ -1138,6 +1327,15 @@ export default class Personal extends Vue.extend({
     setTimeout(() => controls.stop(), 20000)
   }
 
+  getOwner(address) {
+    if (address === this.getWalletconnect().accounts[0]) {
+      return `Owned by me`
+    } else {
+      return `Owned by  ${address.substring(0, 8)}...${address.substring(
+        address.length - 8
+      )}`
+    }
+  }
   async decodeQR(cid) {
     return async (res) => {
       this.selectedRecipient = res
