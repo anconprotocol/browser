@@ -44,7 +44,7 @@
         ></v-progress-linear>
       </v-col> </v-row
     ><v-row>
-      <v-col dense v-for="v in items" :key="v[0]">
+      <v-col dense v-for="v in items" :key="v.cid">
         <v-card class="mx-auto" max-width="360">
           <v-img
             :src="v.document.image"
@@ -99,47 +99,26 @@
                 @init="onScanQR"
               ></qrcode-stream>
             </v-dialog>
-            <v-bottom-sheet v-model="shareSheet">
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn
-                  v-bind="attrs"
-                  v-on="on"
-                  icon
-                  color="orange lighten-2"
-                  v-show="v.document.kind === 'StorageAsset'"
-                >
-                  <v-icon>mdi-share-variant</v-icon>
-                </v-btn>
-              </template>
+            <!-- <v-bottom-sheet v-model="shareSheet">
+              <template v-slot:activator="{ on, attrs }"> -->
+            <v-btn
+              icon
+              @click="openShareDialog(v)"
+              color="orange lighten-2"
+              v-show="v.document.kind === 'StorageAsset'"
+            >
+              <v-icon>mdi-share-variant</v-icon>
+            </v-btn>
+            <!-- </template>
               <v-list>
                 <v-subheader>Share</v-subheader>
 
-                <v-combobox
-                  v-model="selectedRecipient"
-                  :items="contacts"
-                  :search-input.sync="search"
-                  hide-selected
-                  label="Search for an option"
-                  persistent-hint
-                  small-chips
-                  solo
-                >
-                  <template v-slot:no-data>
-                    <v-list-item>
-                      <v-list-item-content>
-                        <v-list-item-title>
-                          No results matching "<strong>{{ search }}</strong
-                          >". Press <kbd>enter</kbd> to create a new one
-                        </v-list-item-title>
-                      </v-list-item-content>
-                    </v-list-item>
-                  </template>
-                </v-combobox>
+              
 
                 <v-list-item
                   v-for="tile in shareTiles"
                   :key="tile.title"
-                  @click="tile.click(v.cid)"
+                  @click="tile.click(v)"
                 >
                   <v-list-item-avatar>
                     <v-icon color="orange lighten-2">{{ tile.img }}</v-icon>
@@ -147,18 +126,17 @@
                   <v-list-item-title>{{ tile.title }}</v-list-item-title>
                 </v-list-item>
               </v-list>
-            </v-bottom-sheet>
-            <v-bottom-sheet v-model="exportSheet">
+            </v-bottom-sheet> -->
+            <v-btn
+              icon
+              color="orange lighten-2"
+              v-show="v.document.kind === 'StorageAsset'"
+            >
+              <v-icon>mdi-export-variant</v-icon>
+            </v-btn>
+            <!-- <v-bottom-sheet v-model="exportSheet">
               <template v-slot:activator="{ on, attrs }">
-                <v-btn
-                  v-bind="attrs"
-                  v-on="on"
-                  icon
-                  color="orange lighten-2"
-                  v-show="v.document.kind === 'StorageAsset'"
-                >
-                  <v-icon>mdi-export-variant</v-icon>
-                </v-btn>
+
               </template>
               <v-list>
                 <v-subheader>Export</v-subheader>
@@ -166,7 +144,7 @@
                 <v-list-item
                   v-for="tile in exportTiles"
                   :key="tile.title"
-                  @click="tile.click(v.cid)"
+                  @click="tile.click(v)"
                 >
                   <v-list-item-avatar>
                     <v-icon color="orange lighten-2">{{ tile.img }}</v-icon>
@@ -174,7 +152,7 @@
                   <v-list-item-title>{{ tile.title }}</v-list-item-title>
                 </v-list-item>
               </v-list>
-            </v-bottom-sheet>
+            </v-bottom-sheet> -->
 
             <!-- <v-bottom-sheet v-model="mintSheet">
               <template v-slot:activator="{ on, attrs }">
@@ -248,6 +226,122 @@
               <v-card-actions>
                 <v-btn color="orange accent-4" text @click="upload">
                   Save
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+
+          <v-dialog v-model="shareDialog" max-width="600px">
+            <v-card>
+              <v-card-title>
+                <span class="text-h5">Share Asset</span>
+              </v-card-title>
+              <v-card-text>
+                <v-list-item two-line>
+                  <v-list-item-content>
+                    <v-list-item-title>Send to address</v-list-item-title>
+                    <v-list-item-subtitle>
+                      <v-combobox
+                        v-model="selectedRecipient"
+                        :items="contacts"
+                        :search-input.sync="search"
+                        hide-selected
+                        label="Search for an option"
+                        persistent-hint
+                        small-chips
+                        solo
+                      >
+                        <template v-slot:no-data>
+                          <v-list-item>
+                            <v-list-item-content>
+                              <v-list-item-title>
+                                No results matching "<strong>{{
+                                  search
+                                }}</strong
+                                >". Press <kbd>enter</kbd> to create a new one
+                              </v-list-item-title>
+                            </v-list-item-content>
+                          </v-list-item>
+                        </template>
+                      </v-combobox>
+                    </v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-row>
+                  <v-col>
+                    <p>Share services available</p>
+
+                    <v-toolbar>
+                      <v-tooltip top>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn
+                            dark
+                            v-bind="attrs"
+                            v-on="on"
+                            icon
+                            @click="pushAssetToTopic(selectedItem.cid)"
+                          >
+                            <v-icon> mdi-message </v-icon>
+                          </v-btn>
+                        </template>
+                        <span>du. secure share</span>
+                      </v-tooltip>
+
+                      <v-tooltip top>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn
+                            dark
+                            v-bind="attrs"
+                            v-on="on"
+                            icon
+                            @click="sendToIpfs(selectedItem.cid)"
+                          >
+                            <v-icon> mdi-cube-outline </v-icon>
+                          </v-btn>
+                        </template>
+                        <span>Upload to IPFS</span>
+                      </v-tooltip>
+                      <v-tooltip top>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn
+                            dark
+                            v-bind="attrs"
+                            v-on="on"
+                            icon
+                            @click="sendToAncon(selectedItem.cid)"
+                          >
+                            <v-icon> mdi-note-plus </v-icon>
+                          </v-btn>
+                        </template>
+                        <span>Ancon (anchored data)</span>
+                      </v-tooltip>
+                      <v-tooltip top>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn
+                            dark
+                            v-bind="attrs"
+                            v-on="on"
+                            icon
+                            @click="sendTextToWhatsapp(selectedItem.cid)"
+                          >
+                            <v-icon> mdi-whatsapp </v-icon>
+                          </v-btn>
+                        </template>
+                        <span>Whatsapp</span>
+                      </v-tooltip>
+
+
+                    </v-toolbar>
+                  </v-col></v-row
+                >
+              </v-card-text>
+              <v-card-actions>
+                <v-btn
+                  color="orange accent-4"
+                  text
+                  @click="shareDialog = false"
+                >
+                  Close
                 </v-btn>
               </v-card-actions>
             </v-card>
@@ -394,6 +488,7 @@ import { decode, encode } from 'cbor-x'
 import 'pdfjs-dist/legacy/build/pdf.worker.entry'
 const PromiseFileReader = require('promise-file-reader')
 import { BrowserQRCodeReader } from '@zxing/browser'
+import EthCrypto from 'eth-crypto'
 
 import { IPFSBlock, StorageAsset } from '../documentModel'
 // Import Vue FilePond
@@ -426,6 +521,7 @@ import {
   getWhatsAppClickToChatLink,
   shareTextViaNativeSharing,
 } from 'share-text-to-whatsapp'
+import { arrayify, hexlify } from 'ethers/lib/utils'
 
 // Create component
 const FilePond = vueFilePond(
@@ -527,10 +623,9 @@ export default class Personal extends Vue.extend({
       img: 'mdi-message',
       title: 'Send asset',
       click: (cid) => {
+        console.log(cid)
         this.shareSheet = false
-        this.$nextTick(() => {
-          this.pushAssetToTopic(cid)
-        })
+        this.pushAssetToTopic(cid)
       },
     },
     {
@@ -538,9 +633,7 @@ export default class Personal extends Vue.extend({
       title: 'IPFS',
       click: (cid) => {
         this.shareSheet = false
-        this.$nextTick(() => {
-          this.sendToIpfs(cid)
-        })
+        this.sendToIpfs(cid)
       },
     },
     {
@@ -630,6 +723,8 @@ export default class Personal extends Vue.extend({
     options: {},
   }
   infoDialog: any = false
+  shareDialog: any = false
+  selectedItem: any
 
   edit(index, item) {
     if (!this.editing) {
@@ -755,19 +850,13 @@ export default class Personal extends Vue.extend({
   }
 
   async pushAssetToTopic(cid: string) {
+    debugger
     this.loading = true
     this.loadingText = this.signingLoadingText
 
     this.shareSheet = false
     this.snackbarText = `Sending asset to ${this.selectedRecipient}...`
     this.snackbar = true
-    const blockCodec = {
-      name: 'cbor',
-      code: '0x71',
-      encode: async (obj) => encode(obj),
-      decode: (buffer) => decode(buffer),
-    }
-
     // @ts-ignore
     const model = await this.getDb.get(cid, null)
 
@@ -793,6 +882,12 @@ export default class Personal extends Vue.extend({
       timestamp: new Date().getTime(),
       issuer: this.defaultAddress,
     }
+    const blockCodec = {
+      name: 'cbor',
+      code: '0x71',
+      encode: async (obj) => encode(obj),
+      decode: (buffer) => decode(buffer),
+    }
 
     // @ts-ignore
     const kex = await this.getDb.requestKeyExchangePublicKey(
@@ -802,18 +897,32 @@ export default class Personal extends Vue.extend({
       }
     )
 
-    const sub = kex.pipe(debounce((i: any)=>{
-      return i
-    })).subscribe(async (encryptionPubKey: any) => {
+    const sub = kex.subscribe(async (encryptionPubKey: any) => {
+      const encBlockCodec = {
+        name: 'cbor',
+        code: '0x71',
+        encode: async (obj) => {
+          const enc = await EthCrypto.encryptWithPublicKey(
+            encryptionPubKey as any as any,
+            //@ts-ignore
+            JSON.stringify(obj)
+          )
+
+          const x = await EthCrypto.cipher.stringify(enc)
+          return encode(x)
+        },
+        decode: (buffer) => {
+          decode(buffer)
+        },
+      }
       // @ts-ignore
       const pubsub = await this.getDb.createTopicPubsub(
         `/xdvdigital/1/${this.selectedRecipient}/cbor`,
         {
-          blockCodec,
+          blockCodec: encBlockCodec,
           isKeyExchangeChannel: false,
-          canPublish: true,          
+          canPublish: true,
           canSubscribe: true,
-          // encryptionPubKey,
         }
       )
       //TODO: encryption public key caching
@@ -827,15 +936,13 @@ export default class Personal extends Vue.extend({
 
       this.loading = false
       this.loadingText = this.defaultLoadingText
-      
-
       // @ts-ignore
       pubsub.publish(block)
       this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
       this.snackbar = true
 
-      // pubsub.close()
-      // sub.unsubscribe()
+      pubsub.close()
+      sub.unsubscribe()
     })
   }
 
@@ -1221,6 +1328,7 @@ export default class Personal extends Vue.extend({
   }
   async postFilter(items) {
     let r = items
+    console.log(items)
     if (this.keys[this.selectedChip] === 'IpfsBlock') {
       r = items.map(async (i: any) => {
         try {
@@ -1256,7 +1364,6 @@ export default class Personal extends Vue.extend({
         let p = value.filter(
           (x) => x.document.kind === this.keys[this.selectedChip]
         )
-      
 
         this.postFilter(p)
         this.loading = false
@@ -1272,8 +1379,6 @@ export default class Personal extends Vue.extend({
 
     this.incomingSubscriptions.subscribe({
       next: (block) => {
-      
-
         // TODO: switch statement or filer by topic
         console.log(`[incoming]`, block)
       },
@@ -1287,6 +1392,11 @@ export default class Personal extends Vue.extend({
       }
     }, 200)
     await this.bindSubscriptions()
+  }
+
+  async openShareDialog(item) {
+    this.selectedItem = item
+    this.shareDialog = true
   }
 
   async infoAsset(item: any) {

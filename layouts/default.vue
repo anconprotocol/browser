@@ -87,6 +87,8 @@ import { Subject } from 'rxjs'
 import { decode, encode } from 'cbor-x'
 import VueQrcode from '@chenfengyuan/vue-qrcode'
 const PromiseFileReader = require('promise-file-reader')
+import EthCrypto from 'eth-crypto'
+import { arrayify } from '@ethersproject/bytes'
 
 export default {
   name: 'DefaultLayout',
@@ -296,7 +298,46 @@ export default {
     },
     dataSync: async function () {},
     subscribeTopics: async function () {
-      const w = ethers.Wallet.createRandom()
+      const w = EthCrypto.createIdentity()
+      const encBlockCodec = {
+        name: 'cbor',
+        code: '0x71',
+        encode: async (obj) => {
+          const cipher = await EthCrypto.encryptWithPublicKey(
+            w.publicKey,
+            hexlify(encode(obj))
+          )
+          return cipher
+        },
+        decode: async (buffer) => {
+          let cipher
+          cipher = await EthCrypto.cipher.parse(decode(buffer))
+          
+          const plain = await EthCrypto.decryptWithPrivateKey(
+            w.privateKey,
+            cipher
+          )
+          
+          return JSON.parse(plain)
+        },
+      }
+      // @ts-ignore
+      const pubsub = await this.db.createTopicPubsub(this.defaultTopic, {
+        blockCodec: encBlockCodec,
+        canSubscribe: true,
+        isKeyExchangeChannel: false,
+        // sigKey: w.privateKey, // !!! Very important
+        canPublish: true,
+        isCRDT: true,
+      })
+      this.currentAccountTopic = pubsub
+      this.onIncomingCancel = pubsub.onBlockReply$.subscribe(async (v) => {
+        // @ts-ignore
+
+        await this.db.putBlock(v.decoded.payload)
+        this.onIncoming.next(v)
+      })
+
       const blockCodec = {
         name: 'cbor',
         code: '0x71',
@@ -304,32 +345,18 @@ export default {
         decode: (buffer) => decode(buffer),
       }
       // @ts-ignore
-      const pubsub = await this.db.createTopicPubsub(this.defaultTopic, {
-        blockCodec,
-        canSubscribe: true,
-        isKeyExchangeChannel: false,
-        sigKey: w.privateKey, // !!! Very important
-        canPublish: true,
-        isCRDT: true,
-      })
-      this.currentAccountTopic = pubsub
-      this.onIncomingCancel = pubsub.onBlockReply$.subscribe(async (v) => {
-        // @ts-ignore
-        
-        await this.db.putBlock(v.decoded.payload)
-        this.onIncoming.next(v)
-      })
-      // @ts-ignore
       const keyex = (this.keyexPubsub = await this.db.emitKeyExchangePublicKey(
         this.keyExchangeTopic,
         {
           blockCodec,
           isCRDT: true,
+          pk: w.privateKey,
+          pub: w.publicKey,
         }
       ))
       this.onKeyexCancel = this.keyexPubsub.subscribe((v) => {
         // no op
-        
+
         this.onIncoming.next(v)
       })
 
@@ -342,9 +369,8 @@ export default {
       })
 
       sync.subscribe(async (message) => {
-        
         const block = decode(message.payload)
-        
+
         await this.db.putBlock(block.document)
       })
     },
