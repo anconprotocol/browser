@@ -49,10 +49,10 @@
           <span class="text-h5">Mint Asset</span>
         </v-card-title>
         <v-card-text>
-          Recipient
+          NFT ERC-721 Address
           <v-combobox
-            v-model="selectedRecipient"
-            :items="contacts"
+            v-model="selectedNFTAddress"
+            :items="nfts"
             :search-input.sync="search"
             hide-selected
             label="Search for an option"
@@ -74,7 +74,7 @@
           <v-list subheader>
             <v-subheader>Mint and marketplaces services available</v-subheader>
 
-            <v-list-item @click="sendTextToWhatsapp(selectedItem.cid)">
+            <v-list-item @click="mintAncon(selectedItem.cid)">
               <v-list-item-avatar>
                 <v-img src="ancon.svg"></v-img>
               </v-list-item-avatar>
@@ -83,7 +83,7 @@
                 <v-list-item-title>Ancon</v-list-item-title>
               </v-list-item-content>
             </v-list-item>
-            <v-list-item @click="pushAssetToTopic(selectedItem.cid)">
+            <v-list-item>
               <v-list-item-avatar>
                 <v-img src="opensea.svg"></v-img>
               </v-list-item-avatar>
@@ -92,7 +92,7 @@
                 <v-list-item-title>OpenSea</v-list-item-title>
               </v-list-item-content>
             </v-list-item>
-            <v-list-item @click="sendToAncon(selectedItem.cid)">
+            <v-list-item>
               <v-list-item-avatar>
                 <v-img src="rarible.png"></v-img>
               </v-list-item-avatar>
@@ -101,7 +101,7 @@
                 <v-list-item-title>Rarible</v-list-item-title>
               </v-list-item-content>
             </v-list-item>
-            <v-list-item @click="sendToIpfs(selectedItem.cid)">
+            <v-list-item>
               <v-list-item-avatar>
                 <v-icon color="indigo">mdi-ethereum </v-icon>
               </v-list-item-avatar>
@@ -113,9 +113,7 @@
           </v-list>
         </v-card-text>
         <v-card-actions>
-          <v-btn color="orange accent-4" text @click="handleMint">
-            Back
-          </v-btn>
+          <v-btn color="orange accent-4" text @click="handleMint"> Back </v-btn>
         </v-card-actions>
       </v-card>
 
@@ -124,7 +122,7 @@
           <span class="text-h5">Share Asset</span>
         </v-card-title>
         <v-card-text>
-         Recipient
+          Recipient
           <v-combobox
             v-model="selectedRecipient"
             :items="contacts"
@@ -160,7 +158,7 @@
             </v-list-item>
             <v-list-item @click="pushAssetToTopic(selectedItem.cid)">
               <v-list-item-avatar>
-                <v-img src="favicon.ico">  </v-img>
+                <v-img src="favicon.ico"> </v-img>
               </v-list-item-avatar>
 
               <v-list-item-content>
@@ -410,7 +408,6 @@ import { QrcodeCapture, QrcodeStream } from 'vue-qrcode-reader'
 import { whatsapp, tw, telegram } from 'vanilla-sharing'
 
 //@ts-ignore
-import { CID } from 'multiformats/cid'
 
 //@ts-ignore
 import { decode, encode } from 'cbor-x'
@@ -438,7 +435,7 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 // Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
-import { debounce, lastValueFrom, Subject } from 'rxjs'
+import { async, debounce, lastValueFrom, Subject } from 'rxjs'
 
 import { Siwe } from '../../lib/AnconProtocol/SIWE'
 import { ethers } from 'ethers'
@@ -508,85 +505,7 @@ export default class Personal extends Vue.extend({
   }
   snackbar = false
   snackbarText = ''
-  privacySheet = false
-  exportSheet = false
-  shareSheet = false
-  mintSheet = false
-  privacyTiles = [
-    {
-      img: 'mdi-certificate',
-      title: 'W3C Verified Credentials',
-      click: (cid) => {
-        this.privacySheet = false
-      },
-    },
-  ]
-  exportTiles = [
-    // {
-    //   title: 'Anchor data asset',
-    //   img: 'mdi-note-plus',
-    //   click: (cid) => {
-    //     this.exportSheet = false
-    //     this.$nextTick(() => {
-    //       this.postBlockToAncon(cid)
-    //     })
-    //   },
-    // },
-    {
-      title: 'Mint',
-      img: 'mdi-transition-masked',
-      click: (cid) => {
-        this.exportSheet = false
-      },
-    },
-    {
-      img: 'mdi-swap-horizontal',
-      title: 'Mint and sell',
-      click: (cid) => {
-        this.exportSheet = false
-      },
-    },
-  ]
-  shareTiles = [
-    {
-      img: 'mdi-message',
-      title: 'Send asset',
-      click: (cid) => {
-        console.log(cid)
-        this.shareSheet = false
-        this.pushAssetToTopic(cid)
-      },
-    },
-    {
-      img: 'mdi-cube-outline',
-      title: 'IPFS',
-      click: (cid) => {
-        this.shareSheet = false
-        this.sendToIpfs(cid)
-      },
-    },
-    {
-      img: 'mdi-note-plus',
-      title: 'Ancon (anchored data)',
-      click: (cid) => {
-        this.shareSheet = false
-        this.$nextTick(() => {
-          this.sendToAncon(cid)
-        })
-      },
-    },
-    {
-      img: 'mdi-whatsapp',
-      title: 'Whatsapp',
-      click: (cid) => {
-        this.shareSheet = false
-        this.$nextTick(() => {
-          this.sendTextToWhatsapp(cid)
-        })
-      },
-    },
-  ]
-  mintTiles = []
+
   result = ''
 
   loading = false
@@ -637,13 +556,14 @@ export default class Personal extends Vue.extend({
   editingIndex = -1
   selectedRecipient = '0xeeC58E89996496640c8b5898A7e0218E9b6E90cB'
   nonce = 0
-
+  selectedNFTAddress = '0xb350959efbE0Aa522Cf753385bB74cf7D0EfdA59'
   menu = false
   contacts = [
     '0xeeC58E89996496640c8b5898A7e0218E9b6E90cB',
     '0x63e6EdFBA95aB3f0854fE1A93f96FAB1aa04b8Fb', //backup
     '0xc932911a1aaC9BA60FDcbe77045364A8170B7558',
   ]
+  nfts = ['0xb350959efbE0Aa522Cf753385bB74cf7D0EfdA59']
   x = 0
   search = null
   y = 0
@@ -680,8 +600,8 @@ export default class Personal extends Vue.extend({
     )
   }
 
-  async fetchItems() {
-    const uri = `https://api.ancon.did.pa/v0/topics?topic=@uuidIndexMainnet&from=0x6502781e4024D1FeBaBc8CdD18fA74f4e1954651`
+  async fetchAnconTopic(topic, address) {
+    const uri = `https://api.ancon.did.pa/v0/topics?topic=${topic}&from=${address}`
     const res = await fetch(uri)
     const output = await res.json()
     this.items = Object.entries(output.content).filter(
@@ -778,11 +698,9 @@ export default class Personal extends Vue.extend({
   }
 
   async pushAssetToTopic(cid: string) {
-    debugger
     this.loading = true
     this.loadingText = this.signingLoadingText
 
-    this.shareSheet = false
     this.snackbarText = `Sending asset to ${this.selectedRecipient}...`
     this.snackbar = true
     // @ts-ignore
@@ -853,7 +771,6 @@ export default class Personal extends Vue.extend({
           canSubscribe: true,
         }
       )
-      //TODO: encryption public key caching
       // @ts-ignore
       this.add(
         cid,
@@ -880,7 +797,7 @@ export default class Personal extends Vue.extend({
     const b = ethers.utils.hexlify(ethers.utils.toUtf8Bytes(data))
 
     const res = await this.getWalletconnect().send({
-      id: 1,
+      id: new Date().getTime(),
       jsonrpc: '2.0',
       method: 'eth_sign',
       params: [this.getWalletconnect().accounts[0], b],
@@ -894,7 +811,6 @@ export default class Personal extends Vue.extend({
   }
 
   async sendToIpfs(cid: string) {
-    this.shareSheet = false
     this.snackbarText = 'Uploading to IPFS...'
     this.snackbar = true
     const model = await (this as any).getDb.get(cid)
@@ -949,7 +865,6 @@ export default class Personal extends Vue.extend({
   }
 
   async sendToAncon(cid: string) {
-    this.shareSheet = false
     this.snackbarText = 'Uploading to Ancon...'
     this.snackbar = true
     const model = await (this as any).getDb.get(cid)
@@ -1048,136 +963,92 @@ export default class Personal extends Vue.extend({
    * Initiates the nft upload & mint main process & modal state handling
    * @param {FileListObject} _file uploaded file object
    */
-  async createDocumentNode(_file) {
+  async mintAncon(cid) {
     try {
-      // setLoading(true);
-      // setStatus(2);
+      this.showMint = false
       let uuid = uuidv4()
 
-      // //Initializing Ancon instance
-      // setMintingStatus("Checking if account is enrolled...");
+      this.snackbarText = 'Uploading to Ancon...'
+      this.snackbar = true
 
-      // const getKeyRes = await getKey(address)
-
-      // if (!getKeyRes) {
-      //   //  setMintingStatus(
-      //   //    "An enrollment error has ocurred",
-      //   //    error.message
-      //   //  );
-      //   throw new Error(
-      //     `Enrollment error, visit ${process.env.REACT_APP_ANCON_TOOLS_URL} to enroll.`
-      //   )
-      // }
-      //Subiendo archivo de imagen a Ancon Node
-      // setMintingStatus("Uploading file to Ancon nodes...");
-
-      const uploadFileRes = await this.anconUploadFile(_file)
-
-      if (uploadFileRes.error) {
-        // setMintingStatus("An error has ocurred", uploadFileRes.error);
-        throw new Error(`Error. ${uploadFileRes.error}`)
-      }
-
-      // setMintingStatus("Requesting Ancon metadata creation...");
-
-      //Create metadata
-
-      // const anconMetadataObject = await anconCreateMetadata(
-      //   uploadFileRes,
-      //   address,
-      //   uuid,
-      //   _file
-      // );
-      // console.log("ancon", anconMetadataObject);
-      // setMintingStatus("Creando transacción en la blockchain...");
-
-      const { AnconNFTContract, AnconTokenContract } = helper.getContracts(
-        this.getWalletconnect()
+      const account = this.getWalletconnect().accounts[0]
+      const { AnconNFTContract, AnconTokenContract, AnconNFTContract_ethers } =
+        helper.getContracts(this.getWalletconnect())
+      const readOnlyContracts = helper.getContracts(
+        new Web3(this.$nuxt.context.env.BSC_MAINNET),
+        account
       )
 
-      const bob = AnconNFTContract.defaultAccount
-
-      // const getDagResponse = await fetch(
-      //   `${anconAPIurl}/v0/dag/${anconMetadataObject.proofCid}/`
-      // );
-
-      // if (getDagResponse.status === 400) {
-      //   throw new Error("Metadata error. 400 Bad Request.");
-      // }
-      // const getDagResponseJSON = await getDagResponse.json();
-      // setMintingStatus("Waiting for approval of blockchain funds...");
-
-      // let allowed = await AnconTokenContract.methods
-      //   //@ts-ignore
-      //   .allowance(bob, AnconNFTContract._address)
-      //   .call()
-      // console.log('allowed', allowed)
-      const serviceFee = await AnconNFTContract.methods
-        .serviceFeeForContract()
-        .call()
+      let fn = await readOnlyContracts.AnconTokenContract.methods
+        //@ts-ignore
+        .allowance(account, AnconNFTContract._address)
+      const allowed = await fn.call()
+      console.log('allowed', allowed)
+      fn =
+        await readOnlyContracts.AnconNFTContract.methods.serviceFeeForContract()
+      let serviceFee = await fn.call()
 
       const max_amount = Web3.utils.toWei('100000', 'ether').toString()
 
-      // if (allowed == '0' && serviceFee != '0') {
-      //   let gasAmount = await AnconTokenContract.methods
-      //     //@ts-ignore
-      //     .approve(AnconNFTContract._address, max_amount)
-      //     .estimateGas({ from: bob })
+      if (allowed === '0' && serviceFee !== '0') {
+        let gasAmount = await AnconTokenContract.methods
+          //@ts-ignore
+          .approve(AnconNFTContract._address, max_amount)
+          .estimateGas({ from: account })
 
-      //   await AnconTokenContract.methods
-      //     //@ts-ignore
-      //     .approve(AnconNFTContract._address, max_amount)
-      //     .send({
-      //       gas: gasAmount,
-      //       from: bob,
-      //     })
-      //   console.log('allowed')
-      // }
+        await AnconTokenContract.methods
+          //@ts-ignore
+          .approve(AnconNFTContract._address, max_amount)
+          .send({
+            gas: gasAmount,
+            from: account,
+          })
+        console.log('allowed')
+      }
 
-      // setMintingStatus("Minting...");
+      const model = await (this as any).getDb.get(cid)
+      this.loading = true
+      this.loadingText = this.signingLoadingText
+
+      const fileAsBlob = await fetch(model.document.image)
+      const file = await fileAsBlob.blob()
+      // @ts-ignore
+      const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
+      model.document.image = cidFromIpfs.image
+      const api = this.$nuxt.context.env.AnconAPI + '/'
+      this.loadingText = 'Requesting metadata creation...'
+      // @ts-ignore
+      const dagblock = await this.getDb.ancon.createDagBlock({
+        // @ts-ignore
+        message: { uuid, ...model.document },
+        topic: 'du.xdv.digital',
+      })
+
+      this.loadingText = 'Minting...'
       const royalty2 = 0
       const params = [
-        bob, //user address
+        account, //user address
         uuid, //static uuid
         royalty2, //royalty fee percent from 0 to 10000, 1 = 0.01%, 10000 = 100.00%
       ]
-      const gasAmount = await AnconNFTContract.methods
+      const gasAmount = await readOnlyContracts.AnconNFTContract.methods
         .mint(...params)
-        .estimateGas({ from: bob })
-
-      const txmint = await AnconNFTContract.methods.mint(...params).send({
-        gas: gasAmount,
-        from: bob,
+        .estimateGas({ from: account })
+      setTimeout(async () => {
+        const tx = await AnconNFTContract_ethers.functions.mint(...params, {
+          gasLimit: gasAmount,
+          from: account,
+        })
       })
 
-      // setMintingStatus("Ending...");
-
-      // const currentBlock = await web3Provider.eth.getBlockNumber();
-
-      // const response = await AnconNFTContract.getPastEvents(
-      //   "Transfer",
-      //   {
-      //     toBlock: "latest",
-      //     fromBlock: currentBlock - 10,
-      //     filter: {
-      //       from: "0x0000000000000000000000000000000000000000",
-      //       //this line to get the ones from a specific address
-      //       to: address,
-      //     },
-      //   }
-      // );
-
-      // const blockItem = response.reverse()[0];
-
-      // await sleep(11000);
-      // const getUpdatedDagRes = await fetch(
-      //   `${anconAPIurl}/v0/topics?topic=uuid:${uuid}&from=${indexerAddress}`
-      // );
-
-      // const getUpdatedDagResJSON = await getUpdatedDagRes.json();
-
-      // setStatus(3);
-      // setLoading(false);
+      this.add(cid, 'Minted Ancon NFT', account, {
+        dagblock,   
+      })
+      this.loadingText = this.defaultLoadingText
+      this.loading = false
+      this.snackbarText = 'Asset minted as Ancon NFT'
+      this.snackbar = true
+      this.showMint = true
 
       // setSuccessData({
       //   ...successData,
@@ -1192,14 +1063,16 @@ export default class Personal extends Vue.extend({
       //   uuidLink: `${anconAPIurl}/v0/topics?topic=uuid:${uuid}&from=${indexerAddress}`,
       //   uuid: uuid,
       // });
-
-      // setStep(true);
     } catch (e) {
       // setStatus(4);
       // setModal(true);
       // setMintingStatus(e.message);
       // setLoading(false);
       console.log(e)
+      this.loading = false
+      this.showMint = true
+      this.snackbarText = `${e}`
+      this.snackbar = true
     }
   }
 

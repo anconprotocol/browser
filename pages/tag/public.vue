@@ -442,7 +442,7 @@ export default class Public extends Vue {
       //Create metadata
 
       // const anconMetadataObject = await anconCreateMetadata(
-      //   uploadFileRes,
+      //   uploadFileRes, 
       //   address,
       //   uuid,
       //   _file

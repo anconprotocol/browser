@@ -7,13 +7,23 @@ const AnconToken = require('../contracts/ANCON.sol/ANCON.json')
 const AnconProtocol = require('../contracts/AnconProtocol.json')
 
 class helper {
-  static getContracts(_provider) {
+  static getContracts(_provider, account) {
     const web3 = new Web3(_provider)
-    web3.eth.defaultAccount = _provider.accounts[0]
+    web3.eth.defaultAccount = account || _provider.accounts[0]
     const anconNFTContractAddress = $nuxt.context.env.AnconNFT
     const _anconNFTContract = new web3.eth.Contract(
       AnconNFT.abi,
       anconNFTContractAddress
+    )
+
+    const web3provider = new ethers.providers.Web3Provider(
+      web3.currentProvider    
+    )
+
+    const c = new ethers.Contract(
+      _anconNFTContract._address,
+      AnconNFT.abi,
+      web3provider.getSigner()
     )
     // const marketPlaceContractAddress = process.env.REACT_APP_MarketplaceAddress
     // const _marketPlaceContract = new web3.eth.Contract(
@@ -36,6 +46,7 @@ class helper {
       web3,
       // Wallet: wallet,A
       AnconNFTContract: _anconNFTContract,
+      AnconNFTContract_ethers: c,
       // MarketPlaceContract: _marketPlaceContract,
       AnconTokenContract: _anconTokenContract,
       // AnconProtocolContract: _anconProtocolContract,

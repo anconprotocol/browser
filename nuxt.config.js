@@ -23,7 +23,7 @@ export default {
 
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
-    titleTemplate: '%s - alpha',
+    titleTemplate: '%s - beta ',
     title: 'du. data. universal.',
     htmlAttrs: {
       lang: 'en',
@@ -122,6 +122,7 @@ export default {
   env: {
     AnconNFT: process.env.REACT_APP_AnconNFTAddress,
     AnconToken: process.env.REACT_APP_AnconTokenAddress,
+    BSC_MAINNET: 'https://bsc-dataseed.binance.org/',
     Onramper: `pk_test_vce1UmxZ3fdhoOGiZBJHiUivX205TfsfAiyljF9LF_k0`,
     AnconAPI: 'https://api.ancon.did.pa',
     WakuRPC: 'https://api.ancon.did.pa/waku',

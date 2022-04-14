@@ -100,7 +100,7 @@ export default {
     //  Create WalletConnect Provider
     let provider = new WalletConnectProvider({
       infuraId: '92ed13edfad140409ac24457a9c4e22d',
-      rpc: { 56: 'https://bsc-dataseed.binance.org/' },
+      rpc: { 56: this.$nuxt.context.env.BSC_MAINNET },
       chainId: 1,
     })
     const web3provider = new ethers.providers.Web3Provider(provider)
@@ -198,7 +198,7 @@ export default {
       walletconnect: new WalletConnectProvider({
         infuraId: '92ed13edfad140409ac24457a9c4e22d',
         rpc: {
-          56: 'https://bsc-dataseed.binance.org/',
+          56: this.$nuxt.context.env.BSC_MAINNET,
           97: 'https://data-seed-prebsc-2-s3.binance.org:8545/',
           137: 'https://polygon-rpc.com/',
           80001: 'https://matic-mumbai.chainstacklabs.com',
