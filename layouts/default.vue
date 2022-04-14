@@ -48,7 +48,7 @@
       </v-btn>
     </v-app-bar>
     <v-main>
-      <v-container>
+      <v-container  >
         <v-subheader v-if="this.walletconnect.connected"
           >Network {{ network.name }} Address
           {{

@@ -43,426 +43,318 @@
           height="6"
         ></v-progress-linear>
       </v-col> </v-row
-    ><v-row>
-      <v-col dense v-for="v in items" :key="v.cid">
-        <v-card class="mx-auto" max-width="360">
-          <v-img
-            :src="v.document.image"
-            height="200px"
-            @click="infoAsset(v)"
-          ></v-img>
+    ><v-container fluid>
+      <v-card v-show="showMint" class="mx-auto">
+        <v-card-title>
+          <span class="text-h5">Mint Asset</span>
+        </v-card-title>
+        <v-card-text>
+          Recipient
+          <v-combobox
+            v-model="selectedRecipient"
+            :items="contacts"
+            :search-input.sync="search"
+            hide-selected
+            label="Search for an option"
+            persistent-hint
+            small-chips
+            solo
+          >
+            <template v-slot:no-data>
+              <v-list-item>
+                <v-list-item-content>
+                  <v-list-item-title>
+                    No results matching "<strong>{{ search }}</strong
+                    >". Press <kbd>enter</kbd> to create a new one
+                  </v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+            </template>
+          </v-combobox>
+          <v-list subheader>
+            <v-subheader>Mint and marketplaces services available</v-subheader>
 
-          <v-card-title>
-            {{ v.document.name }}
-          </v-card-title>
+            <v-list-item @click="sendTextToWhatsapp(selectedItem.cid)">
+              <v-list-item-avatar>
+                <v-img src="ancon.svg"></v-img>
+              </v-list-item-avatar>
 
-          <v-card-subtitle>
-            {{ getOwner(v.document.owner) }}
-          </v-card-subtitle>
-          <v-card-text>{{ v.document.description }}</v-card-text>
-          <v-card-actions>
-            <!-- <v-bottom-sheet v-model="privacySheet">
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2">
-                  <v-icon>mdi-shield-key</v-icon>
-                </v-btn>
-              </template>
-              <v-list>
-                <v-subheader>Privacy</v-subheader>
-                <v-list-item
-                  v-for="tile in privacyTiles"
-                  :key="tile.title"
-                  @click="tile.click(v.cid)"
-                >
-                  <v-list-item-avatar>
-<v-icon>{{ tile.img }}</v-icon>
-                  </v-list-item-avatar>
-                  <v-list-item-title>{{ tile.title }}</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-bottom-sheet> -->
-            <v-dialog @click="showQRScanner = true" hide-overlay>
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn
-                  v-bind="attrs"
-                  v-on="on"
-                  icon
-                  color="orange lighten-2"
-                  v-show="v.document.kind === 'StorageAsset'"
-                  ><v-icon>mdi-qrcode-scan</v-icon>
-                </v-btn>
-              </template>
+              <v-list-item-content>
+                <v-list-item-title>Ancon</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item @click="pushAssetToTopic(selectedItem.cid)">
+              <v-list-item-avatar>
+                <v-img src="opensea.svg"></v-img>
+              </v-list-item-avatar>
 
-              <qrcode-stream
-                key="1"
-                @decode="decodeQR(v.cid)"
-                @init="onScanQR"
-              ></qrcode-stream>
-            </v-dialog>
-            <!-- <v-bottom-sheet v-model="shareSheet">
-              <template v-slot:activator="{ on, attrs }"> -->
-            <v-btn
-              icon
-              @click="openShareDialog(v)"
-              color="orange lighten-2"
-              v-show="v.document.kind === 'StorageAsset'"
-            >
-              <v-icon>mdi-share-variant</v-icon>
-            </v-btn>
-            <!-- </template>
-              <v-list>
-                <v-subheader>Share</v-subheader>
+              <v-list-item-content>
+                <v-list-item-title>OpenSea</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item @click="sendToAncon(selectedItem.cid)">
+              <v-list-item-avatar>
+                <v-img src="rarible.png"></v-img>
+              </v-list-item-avatar>
 
-              
+              <v-list-item-content>
+                <v-list-item-title>Rarible</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item @click="sendToIpfs(selectedItem.cid)">
+              <v-list-item-avatar>
+                <v-icon color="indigo">mdi-ethereum </v-icon>
+              </v-list-item-avatar>
 
-                <v-list-item
-                  v-for="tile in shareTiles"
-                  :key="tile.title"
-                  @click="tile.click(v)"
-                >
-                  <v-list-item-avatar>
-                    <v-icon color="orange lighten-2">{{ tile.img }}</v-icon>
-                  </v-list-item-avatar>
-                  <v-list-item-title>{{ tile.title }}</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-bottom-sheet> -->
-            <v-btn
-              icon
-              color="orange lighten-2"
-              v-show="v.document.kind === 'StorageAsset'"
-            >
-              <v-icon>mdi-export-variant</v-icon>
-            </v-btn>
-            <!-- <v-bottom-sheet v-model="exportSheet">
-              <template v-slot:activator="{ on, attrs }">
+              <v-list-item-content>
+                <v-list-item-title>Custom ERC-721</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="orange accent-4" text @click="handleMint">
+            Back
+          </v-btn>
+        </v-card-actions>
+      </v-card>
 
-              </template>
-              <v-list>
-                <v-subheader>Export</v-subheader>
+      <v-card v-show="showShare" class="mx-auto">
+        <v-card-title>
+          <span class="text-h5">Share Asset</span>
+        </v-card-title>
+        <v-card-text>
+         Recipient
+          <v-combobox
+            v-model="selectedRecipient"
+            :items="contacts"
+            :search-input.sync="search"
+            hide-selected
+            label="Search for an option"
+            persistent-hint
+            small-chips
+            solo
+          >
+            <template v-slot:no-data>
+              <v-list-item>
+                <v-list-item-content>
+                  <v-list-item-title>
+                    No results matching "<strong>{{ search }}</strong
+                    >". Press <kbd>enter</kbd> to create a new one
+                  </v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+            </template>
+          </v-combobox>
+          <v-list subheader>
+            <v-subheader>Share services available</v-subheader>
 
-                <v-list-item
-                  v-for="tile in exportTiles"
-                  :key="tile.title"
-                  @click="tile.click(v)"
-                >
-                  <v-list-item-avatar>
-                    <v-icon color="orange lighten-2">{{ tile.img }}</v-icon>
-                  </v-list-item-avatar>
-                  <v-list-item-title>{{ tile.title }}</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-bottom-sheet> -->
+            <v-list-item @click="sendTextToWhatsapp(selectedItem.cid)">
+              <v-list-item-avatar>
+                <v-icon color="green accent-4"> mdi-whatsapp </v-icon>
+              </v-list-item-avatar>
 
-            <!-- <v-bottom-sheet v-model="mintSheet">
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn v-bind="attrs" v-on="on" icon color="orange lighten-2">
-                  <v-icon>mdi-collage</v-icon>
-                </v-btn>
-              </template>
-              <v-list>
-                <v-subheader>Mint</v-subheader>
-                <v-list-item
-                  v-for="tile in mintTiles"
-                  :key="tile.title"
-                  @click="mintSheet = false"
-                >
-                  <v-list-item-avatar>
-                    <v-icon>{{ tile.img }}</v-icon>
-                    </v-avatar>
-                  </v-list-item-avatar>
-                  <v-list-item-title>{{ tile.title }}</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-bottom-sheet> -->
+              <v-list-item-content>
+                <v-list-item-title>Whatsapp</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item @click="pushAssetToTopic(selectedItem.cid)">
+              <v-list-item-avatar>
+                <v-img src="favicon.ico">  </v-img>
+              </v-list-item-avatar>
 
-            <v-spacer></v-spacer>
+              <v-list-item-content>
+                <v-list-item-title>du. secure share</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item @click="sendToAncon(selectedItem.cid)">
+              <v-list-item-avatar>
+                <v-img src="ancon.svg"></v-img>
+              </v-list-item-avatar>
 
-            <v-btn icon @click="historyBlocks(v.cid)">
-              <v-icon>{{ 'mdi-history' }}</v-icon>
-            </v-btn>
-            <!-- 
-            <v-tooltip bottom color="primary">
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn icon color="primary" dark v-bind="attrs" v-on="on"
-                  ><v-icon>mdi-information</v-icon></v-btn
-                >
-              </template>
-              <div>cid {{ v.cid }}</div>
-              <div>description {{ v.description }}</div>
-              <div>owner {{ v.document.owner }}</div>
-            </v-tooltip> -->
-          </v-card-actions>
+              <v-list-item-content>
+                <v-list-item-title>Ancon (anchored data)</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item @click="sendToIpfs(selectedItem.cid)">
+              <v-list-item-avatar>
+                <v-icon color="teal accent-4">mdi-cube-outline </v-icon>
+              </v-list-item-avatar>
 
-          <v-dialog v-model="editDialog" max-width="600px">
-            <v-card>
-              <v-card-title>
-                <span class="text-h5">Edit Asset</span>
-              </v-card-title>
-              <v-card-text>
-                <v-form>
-                  <v-container>
-                    <v-row>
-                      <v-col cols="12" sm="12">
-                        <v-text-field
-                          v-model="selectedEdit.options.description"
-                          label="Description"
-                          solo-inverted
-                        ></v-text-field>
-                      </v-col>
-                    </v-row>
-                    <v-row>
-                      <v-col cols="12" sm="12">
-                        <v-text-field
-                          v-model="selectedEdit.options.sources"
-                          label="Sources (separate by comma)"
-                          solo-inverted
-                        ></v-text-field>
-                      </v-col>
-                    </v-row>
-                  </v-container>
-                </v-form>
-              </v-card-text>
-              <v-card-actions>
-                <v-btn color="orange accent-4" text @click="upload">
-                  Save
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-dialog>
+              <v-list-item-content>
+                <v-list-item-title>IPFS</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="orange accent-4" text @click="handleShowShare">
+            Back
+          </v-btn>
+        </v-card-actions>
+      </v-card>
 
-          <v-dialog v-model="shareDialog" max-width="600px">
-            <v-card>
-              <v-card-title>
-                <span class="text-h5">Share Asset</span>
-              </v-card-title>
-              <v-card-text>
-                <v-list-item two-line>
-                  <v-list-item-content>
-                    <v-list-item-title>Send to address</v-list-item-title>
-                    <v-list-item-subtitle>
-                      <v-combobox
-                        v-model="selectedRecipient"
-                        :items="contacts"
-                        :search-input.sync="search"
-                        hide-selected
-                        label="Search for an option"
-                        persistent-hint
-                        small-chips
-                        solo
-                      >
-                        <template v-slot:no-data>
-                          <v-list-item>
-                            <v-list-item-content>
-                              <v-list-item-title>
-                                No results matching "<strong>{{
-                                  search
-                                }}</strong
-                                >". Press <kbd>enter</kbd> to create a new one
-                              </v-list-item-title>
-                            </v-list-item-content>
-                          </v-list-item>
-                        </template>
-                      </v-combobox>
-                    </v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-                <v-row>
-                  <v-col>
-                    <p>Share services available</p>
-
-                    <v-toolbar>
-                      <v-tooltip top>
-                        <template v-slot:activator="{ on, attrs }">
-                          <v-btn
-                            dark
-                            v-bind="attrs"
-                            v-on="on"
-                            icon
-                            @click="pushAssetToTopic(selectedItem.cid)"
-                          >
-                            <v-icon> mdi-message </v-icon>
-                          </v-btn>
-                        </template>
-                        <span>du. secure share</span>
-                      </v-tooltip>
-
-                      <v-tooltip top>
-                        <template v-slot:activator="{ on, attrs }">
-                          <v-btn
-                            dark
-                            v-bind="attrs"
-                            v-on="on"
-                            icon
-                            @click="sendToIpfs(selectedItem.cid)"
-                          >
-                            <v-icon> mdi-cube-outline </v-icon>
-                          </v-btn>
-                        </template>
-                        <span>Upload to IPFS</span>
-                      </v-tooltip>
-                      <v-tooltip top>
-                        <template v-slot:activator="{ on, attrs }">
-                          <v-btn
-                            dark
-                            v-bind="attrs"
-                            v-on="on"
-                            icon
-                            @click="sendToAncon(selectedItem.cid)"
-                          >
-                            <v-icon> mdi-note-plus </v-icon>
-                          </v-btn>
-                        </template>
-                        <span>Ancon (anchored data)</span>
-                      </v-tooltip>
-                      <v-tooltip top>
-                        <template v-slot:activator="{ on, attrs }">
-                          <v-btn
-                            dark
-                            v-bind="attrs"
-                            v-on="on"
-                            icon
-                            @click="sendTextToWhatsapp(selectedItem.cid)"
-                          >
-                            <v-icon> mdi-whatsapp </v-icon>
-                          </v-btn>
-                        </template>
-                        <span>Whatsapp</span>
-                      </v-tooltip>
-
-
-                    </v-toolbar>
-                  </v-col></v-row
-                >
-              </v-card-text>
-              <v-card-actions>
-                <v-btn
-                  color="orange accent-4"
-                  text
-                  @click="shareDialog = false"
-                >
-                  Close
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-dialog>
-
-          <v-dialog v-model="infoDialog" max-width="600px">
-            <v-card>
-              <v-card-title>
-                <span class="text-h5">Asset Information</span>
-              </v-card-title>
-              <v-card-text>
-                <v-list-item two-line>
-                  <v-list-item-content>
-                    <v-list-item-title>Cid</v-list-item-title>
-                    <v-list-item-subtitle>{{
-                      selectedInfoItem.meta.cid
-                    }}</v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-                <v-list-item two-line>
-                  <v-list-item-content>
-                    <v-list-item-title>Kind</v-list-item-title>
-                    <v-list-item-subtitle>{{
-                      selectedInfoItem.document.kind
-                    }}</v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-                <v-list-item two-line>
-                  <v-list-item-content>
-                    <v-list-item-title>Reference</v-list-item-title>
-                    <v-list-item-subtitle>{{
-                      selectedInfoItem.ref
-                    }}</v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-                <v-list-item two-line>
-                  <v-list-item-content>
-                    <v-list-item-title>Owner</v-list-item-title>
-                    <v-list-item-subtitle>{{
-                      selectedInfoItem.document.owner
-                    }}</v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-                <v-list-item two-line>
-                  <v-list-item-content>
-                    <v-list-item-title>Name</v-list-item-title>
-                    <v-list-item-subtitle>{{
-                      selectedInfoItem.document.name
-                    }}</v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-                <v-list-item two-line>
-                  <v-list-item-content>
-                    <v-list-item-title>Description</v-list-item-title>
-                    <v-list-item-subtitle>{{
-                      selectedInfoItem.document.description
-                    }}</v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-                <v-list-item two-line>
-                  <v-list-item-content>
-                    <v-list-item-title>Last modified</v-list-item-title>
-                    <v-list-item-subtitle>{{
-                      selectedInfoItem.document.timestamp | formatDate
-                    }}</v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-                <v-list-item two-line>
-                  <v-list-item-content>
-                    <v-list-item-title>Sources</v-list-item-title>
-                    <v-list-item-subtitle>{{
-                      selectedInfoItem.document.sources
-                    }}</v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-              </v-card-text>
-              <v-card-actions>
-                <v-btn color="orange accent-4" text @click="infoAsset()">
-                  Close
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-dialog>
-
-          <v-dialog v-model="dialog" max-width="600px">
-            <v-card>
-              <v-card-title>
-                <span class="text-h5">Asset History</span>
-              </v-card-title>
-              <v-card-text>
-                <div v-if="historyItems">
-                  <v-timeline align-top dense>
-                    <v-timeline-item
-                      v-for="message in historyItems"
-                      :key="message.time"
-                      :color="message.color"
-                      small
-                    >
-                      <div>
-                        <div class="font-weight-normal">
-                          <strong>{{ message.from }}</strong> @{{
-                            message.time | formatDate
-                          }}
-                        </div>
-                        <div>{{ message.message }}</div>
-                      </div>
-                    </v-timeline-item>
-                  </v-timeline>
+      <v-card v-show="showHistory" class="mx-auto">
+        <v-card-title>
+          <span class="text-h5">Asset History</span>
+        </v-card-title>
+        <v-card-text>
+          <div v-if="historyItems">
+            <v-timeline align-top dense>
+              <v-timeline-item
+                v-for="message in historyItems"
+                :key="message.time"
+                :color="message.color"
+                small
+              >
+                <div>
+                  <div class="font-weight-normal">
+                    <strong>{{ message.from }}</strong> @{{
+                      message.time | formatDate
+                    }}
+                  </div>
+                  <div>{{ message.message }}</div>
                 </div>
-              </v-card-text>
-              <v-card-actions>
-                <v-btn color="green darken-1" text @click="dialog = false">
-                  Close
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-dialog>
-        </v-card>
-      </v-col>
-    </v-row>
-    <v-alert type="info" v-if="this.items < 1 && !loading">
+              </v-timeline-item>
+            </v-timeline>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="orange accent-4" text @click="openHistory(true)">
+            Back
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+
+      <v-card v-show="showInfo" class="mx-auto">
+        <v-card-title key="p">
+          <span class="text-h5">Asset Information</span>
+        </v-card-title>
+        <v-card-text>
+          <v-row>
+            <v-col>
+              <v-list-item key="cid" two-line>
+                <v-list-item-content key="cid-c">
+                  <v-list-item-title>Cid</v-list-item-title>
+                  <v-list-item-subtitle>{{
+                    selectedInfoItem.meta.cid
+                  }}</v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+              <v-list-item two-line key="kind">
+                <v-list-item-content>
+                  <v-list-item-title>Kind</v-list-item-title>
+                  <v-list-item-subtitle>{{
+                    selectedInfoItem.document.kind
+                  }}</v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+              <v-list-item two-line key="ref">
+                <v-list-item-content>
+                  <v-list-item-title>Reference</v-list-item-title>
+                  <v-list-item-subtitle>{{
+                    selectedInfoItem.ref
+                  }}</v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+              <v-list-item two-line key="owner">
+                <v-list-item-content>
+                  <v-list-item-title>Owner</v-list-item-title>
+                  <v-list-item-subtitle>{{
+                    selectedInfoItem.document.owner
+                  }}</v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item> </v-col
+            ><v-col>
+              <v-list-item two-line key="name">
+                <v-list-item-content>
+                  <v-list-item-title>Name</v-list-item-title>
+                  <v-list-item-subtitle>{{
+                    selectedInfoItem.document.name
+                  }}</v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+              <v-list-item two-line key="desc">
+                <v-list-item-content>
+                  <v-list-item-title>Description</v-list-item-title>
+                  <v-list-item-subtitle>{{
+                    selectedInfoItem.document.description
+                  }}</v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+              <v-list-item two-line key="date">
+                <v-list-item-content>
+                  <v-list-item-title>Last modified</v-list-item-title>
+                  <v-list-item-subtitle>{{
+                    selectedInfoItem.document.timestamp | formatDate
+                  }}</v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+              <v-list-item two-line key="src">
+                <v-list-item-content>
+                  <v-list-item-title>Sources</v-list-item-title>
+                  <v-list-item-subtitle>{{
+                    selectedInfoItem.document.sources
+                  }}</v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item></v-col
+            ></v-row
+          >
+        </v-card-text>
+        <v-card-actions key="actions">
+          <v-btn color="orange accent-4" text @click="infoAsset(true)">
+            Back
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+
+      <v-row dense v-show="showAssets"
+        ><v-col v-for="v in items" :key="v.cid">
+          <v-card class="mx-auto" max-width="360">
+            <v-img
+              :src="v.document.image"
+              height="200px"
+              @click="infoAsset(v)"
+            ></v-img>
+
+            <v-card-title>
+              {{ v.document.name }}
+            </v-card-title>
+
+            <v-card-subtitle>
+              {{ getOwner(v.document.owner) }}
+            </v-card-subtitle>
+            <v-card-text>{{ v.document.description }}</v-card-text>
+            <v-card-actions>
+              <v-btn
+                icon
+                @click="handleShowShare(v)"
+                color="orange lighten-2"
+                v-show="v.document.kind === 'StorageAsset'"
+              >
+                <v-icon>mdi-share-variant</v-icon>
+              </v-btn>
+
+              <v-btn
+                icon
+                @click="handleMint(v)"
+                color="orange lighten-2"
+                v-show="v.document.kind === 'StorageAsset'"
+              >
+                <v-icon>mdi-export-variant</v-icon>
+              </v-btn>
+
+              <v-spacer></v-spacer>
+
+              <v-btn icon @click="openHistory(v.cid)">
+                <v-icon>{{ 'mdi-history' }}</v-icon>
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+    <v-alert type="info" v-if="this.items < 1">
       There are no documents yet. Add a document.</v-alert
     >
     <v-snackbar v-model="snackbar">
@@ -474,12 +366,49 @@
         </v-btn>
       </template>
     </v-snackbar>
+
+    <v-dialog v-model="editDialog" max-width="600px">
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">Edit Asset</span>
+        </v-card-title>
+        <v-card-text>
+          <v-form>
+            <v-container>
+              <v-row>
+                <v-col cols="12" sm="12">
+                  <v-text-field
+                    v-model="selectedEdit.options.description"
+                    label="Description"
+                    solo-inverted
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12" sm="12">
+                  <v-text-field
+                    v-model="selectedEdit.options.sources"
+                    label="Sources (separate by comma)"
+                    solo-inverted
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="orange accent-4" text @click="upload"> Save </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
 import { QrcodeCapture, QrcodeStream } from 'vue-qrcode-reader'
+import { whatsapp, tw, telegram } from 'vanilla-sharing'
+
 //@ts-ignore
 import { CID } from 'multiformats/cid'
 
@@ -722,9 +651,12 @@ export default class Personal extends Vue.extend({
   selectedEdit: any = {
     options: {},
   }
-  infoDialog: any = false
-  shareDialog: any = false
+  showInfo: any = false
+  showAssets: any = true
+  showHistory = false
+  showShare: any = false
   selectedItem: any
+  showMint: boolean = false
 
   edit(index, item) {
     if (!this.editing) {
@@ -827,26 +759,22 @@ export default class Personal extends Vue.extend({
     //    const shareCid = await this.getDb.ipfs.uploadFile(block)
 
     this.shareSheet = false
-    setTimeout(() => {
-      const data = {
-        message: model.document.name,
-        title: `Sharing data asset from du. app`,
-        url: block.image,
-      } as any
 
-      shareTextViaNativeSharing(data, () => {
-        const lnk = getWhatsAppClickToChatLink(`
-      Sharing data asset from du. app
-      ${data.url}
-      `)
+    // const data = {
+    //   message: model.document.name,
+    //   title: `Sharing data asset from du. app`,
+    //   url: block.image,
+    // } as any
 
-        this.add(cid, `Shared whatsapp message`, this.defaultAddress, block)
-        this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
-        this.snackbar = true
+    whatsapp({
+      url: block.image,
+      title: `Sharing data asset from du. app`,
+      // phone: string,
+    })
 
-        window.open(lnk, '_blank')
-      })
-    }, 50)
+    this.add(cid, `Shared whatsapp message`, this.defaultAddress, block)
+    this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
+    this.snackbar = true
   }
 
   async pushAssetToTopic(cid: string) {
@@ -1299,20 +1227,30 @@ export default class Personal extends Vue.extend({
     }
   }
 
-  async historyBlocks(cid) {
-    // this.show = !this.show
-    this.dialog = true
-    // @ts-ignore
-    const q = await this.getDb.getBlocksByTableName$('history', (h) => {
-      return () => h.where({ cid: cid }).toArray()
-    })
+  async openHistory(cid) {
+    this.showAssets = !this.showAssets
+    this.showHistory = !this.showHistory
+    this.showMint = false
+    this.showShare = false
+    this.showInfo = false
+    if (this.showHistory) {
+      // @ts-ignore
+      const q = await this.getDb.getBlocksByTableName$('history', (h) => {
+        return () => h.where({ cid: cid }).toArray()
+      })
 
-    q.subscribe((value) => {
-      if (value.length > 0) this.historyItems = value[0].refs.slice(0, 5)
-    })
+      q.subscribe((value) => {
+        if (value.length > 0) this.historyItems = value[0].refs.slice(0, 5)
+      })
+    }
   }
 
   async selectChip(selected) {
+    this.showAssets = true
+    this.showHistory = false
+    this.showMint = false
+    this.showShare = false
+    this.showInfo = false
     this.selectedChip = selected
     // @ts-ignore
     const blocks = await this.getDb.getBlocksByTableName$('blockdb', (b) => {
@@ -1366,8 +1304,8 @@ export default class Personal extends Vue.extend({
         )
 
         this.postFilter(p)
-        this.loading = false
         this.items = await Promise.all(p)
+        this.loading = false
       },
     })
 
@@ -1385,23 +1323,39 @@ export default class Personal extends Vue.extend({
     })
   }
   async mounted() {
+    this.loading = true
+    await this.bindSubscriptions()
+
     const cancel = setInterval(async () => {
-      if (this.getWalletconnect().connected) {
-        this.loading = true
+      if (this.getWalletconnect().connected && this.items) {
+        this.loading = false
+
         clearInterval(cancel)
       }
-    }, 200)
-    await this.bindSubscriptions()
+    }, 1200)
   }
 
-  async openShareDialog(item) {
+  async handleMint(item) {
     this.selectedItem = item
-    this.shareDialog = true
+    this.showMint = !this.showMint
+    this.showAssets = !this.showAssets
+  }
+
+  async handleShowShare(item) {
+    this.selectedItem = item
+    this.showShare = !this.showShare
+    this.showAssets = !this.showAssets
+  }
+
+  async handleShowHistory(item) {
+    this.selectedItem = item
+    this.showHistory = !this.showShare
+    this.showAssets = !this.showAssets
   }
 
   async infoAsset(item: any) {
-    if (this.infoDialog) {
-      this.infoDialog = false
+    if (this.showInfo) {
+      this.showInfo = false
     } else {
       this.selectedInfoItem = {
         ...item,
@@ -1409,8 +1363,9 @@ export default class Personal extends Vue.extend({
           cid: item.cid,
         },
       }
-      this.infoDialog = true
+      this.showInfo = true
     }
+    this.showAssets = !this.showAssets
   }
 
   async scanAddress() {
