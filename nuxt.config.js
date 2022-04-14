@@ -23,7 +23,7 @@ export default {
 
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
-    titleTemplate: '%s - beta ',
+    titleTemplate: '%s - beta',
     title: 'du. data. universal.',
     htmlAttrs: {
       lang: 'en',
