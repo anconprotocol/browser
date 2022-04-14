@@ -48,23 +48,23 @@
       </v-btn>
     </v-app-bar>
     <v-main>
-      <v-container  >
+      <v-container>
         <v-subheader v-if="this.walletconnect.connected"
-          >Network {{ network.name }} Address
-          {{
-            `${address.substring(0, 8)}...${address.substring(
-              address.length - 8
-            )}`
-          }}
-          <v-dialog @click="qrDialog = true" hide-overlay>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn v-bind="attrs" v-on="on" icon
-                ><v-icon>mdi-qrcode-scan</v-icon></v-btn
-              >
-            </template>
-
-            <vue-qrcode :value="address" :options="{ width: 200 }"></vue-qrcode>
-          </v-dialog>
+          ><v-row dense
+            ><v-col  xs>Network {{ network.name }}</v-col>
+          
+            <v-col  xs cols="12"
+              >Address
+              {{
+                `${address.substring(0, 8)}...${address.substring(
+                  address.length - 8
+                )}`
+              }}</v-col
+            ></v-row
+          >
+          
+            <vue-qrcode :value="address" :options="{ width: 55 }"></vue-qrcode>
+          
         </v-subheader>
         <Nuxt />
       </v-container>
@@ -312,12 +312,12 @@ export default {
         decode: async (buffer) => {
           let cipher
           cipher = await EthCrypto.cipher.parse(decode(buffer))
-          
+
           const plain = await EthCrypto.decryptWithPrivateKey(
             w.privateKey,
             cipher
           )
-          
+
           return JSON.parse(plain)
         },
       }
