@@ -416,7 +416,7 @@ const PromiseFileReader = require('promise-file-reader')
 import { BrowserQRCodeReader } from '@zxing/browser'
 import EthCrypto from 'eth-crypto'
 
-import { IPFSBlock, StorageAsset } from '../documentModel'
+import { ERC721Block, IPFSBlock, StorageAsset } from '../documentModel'
 // Import Vue FilePond
 import vueFilePond from 'vue-filepond'
 
@@ -435,7 +435,20 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 // Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
-import { async, debounce, lastValueFrom, Subject } from 'rxjs'
+import {
+  async,
+  debounce,
+  from,
+  interval,
+  lastValueFrom,
+  map,
+  mergeMap,
+  Subject,
+  take,
+  takeUntil,
+  tap,
+  timeout,
+} from 'rxjs'
 
 import { Siwe } from '../../lib/AnconProtocol/SIWE'
 import { ethers } from 'ethers'
@@ -542,6 +555,8 @@ export default class Personal extends Vue.extend({
   personalBlocksSubscription: Subject<any>
   // @ts-ignore
   incomingSubscriptions: Subject<any>
+  // @ts-ignore
+  anconNFTsubscription: Subject<any>
   pubsub: any
   topic = ''
   getWalletconnect: any
@@ -556,14 +571,14 @@ export default class Personal extends Vue.extend({
   editingIndex = -1
   selectedRecipient = '0xeeC58E89996496640c8b5898A7e0218E9b6E90cB'
   nonce = 0
-  selectedNFTAddress = '0xb350959efbE0Aa522Cf753385bB74cf7D0EfdA59'
+  selectedNFTAddress = this.$nuxt.context.env.AnconNFT
   menu = false
   contacts = [
     '0xeeC58E89996496640c8b5898A7e0218E9b6E90cB',
     '0x63e6EdFBA95aB3f0854fE1A93f96FAB1aa04b8Fb', //backup
     '0xc932911a1aaC9BA60FDcbe77045364A8170B7558',
   ]
-  nfts = ['0xb350959efbE0Aa522Cf753385bB74cf7D0EfdA59']
+  nfts = [this.$nuxt.context.env.AnconNFT]
   x = 0
   search = null
   y = 0
@@ -635,7 +650,7 @@ export default class Personal extends Vue.extend({
       owner: this.getWalletconnect().accounts[0],
       sources: this.selectedEdit.options.sources.split(','),
       description: this.selectedEdit.options.description,
-      timestamp: source.lastModifiedDate.getTime(),
+      timestamp: new Date().getTime(),
       image: await PromiseFileReader.readAsDataURL(source),
     } as StorageAsset
 
@@ -1042,7 +1057,7 @@ export default class Personal extends Vue.extend({
       })
 
       this.add(cid, 'Minted Ancon NFT', account, {
-        dagblock,   
+        dagblock,
       })
       this.loadingText = this.defaultLoadingText
       this.loading = false
@@ -1194,6 +1209,45 @@ export default class Personal extends Vue.extend({
         console.log(`[incoming]`, block)
       },
     })
+
+    const { AnconNFTContract, AnconNFTContract_ethers } = helper.getContracts(
+      new Web3(this.$nuxt.context.env.BSC_MAINNET),
+      this.getWalletconnect().accounts[0]
+    )
+
+    const time$ = interval(15000).pipe(take(100))
+    const block = await AnconNFTContract_ethers.provider.getBlockNumber()
+    time$
+      .pipe(
+        mergeMap((i: any) => {
+          return AnconNFTContract.getPastEvents('Transfer', {
+            filter: { to: this.getWalletconnect().accounts[0] },
+            fromBlock: block - i * 1000,
+            toBlock: block - (i - 1) * 1000,
+          })
+        })
+      )
+      .subscribe({
+        next: async (value: any) => {
+          value.forEach(async (tx: any) => {
+            const tokenUri = await AnconNFTContract.methods.tokenURI(
+              tx.returnValues.tokenId
+            )
+            console.log(tokenUri)
+            // TODO: Search by tokenuri
+            // @ts-ignore
+            // await this.getDb.putBlock({
+            //   cid: tx.transactionHash,
+            //   metadata: tokenUri,
+            //   tokenAddress: tx.address,
+            //   tokenId: tx.returnValues.tokenId,
+            //   kind: 'ERC721Block',
+            //   minterAddress: tx.returnValues.to,
+            //   ownerAddress: tx.returnValues.to,
+            // } as ERC721Block)
+          })
+        },
+      })
   }
   async mounted() {
     this.loading = true

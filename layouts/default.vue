@@ -51,9 +51,9 @@
       <v-container>
         <v-subheader v-if="this.walletconnect.connected"
           ><v-row dense
-            ><v-col  xs>Network {{ network.name }}</v-col>
-          
-            <v-col  xs cols="12"
+            ><v-col xs>Network {{ network.name }}</v-col>
+
+            <v-col xs cols="12"
               >Address
               {{
                 `${address.substring(0, 8)}...${address.substring(
@@ -62,9 +62,8 @@
               }}</v-col
             ></v-row
           >
-          
-            <vue-qrcode :value="address" :options="{ width: 55 }"></vue-qrcode>
-          
+
+          <vue-qrcode :value="address" :options="{ width: 55 }"></vue-qrcode>
         </v-subheader>
         <Nuxt />
       </v-container>
@@ -88,7 +87,8 @@ import { decode, encode } from 'cbor-x'
 import VueQrcode from '@chenfengyuan/vue-qrcode'
 const PromiseFileReader = require('promise-file-reader')
 import EthCrypto from 'eth-crypto'
-import { arrayify } from '@ethersproject/bytes'
+
+
 
 export default {
   name: 'DefaultLayout',
@@ -245,7 +245,7 @@ export default {
     },
     connect: async function () {
       console.log('Connect')
-      this.walletconnect.enable()
+      if (!this.walletconnect.connected) await this.walletconnect.enable()
     },
     disconnect: function () {
       console.log('Disconnect')
@@ -296,7 +296,6 @@ export default {
 
       return { digest: b, signature }
     },
-    dataSync: async function () {},
     subscribeTopics: async function () {
       const w = EthCrypto.createIdentity()
       const encBlockCodec = {
@@ -356,23 +355,10 @@ export default {
       ))
       this.onKeyexCancel = this.keyexPubsub.subscribe((v) => {
         // no op
-
         this.onIncoming.next(v)
       })
 
-      const startTime = new Date()
-      // 7 days/week, 24 hours/day, 60min/hour, 60secs/min, 100ms/sec
-      startTime.setTime(startTime.getTime() - 7 * 24 * 60 * 60 * 1000)
-      const sync = await this.db.getSyncStore({
-        startTime,
-        endTime: new Date(),
-      })
 
-      sync.subscribe(async (message) => {
-        const block = decode(message.payload)
-
-        await this.db.putBlock(block.document)
-      })
     },
   },
 }
