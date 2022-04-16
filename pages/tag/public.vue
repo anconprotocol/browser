@@ -229,7 +229,6 @@ const payload = {
   inject: ['db', 'web3', 'walletconnect'],
 })
 export default class Public extends Vue {
-  bob = new ParkyDB()
   result = ''
   selected: any
   loading = false

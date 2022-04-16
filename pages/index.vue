@@ -37,7 +37,6 @@ import Shared from './tag/shared.vue'
   },
 })
 export default class Main extends Vue {
-  bob = new ParkyDB()
   result = ''
   selected: any
   loading = false

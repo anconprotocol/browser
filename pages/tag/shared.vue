@@ -115,7 +115,6 @@ const payload = {
   ],
 })
 export default class Shared extends Vue {
-  bob = new ParkyDB()
   result = ''
   selected: any
   loading = false

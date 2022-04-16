@@ -1,3 +1,4 @@
+import webpack from 'webpack'
 import colors from 'vuetify/es5/util/colors'
 // import { createOidcAuth, SignInType } from 'vue-oidc-client/vue2';
 
@@ -35,6 +36,7 @@ export default {
       { name: 'format-detection', content: 'telephone=no' },
     ],
     link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
+    script:[]
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
@@ -118,7 +120,14 @@ export default {
         include: /node_modules/,
         type: 'javascript/auto',
       })
+
+      
     },
+    plugins:[
+      new webpack.NormalModuleReplacementPlugin(/type-graphql$/, resource => {
+        resource.request = resource.request.replace(/type-graphql/, "type-graphql/dist/browser-shim.js");
+      })
+    ]
   },
 
   env: {

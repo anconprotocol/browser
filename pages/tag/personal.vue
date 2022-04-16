@@ -461,7 +461,6 @@ import {
   shareTextViaNativeSharing,
 } from 'share-text-to-whatsapp'
 import { arrayify, hexlify } from 'ethers/lib/utils'
-
 // Create component
 const FilePond = vueFilePond(
   FilePondPluginFileValidateType,
@@ -1103,7 +1102,7 @@ export default class Personal extends Vue.extend({
     const event = {
       message: _action,
       time: new Date().getTime(),
-      from: _user,
+      from: _user,  
       metadata,
     }
     const init = {

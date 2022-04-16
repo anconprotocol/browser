@@ -84,6 +84,7 @@ import { ParkyDB } from 'parkydb'
 import AnconProtocolClient from '../lib/AnconProtocol/AnconProtocolClient'
 import { Subject } from 'rxjs'
 import { decode, encode } from 'cbor-x'
+import { defaultResolvers} from 'parkydb/lib/resolvers'
 import VueQrcode from '@chenfengyuan/vue-qrcode'
 const PromiseFileReader = require('promise-file-reader')
 import EthCrypto from 'eth-crypto'
@@ -111,6 +112,8 @@ export default {
       try {
         this.network = await web3provider.getNetwork()
         await this.db.initialize({
+    graphql: { resolvers: defaultResolvers},
+
           enableSync: true,
           wakuconnect: {
             bootstrap: { peers: [$nuxt.context.env.WakuLibp2p] },
@@ -194,7 +197,7 @@ export default {
       onIncoming: new Subject(),
       onPersonal: new Subject(),
       onHistory: new Subject(),
-      db: new ParkyDB(),
+      db: new ParkyDB('du'),
       walletconnect: new WalletConnectProvider({
         infuraId: '92ed13edfad140409ac24457a9c4e22d',
         rpc: {
