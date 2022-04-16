@@ -1,5 +1,5 @@
 {
-  "name": "did-panama",
+  "name": "du.",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -36,7 +36,7 @@
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.29.1",
     "nuxt": "^2.15.8",
-    "parkydb": "^1.0.9",
+    "parkydb": "^1.0.10",
     "pdfjs-dist": "^2.12.313",
     "promise-file-reader": "^1.0.3",
     "qrious": "^4.0.2",

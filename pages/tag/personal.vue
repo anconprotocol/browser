@@ -1036,7 +1036,13 @@ export default class Personal extends Vue.extend({
       const dagblock = await this.getDb.ancon.createDagBlock({
         // @ts-ignore
         message: { uuid, ...model.document },
-        topic: 'du.xdv.digital',
+      })
+
+      // @ts-ignore
+      await this.getDb.ancon.createDagBlock({
+        // @ts-ignore
+        message: { uuid, metadata: dagblock.cid },
+        topic: '/du.xdv.digital/' + cid+'/metadata/json',
       })
 
       this.loadingText = 'Minting...'
@@ -1178,6 +1184,18 @@ export default class Personal extends Vue.extend({
           return { document: data.content, ...i.document }
         } catch (e) {}
       })
+    } else if (this.keys[this.selectedChip] === 'ERC721Block') {
+      r = items.map(async (i: any) => {
+        try {
+          debugger
+          const result = await fetch(
+            `${this.$nuxt.context.env.AnconAPI}/v0/dag/${i.document.cid}/`
+          )
+          const data = await result.json()
+
+          return { document: data.content, ...i.document }
+        } catch (e) {}
+      })
     }
 
     return r
@@ -1215,37 +1233,33 @@ export default class Personal extends Vue.extend({
       this.getWalletconnect().accounts[0]
     )
 
-    const time$ = interval(15000).pipe(take(100))
+    const time$ = interval(1507).pipe(take(1900))
     const block = await AnconNFTContract_ethers.provider.getBlockNumber()
     time$
       .pipe(
         mergeMap((i: any) => {
-          return AnconNFTContract.getPastEvents('Transfer', {
+          return AnconNFTContract.getPastEvents('AddMintInfo', {
             filter: { to: this.getWalletconnect().accounts[0] },
-            fromBlock: block - i * 1000,
-            toBlock: block - (i - 1) * 1000,
+            fromBlock: block - i * 2000,
+            toBlock: block - (i - 1) * 2000,
           })
-        })
+        }),
+        mergeMap((p) => p)
       )
       .subscribe({
-        next: async (value: any) => {
-          value.forEach(async (tx: any) => {
-            const tokenUri = await AnconNFTContract.methods.tokenURI(
-              tx.returnValues.tokenId
-            )
-            console.log(tokenUri)
-            // TODO: Search by tokenuri
-            // @ts-ignore
-            // await this.getDb.putBlock({
-            //   cid: tx.transactionHash,
-            //   metadata: tokenUri,
-            //   tokenAddress: tx.address,
-            //   tokenId: tx.returnValues.tokenId,
-            //   kind: 'ERC721Block',
-            //   minterAddress: tx.returnValues.to,
-            //   ownerAddress: tx.returnValues.to,
-            // } as ERC721Block)
-          })
+        next: async (tx: any) => {
+          //            console.log(tokenUri)
+          // TODO: Search by tokenuri
+          // @ts-ignore
+          await this.getDb.putBlock({
+            txid: tx.transactionHash,
+
+            image: tx.returnValues.uri,
+            tokenAddress: tx.address,
+            tokenId: tx.returnValues.tokenId,
+            kind: 'ERC721Block',
+            minterAddress: tx.returnValues.creator,
+          } as ERC721Block)
         },
       })
   }
