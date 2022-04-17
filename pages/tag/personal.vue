@@ -669,9 +669,9 @@ export default class Personal extends Vue.extend({
     // @ts-ignore
     const fido2server = new WebauthnHardwareAuthenticate()
     fido2server.initialize({
-      rpId: `localhost`,
+      rpId: `du.xdv.digital`,
       rpName: cid,
-      rpIcon: `http://localhost:3000`,
+      rpIcon: `https://du,xdv.digital`,
       attestation: 'none',
       authenticatorRequireResidentKey: false,
       authenticatorUserVerification: 'required',
@@ -679,7 +679,7 @@ export default class Personal extends Vue.extend({
 
     // Fido2 client settings, user is the user address + origin
     const fido2client = new WebauthnHardwareClient(fido2server)
-    const origin = `http://localhost:3000`
+    const origin = `https://du,xdv.digital`
     // @ts-ignore
     const { signature } = await fido2client.register(
       origin,
