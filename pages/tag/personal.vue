@@ -1,4 +1,4 @@
-<template>
+c<template>
   <v-container fluid>
     <div></div>
     <v-row>
@@ -362,14 +362,14 @@
             </v-card-subtitle>
             <v-card-text>{{ v.document.description }}</v-card-text>
             <v-card-actions>
-              <v-btn
+              <!-- <v-btn
                 icon
                 @click="handleDisplay('showProvenanceSigning', true, v)"
                 color="orange lighten-2"
                 v-show="v.document.kind === 'StorageAsset'"
               >
                 <v-icon>mdi-file-certificate</v-icon>
-              </v-btn>
+              </v-btn> -->
               <v-btn
                 icon
                 @click="handleDisplay('showShare', true, v)"
@@ -454,8 +454,8 @@ import { QrcodeCapture, QrcodeStream } from 'vue-qrcode-reader'
 import { whatsapp, tw, telegram } from 'vanilla-sharing'
 
 //@ts-ignore
-import {  WebauthnHardwareClient } from 'parkydb/lib/core/webauthnClient'
-import { WebauthnHardwareAuthenticate  } from 'parkydb/lib/core/webauthnServer'
+import { WebauthnHardwareClient } from 'parkydb/lib/core/webauthnClient'
+import { WebauthnHardwareAuthenticate } from 'parkydb/lib/core/webauthnServer'
 //@ts-ignore
 import { decode, encode } from 'cbor-x'
 import 'pdfjs-dist/legacy/build/pdf.worker.entry'
@@ -659,16 +659,15 @@ export default class Personal extends Vue.extend({
   }
 
   async registerCidForFido2(cid) {
+    // this.loading = true
+    this.loadingText = this.signingLoadingText
 
     // @ts-ignore
     const model = await this.getDb.get(cid, null)
 
-    const fileAsBlob = await fetch(model.document.image)
-    const file = await fileAsBlob.blob()
-
     // Fido2 server settings, rp*** is the data asset
     // @ts-ignore
-    const fido2server = new WebauthnHardwareAuthenticate(null);
+    const fido2server = new WebauthnHardwareAuthenticate()
     fido2server.initialize({
       rpId: `localhost`,
       rpName: cid,
@@ -679,18 +678,19 @@ export default class Personal extends Vue.extend({
     })
 
     // Fido2 client settings, user is the user address + origin
-    const fido2client = new WebauthnHardwareClient(fido2server);
-    const origin  = (`http://localhost:3000`)
-    const res = await fido2client
-    .register(origin, this.getWalletconnect().accounts[0], this.getWalletconnect().accounts[0])
-    
-    // Store in cid
-    alert(JSON.stringify(res))
-    const verified = await fido2client.verify(origin, res?.registerResponse, res?.credential )
-
-    alert(JSON.stringify(verified))
+    const fido2client = new WebauthnHardwareClient(fido2server)
+    const origin = `http://localhost:3000`
     // @ts-ignore
-    // this.getDb.db.blockdb.update(cid, update)
+    const { signature } = await fido2client.register(
+      origin,
+      model.cid,
+      this.getWalletconnect().accounts[0],
+      model.dag.bytes
+    )
+
+    this.loading = false
+    // this.loadingText = this.defaultLoadingText
+    return { digest: '', signature }
   }
 
   async fetchAnconTopic(topic, address) {
@@ -808,15 +808,13 @@ export default class Personal extends Vue.extend({
     const file = await fileAsBlob.blob()
     // @ts-ignore
     const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
-    // // sign message
-    // const { signature, digest } = await this.sign(
-    //   JSON.stringify(model.document)
-    // )
+    // sign message
+    const { signature, digest } = await this.registerCidForFido2(cid)
     const block = {
       ...model.document,
       image: cidFromIpfs.image,
       kind: 'StorageBlock',
-      // signature,
+      signature,
       // digest,
       timestamp: new Date().getTime(),
       issuer: this.defaultAddress,
@@ -914,14 +912,12 @@ export default class Personal extends Vue.extend({
     // @ts-ignore
     const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
     // sign message
-    const { signature, digest } = await this.sign(
-      JSON.stringify(model.document)
-    )
+    const { signature, digest } = await this.registerCidForFido2(cid)
     const block = {
       ...model.document,
       image: cidFromIpfs.image,
       kind: 'StorageBlock',
-      // signature,
+      signature,
       // digest,
       timestamp: new Date().getTime(),
       issuer: this.defaultAddress,
