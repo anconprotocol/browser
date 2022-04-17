@@ -36,7 +36,7 @@
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.29.1",
     "nuxt": "^2.15.8",
-    "parkydb": "^1.0.14",
+    "parkydb": "^1.0.15",
     "pdfjs-dist": "^2.12.313",
     "promise-file-reader": "^1.0.3",
     "qrious": "^4.0.2",

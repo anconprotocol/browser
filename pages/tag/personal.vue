@@ -113,7 +113,13 @@
           </v-list>
         </v-card-text>
         <v-card-actions>
-          <v-btn color="orange accent-4" text @click="handleMint"> Back </v-btn>
+          <v-btn
+            color="orange accent-4"
+            text
+            @click="handleDisplay('showMint', false)"
+          >
+            Back
+          </v-btn>
         </v-card-actions>
       </v-card>
 
@@ -186,7 +192,41 @@
           </v-list>
         </v-card-text>
         <v-card-actions>
-          <v-btn color="orange accent-4" text @click="handleShowShare">
+          <v-btn
+            color="orange accent-4"
+            text
+            @click="handleDisplay('showShare', false)"
+          >
+            Back
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+
+      <v-card v-show="showProvenanceSigning" class="mx-auto">
+        <v-card-title>
+          <span class="text-h5">Authenticity Signatures</span>
+        </v-card-title>
+        <v-card-text>
+          <v-list subheader>
+            <v-subheader>Content authenticy signatures</v-subheader>
+
+            <v-list-item @click="registerCidForFido2(selectedItem.cid)">
+              <v-list-item-avatar>
+                <v-icon color="indigo">mdi-fingerprint </v-icon>
+              </v-list-item-avatar>
+
+              <v-list-item-content>
+                <v-list-item-title>Add Webauthn / Fido2</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn
+            color="orange accent-4"
+            text
+            @click="handleDisplay('showProvenanceSigning', false)"
+          >
             Back
           </v-btn>
         </v-card-actions>
@@ -326,7 +366,15 @@
             <v-card-actions>
               <v-btn
                 icon
-                @click="handleShowShare(v)"
+                @click="handleDisplay('showProvenanceSigning', true, v)"
+                color="orange lighten-2"
+                v-show="v.document.kind === 'StorageAsset'"
+              >
+                <v-icon>mdi-file-certificate</v-icon>
+              </v-btn>
+              <v-btn
+                icon
+                @click="handleDisplay('showShare', true, v)"
                 color="orange lighten-2"
                 v-show="v.document.kind === 'StorageAsset'"
               >
@@ -335,7 +383,7 @@
 
               <v-btn
                 icon
-                @click="handleMint(v)"
+                @click="handleDisplay('showMint', true, v)"
                 color="orange lighten-2"
                 v-show="v.document.kind === 'StorageAsset'"
               >
@@ -408,7 +456,8 @@ import { QrcodeCapture, QrcodeStream } from 'vue-qrcode-reader'
 import { whatsapp, tw, telegram } from 'vanilla-sharing'
 
 //@ts-ignore
-
+import {  WebauthnHardwareClient } from 'parkydb/lib/core/webauthnClient'
+import { WebauthnHardwareAuthenticate  } from 'parkydb/lib/core/webauthnServer'
 //@ts-ignore
 import { decode, encode } from 'cbor-x'
 import 'pdfjs-dist/legacy/build/pdf.worker.entry'
@@ -591,7 +640,7 @@ export default class Personal extends Vue.extend({
   showShare: any = false
   selectedItem: any
   showMint: boolean = false
-
+  showProvenanceSigning = false
   edit(index, item) {
     if (!this.editing) {
       this.editing = item
@@ -612,6 +661,37 @@ export default class Personal extends Vue.extend({
     return (
       text.toString().toLowerCase().indexOf(query.toString().toLowerCase()) > -1
     )
+  }
+
+  async registerCidForFido2(cid) {
+
+    // @ts-ignore
+    const model = await this.getDb.get(cid, null)
+
+    const fileAsBlob = await fetch(model.document.image)
+    const file = await fileAsBlob.blob()
+
+    // Fido2 server settings, rp*** is the data asset
+    // @ts-ignore
+    const fido2server = new WebauthnHardwareAuthenticate(null);
+    fido2server.initialize({
+      rpId: cid,
+      rpName: model.document.name,
+      rpIcon: '',
+    })
+
+    // Fido2 client settings, user is the user address + origin
+    const fido2client = new WebauthnHardwareClient(fido2server);
+    const origin = window.location.origin.toString()
+    const res = await fido2client.register(origin, this.getWalletconnect().accounts[0], this.getWalletconnect().accounts[0])
+    
+    // Store in cid
+    alert(res)
+    const verified = await fido2client.verify(origin, res?.registerResponse, res?.credential )
+
+    alert(JSON.stringify(verified))
+    // @ts-ignore
+    // this.getDb.db.blockdb.update(cid, update)
   }
 
   async fetchAnconTopic(topic, address) {
@@ -1041,7 +1121,7 @@ export default class Personal extends Vue.extend({
       await this.getDb.ancon.createDagBlock({
         // @ts-ignore
         message: { uuid, metadata: dagblock.cid },
-        topic: '/du.xdv.digital/' + cid+'/metadata/json',
+        topic: '/du.xdv.digital/' + cid + '/metadata/json',
       })
 
       this.loadingText = 'Minting...'
@@ -1102,7 +1182,7 @@ export default class Personal extends Vue.extend({
     const event = {
       message: _action,
       time: new Date().getTime(),
-      from: _user,  
+      from: _user,
       metadata,
     }
     const init = {
@@ -1232,7 +1312,7 @@ export default class Personal extends Vue.extend({
       this.getWalletconnect().accounts[0]
     )
 
-    const time$ = interval(1507).pipe(take(1900))
+    const time$ = interval(6507).pipe(take(500))
     const block = await AnconNFTContract_ethers.provider.getBlockNumber()
     time$
       .pipe(
@@ -1275,22 +1355,18 @@ export default class Personal extends Vue.extend({
     }, 1200)
   }
 
-  async handleMint(item) {
-    this.selectedItem = item
-    this.showMint = !this.showMint
-    this.showAssets = !this.showAssets
-  }
-
-  async handleShowShare(item) {
-    this.selectedItem = item
-    this.showShare = !this.showShare
-    this.showAssets = !this.showAssets
-  }
-
-  async handleShowHistory(item) {
-    this.selectedItem = item
-    this.showHistory = !this.showShare
-    this.showAssets = !this.showAssets
+  async handleDisplay(key, show, item) {
+    if (!!item) {
+      this.selectedItem = item
+    }
+    this.showProvenanceSigning =
+      this.showAssets =
+      this.showMint =
+      this.showHistory =
+      this.showShare =
+        false
+    this[key] = show
+    if (show === false) this.showAssets = true
   }
 
   async infoAsset(item: any) {
