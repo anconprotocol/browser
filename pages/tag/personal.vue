@@ -204,12 +204,10 @@
 
       <v-card v-show="showProvenanceSigning" class="mx-auto">
         <v-card-title>
-          <span class="text-h5">Authenticity Signatures</span>
+          <span class="text-h5">Content authenticity</span>
         </v-card-title>
         <v-card-text>
-          <v-list subheader>
-            <v-subheader>Content authenticy signatures</v-subheader>
-
+          <v-list>
             <v-list-item @click="registerCidForFido2(selectedItem.cid)">
               <v-list-item-avatar>
                 <v-icon color="indigo">mdi-fingerprint </v-icon>
@@ -505,10 +503,7 @@ import helper from '~/utils/helper'
 import AnconProtocolClient from '~/lib/AnconProtocol/AnconProtocolClient'
 import { v4 as uuidv4 } from 'uuid'
 import Web3 from 'web3'
-import {
-  getWhatsAppClickToChatLink,
-  shareTextViaNativeSharing,
-} from 'share-text-to-whatsapp'
+
 import { arrayify, hexlify } from 'ethers/lib/utils'
 // Create component
 const FilePond = vueFilePond(
@@ -675,18 +670,22 @@ export default class Personal extends Vue.extend({
     // @ts-ignore
     const fido2server = new WebauthnHardwareAuthenticate(null);
     fido2server.initialize({
-      rpId: cid,
-      rpName: model.document.name,
-      rpIcon: '',
+      rpId: `localhost`,
+      rpName: cid,
+      rpIcon: `http://localhost:3000`,
+      attestation: 'none',
+      authenticatorRequireResidentKey: false,
+      authenticatorUserVerification: 'required',
     })
 
     // Fido2 client settings, user is the user address + origin
     const fido2client = new WebauthnHardwareClient(fido2server);
-    const origin = window.location.origin.toString()
-    const res = await fido2client.register(origin, this.getWalletconnect().accounts[0], this.getWalletconnect().accounts[0])
+    const origin  = (`http://localhost:3000`)
+    const res = await fido2client
+    .register(origin, this.getWalletconnect().accounts[0], this.getWalletconnect().accounts[0])
     
     // Store in cid
-    alert(res)
+    alert(JSON.stringify(res))
     const verified = await fido2client.verify(origin, res?.registerResponse, res?.credential )
 
     alert(JSON.stringify(verified))
@@ -1312,7 +1311,7 @@ export default class Personal extends Vue.extend({
       this.getWalletconnect().accounts[0]
     )
 
-    const time$ = interval(6507).pipe(take(500))
+    const time$ = interval(9650).pipe(take(25))
     const block = await AnconNFTContract_ethers.provider.getBlockNumber()
     time$
       .pipe(
