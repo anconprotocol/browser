@@ -677,7 +677,7 @@ export default class Personal extends Vue.extend({
       authenticatorUserVerification: 'required',
     })
 
-    // Fido2 client settings, user is the user address + origin
+    // Fido2 client                                    settings, user is the user address + origin
     const fido2client = new WebauthnHardwareClient(fido2server)
     const origin = `https://du,xdv.digital`
     // @ts-ignore
