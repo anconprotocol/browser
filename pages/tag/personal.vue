@@ -679,7 +679,7 @@ export default class Personal extends Vue.extend({
 
     // Fido2 client                                    settings, user is the user address + origin
     const fido2client = new WebauthnHardwareClient(fido2server)
-    const origin = `https://du,xdv.digital`
+    const origin = window.location.origin
     // @ts-ignore
     const { signature } = await fido2client.register(
       origin,
