@@ -328,7 +328,7 @@ export default {
           attestation: 'none',
           authenticatorRequireResidentKey: false,
           authenticatorUserVerification: 'required',
-          cryptoParams: [-257],
+   ///       cryptoParams: [-257],
         })
 
         await this.bootstrap()
