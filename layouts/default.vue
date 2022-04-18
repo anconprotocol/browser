@@ -77,7 +77,7 @@
     <v-dialog v-model="showConnect" max-width="600px">
       <v-card>
         <v-card-title>
-          <span class="text-h5">Sign in or connect with</span>
+          <span class="text-h5">Connect with</span>
         </v-card-title>
         <v-card-text>
           <v-list>
@@ -87,7 +87,7 @@
               </v-list-item-avatar>
 
               <v-list-item-content>
-                <v-list-item-title>W3C Web Authentication</v-list-item-title>
+                <v-list-item-title>Smartphone</v-list-item-title>
               </v-list-item-content>
             </v-list-item>
             <v-list-item @click="connect()">
