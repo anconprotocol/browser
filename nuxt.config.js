@@ -132,6 +132,7 @@ export default {
   env: {
     AnconNFT: process.env.REACT_APP_AnconNFTAddress,
     AnconToken: process.env.REACT_APP_AnconTokenAddress,
+    XDVNFT: '0xD6cE9d299E1899B4BBCece03D2ad44b41212f324',
     BSC_MAINNET: 'https://bsc-dataseed.binance.org/',
     Onramper: `pk_test_vce1UmxZ3fdhoOGiZBJHiUivX205TfsfAiyljF9LF_k0`,
     AnconAPI: 'https://api.ancon.did.pa',

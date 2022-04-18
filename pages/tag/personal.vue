@@ -998,7 +998,7 @@ export default class Personal extends Vue.extend({
         }`,
       }
       // @ts-ignore
-      await this.getDb.ancon.createDid(didacct, pubkey)
+      await this.getDb.ancon.createDid(didacct, pubkey, 'Welcome tu du.xdv.digital!')
       // @ts-ignore
 
       const dagblock = await this.getDb.ancon.createDagBlock(didacct.ethrdid, {
@@ -1030,6 +1030,7 @@ export default class Personal extends Vue.extend({
     } catch (e) {
       this.loading = false
       this.showShare = true
+      console.error(e)
       this.snackbarText = `${e}`
       this.snackbar = true
     }
@@ -1153,13 +1154,12 @@ export default class Personal extends Vue.extend({
         message: { uuid, metadata: dagblock.cid },
         topic: '/du.xdv.digital/' + cid + '/metadata/json',
       })
-
+debugger
       this.loadingText = 'Minting...'
       const royalty2 = 0
       const params = [
         account, //user address
-        uuid, //static uuid
-        royalty2, //royalty fee percent from 0 to 10000, 1 = 0.01%, 10000 = 100.00%
+        dagblock.cid,
       ]
       const gasAmount = await readOnlyContracts.AnconNFTContract.methods
         .mint(...params)

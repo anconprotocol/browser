@@ -189,6 +189,7 @@ export default {
       )
 
       this.Ancon.initialize()
+      debugger
     }
     // Subscribe to accounts change
     provider.on('accountsChanged', bootstrap)
@@ -307,7 +308,7 @@ export default {
           withWeb3: {
             provider: web3provider,
             defaultAddress: identity.address,
-          },
+          },       
           withIpfs: {
             gateway: 'https://ipfs.infura.io',
             api: this.$nuxt.context.env.IPFS,
@@ -325,7 +326,7 @@ export default {
           rpId: this.$nuxt.context.env.WebAuthn,
           rpName: 'du.',
           rpIcon: '',
-          attestation: 'none',
+          attestation: 'direct',
           authenticatorRequireResidentKey: false,
           authenticatorUserVerification: 'required',
    ///       cryptoParams: [-257],
@@ -399,6 +400,7 @@ export default {
       if (!this.walletconnect.connected) {
         await this.walletconnect.enable()
         this.connected = true
+        
       }
       this.showConnect = false
     },

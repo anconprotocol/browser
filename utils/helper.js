@@ -10,7 +10,7 @@ class helper {
   static getContracts(_provider, account) {
     const web3 = new Web3(_provider)
     web3.eth.defaultAccount = account || _provider.accounts[0]
-    const anconNFTContractAddress = $nuxt.context.env.AnconNFT
+    const anconNFTContractAddress = $nuxt.context.env.XDVNFT
     const _anconNFTContract = new web3.eth.Contract(
       AnconNFT.abi,
       anconNFTContractAddress
