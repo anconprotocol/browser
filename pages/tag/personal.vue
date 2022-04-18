@@ -681,7 +681,7 @@ export default class Personal extends Vue.extend({
     const fido2client = new WebauthnHardwareClient(fido2server)
     const origin = window.location.origin
     // @ts-ignore
-    const { signature } = await fido2client.register(
+    const res = await fido2client.register(
       origin,
       model.cid,
       this.getWalletconnect().accounts[0],
@@ -690,7 +690,7 @@ export default class Personal extends Vue.extend({
 
     this.loading = false
     // this.loadingText = this.defaultLoadingText
-    return { digest: '', signature }
+    return { digest: '', ...res }
   }
 
   async fetchAnconTopic(topic, address) {
