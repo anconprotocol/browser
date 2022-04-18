@@ -667,9 +667,9 @@ export default class Personal extends Vue.extend({
 
     // Fido2 server settings, rp*** is the data asset
     // @ts-ignore
-    const fido2server = new WebauthnHardwareAuthenticate()
+    const fido2server = new WebauthnHardwareAuthenticate({})
     fido2server.initialize({
-      rpId: `du.xdv.digital`,
+      rpId: `localhost`,
       rpName: cid,
       rpIcon: `https://du,xdv.digital`,
       attestation: 'none',
@@ -791,95 +791,102 @@ export default class Personal extends Vue.extend({
   }
 
   async pushAssetToTopic(cid: string) {
-    this.loading = true
-    this.loadingText = this.signingLoadingText
+    try {
+      this.loading = true
+      this.loadingText = this.signingLoadingText
 
-    this.snackbarText = `Sending asset to ${this.selectedRecipient}...`
-    this.snackbar = true
-    // @ts-ignore
-    const model = await this.getDb.get(cid, null)
-
-    if (model.document.kind !== 'StorageAsset') {
-      this.snackbarText = 'Invalid asset, must be stored in personal'
+      this.snackbarText = `Sending asset to ${this.selectedRecipient}...`
       this.snackbar = true
-      return
-    }
-    const fileAsBlob = await fetch(model.document.image)
-    const file = await fileAsBlob.blob()
-    // @ts-ignore
-    const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
-    // sign message
-    const { signature, digest } = await this.registerCidForFido2(cid)
-    const block = {
-      ...model.document,
-      image: cidFromIpfs.image,
-      kind: 'StorageBlock',
-      signature,
-      // digest,
-      timestamp: new Date().getTime(),
-      issuer: this.defaultAddress,
-    }
-    const blockCodec = {
-      name: 'cbor',
-      code: '0x71',
-      encode: async (obj) => encode(obj),
-      decode: (buffer) => decode(buffer),
-    }
+      // @ts-ignore
+      const model = await this.getDb.get(cid, null)
 
-    // @ts-ignore
-    const kex = await this.getDb.requestKeyExchangePublicKey(
-      `/xdvdigital/1/${this.selectedRecipient}-kex/cbor`,
-      {
-        blockCodec,
+      if (model.document.kind !== 'StorageAsset') {
+        this.snackbarText = 'Invalid asset, must be stored in personal'
+        this.snackbar = true
+        return
       }
-    )
-
-    const sub = kex.subscribe(async (encryptionPubKey: any) => {
-      const encBlockCodec = {
+      const fileAsBlob = await fetch(model.document.image)
+      const file = await fileAsBlob.blob()
+      // @ts-ignore
+      const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
+      // sign message
+      const { signature, digest } = await this.registerCidForFido2(cid)
+      const block = {
+        ...model.document,
+        image: cidFromIpfs.image,
+        kind: 'StorageBlock',
+        signature,
+        // digest,
+        timestamp: new Date().getTime(),
+        issuer: this.defaultAddress,
+      }
+      const blockCodec = {
         name: 'cbor',
         code: '0x71',
-        encode: async (obj) => {
-          const enc = await EthCrypto.encryptWithPublicKey(
-            encryptionPubKey as any as any,
-            //@ts-ignore
-            JSON.stringify(obj)
-          )
-
-          const x = await EthCrypto.cipher.stringify(enc)
-          return encode(x)
-        },
-        decode: (buffer) => {
-          decode(buffer)
-        },
+        encode: async (obj) => encode(obj),
+        decode: (buffer) => decode(buffer),
       }
+
       // @ts-ignore
-      const pubsub = await this.getDb.createTopicPubsub(
-        `/xdvdigital/1/${this.selectedRecipient}/cbor`,
+      const kex = await this.getDb.requestKeyExchangePublicKey(
+        `/xdvdigital/1/${this.selectedRecipient}-kex/cbor`,
         {
-          blockCodec: encBlockCodec,
-          isKeyExchangeChannel: false,
-          canPublish: true,
-          canSubscribe: true,
+          blockCodec,
         }
       )
-      // @ts-ignore
-      this.add(
-        cid,
-        `Sent message to ${this.selectedRecipient}`,
-        this.defaultAddress,
-        block
-      )
 
+      const sub = kex.subscribe(async (encryptionPubKey: any) => {
+        const encBlockCodec = {
+          name: 'cbor',
+          code: '0x71',
+          encode: async (obj) => {
+            const enc = await EthCrypto.encryptWithPublicKey(
+              encryptionPubKey as any as any,
+              //@ts-ignore
+              JSON.stringify(obj)
+            )
+
+            const x = await EthCrypto.cipher.stringify(enc)
+            return encode(x)
+          },
+          decode: (buffer) => {
+            decode(buffer)
+          },
+        }
+        // @ts-ignore
+        const pubsub = await this.getDb.createTopicPubsub(
+          `/xdvdigital/1/${this.selectedRecipient}/cbor`,
+          {
+            blockCodec: encBlockCodec,
+            isKeyExchangeChannel: false,
+            canPublish: true,
+            canSubscribe: true,
+          }
+        )
+        // @ts-ignore
+        this.add(
+          cid,
+          `Sent message to ${this.selectedRecipient}`,
+          this.defaultAddress,
+          block
+        )
+
+        this.loading = false
+        this.loadingText = this.defaultLoadingText
+        // @ts-ignore
+        pubsub.publish(block)
+        this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
+        this.snackbar = true
+
+        pubsub.close()
+        sub.unsubscribe()
+      })
+    } catch (e) {
       this.loading = false
-      this.loadingText = this.defaultLoadingText
-      // @ts-ignore
-      pubsub.publish(block)
-      this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
+      this.showShare = true
+      this.snackbarText = `${e}`
       this.snackbar = true
-
-      pubsub.close()
-      sub.unsubscribe()
-    })
+    }
   }
 
   async sign(data: any) {
@@ -902,102 +909,116 @@ export default class Personal extends Vue.extend({
   }
 
   async sendToIpfs(cid: string) {
-    this.snackbarText = 'Uploading to IPFS...'
-    this.snackbar = true
-    const model = await (this as any).getDb.get(cid)
+    try {
+      this.snackbarText = 'Uploading to IPFS...'
+      this.snackbar = true
+      const model = await (this as any).getDb.get(cid)
 
-    const fileAsBlob = await fetch(model.document.image)
-    const file = await fileAsBlob.blob()
+      const fileAsBlob = await fetch(model.document.image)
+      const file = await fileAsBlob.blob()
 
-    // @ts-ignore
-    const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
-    // sign message
-    const { signature, digest } = await this.registerCidForFido2(cid)
-    const block = {
-      ...model.document,
-      image: cidFromIpfs.image,
-      kind: 'StorageBlock',
-      signature,
-      // digest,
-      timestamp: new Date().getTime(),
-      issuer: this.defaultAddress,
-    }
-
-    const body = new FormData()
-    body.append('file', JSON.stringify(block))
-
-    const ipfsAddRes = await fetch(
-      `${this.$nuxt.context.env.IPFS}api/v0/add?pin=true`,
-      {
-        body,
-        method: 'POST',
+      // @ts-ignore
+      const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
+      // sign message
+      const { signature, digest } = await this.registerCidForFido2(cid)
+      const block = {
+        ...model.document,
+        image: cidFromIpfs.image,
+        kind: 'StorageBlock',
+        signature,
+        // digest,
+        timestamp: new Date().getTime(),
+        issuer: this.defaultAddress,
       }
-    )
 
-    const ipfsAddResJSON = await ipfsAddRes.json()
+      const body = new FormData()
+      body.append('file', JSON.stringify(block))
 
-    const cidipfs = ipfsAddResJSON.Hash
+      const ipfsAddRes = await fetch(
+        `${this.$nuxt.context.env.IPFS}api/v0/add?pin=true`,
+        {
+          body,
+          method: 'POST',
+        }
+      )
 
-    this.add(cid, 'Publish to ipfs', this.getWalletconnect().accounts[0], {
-      cid: cidipfs,
-    })
+      const ipfsAddResJSON = await ipfsAddRes.json()
 
-    // @ts-ignore
-    await this.getDb.putBlock({
-      cid: cidipfs,
-      kind: 'IpfsBlock',
-      ref: cid,
-    } as IPFSBlock)
+      const cidipfs = ipfsAddResJSON.Hash
 
-    this.snackbarText = 'Upload completed'
-    this.snackbar = true
+      this.add(cid, 'Publish to ipfs', this.getWalletconnect().accounts[0], {
+        cid: cidipfs,
+      })
+
+      // @ts-ignore
+      await this.getDb.putBlock({
+        cid: cidipfs,
+        kind: 'IpfsBlock',
+        ref: cid,
+      } as IPFSBlock)
+
+      this.snackbarText = 'Upload completed'
+      this.snackbar = true
+    } catch (e) {
+      this.loading = false
+      this.showShare = true
+      this.snackbarText = `${e}`
+      this.snackbar = true
+    }
   }
 
   async sendToAncon(cid: string) {
-    this.snackbarText = 'Uploading to Ancon...'
-    this.snackbar = true
-    const model = await (this as any).getDb.get(cid)
-    this.loading = true
-    this.loadingText = this.signingLoadingText
+    try {
+      this.snackbarText = 'Uploading to Ancon...'
+      this.snackbar = true
+      const model = await (this as any).getDb.get(cid)
+      this.loading = true
+      this.loadingText = this.signingLoadingText
 
-    const fileAsBlob = await fetch(model.document.image)
-    const file = await fileAsBlob.blob()
-    // @ts-ignore
-    const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
-    model.document.image = cidFromIpfs.image
-    const api = this.$nuxt.context.env.AnconAPI + '/'
-    const siwe = new Siwe(this.getWalletconnect(), api)
-
-    const pubkey = await siwe.getSIWEPublicKey()
-    // @ts-ignore
-    const did = await this.getDb.ancon.createDid(pubkey)
-    // @ts-ignore
-
-    const dagblock = await this.getDb.ancon.createDagBlock({
+      const fileAsBlob = await fetch(model.document.image)
+      const file = await fileAsBlob.blob()
       // @ts-ignore
-      message: model.document,
-      topic: undefined,
-      // topic: 'du.xdv.digital',
-    })
-    this.add(
-      cid,
-      'Publish to ancon',
-      this.getWalletconnect().accounts[0],
-      dagblock
-    )
+      const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
+      model.document.image = cidFromIpfs.image
+      const api = this.$nuxt.context.env.AnconAPI + '/'
+      const siwe = new Siwe(this.getWalletconnect(), api)
 
-    // @ts-ignore
-    await this.getDb.putBlock({
-      cid: dagblock.cid,
-      // topic: 'du.xdv.digital',
-      kind: 'AnconBlock',
-      ref: cid,
-    })
-    this.loading = false
-    this.loadingText = this.defaultLoadingText
+      const pubkey = await siwe.getSIWEPublicKey()
+      // @ts-ignore
+      const did = await this.getDb.ancon.createDid(pubkey)
+      // @ts-ignore
 
-    this.snackbarText = 'Upload completed'
-    this.snackbar = true
+      const dagblock = await this.getDb.ancon.createDagBlock({
+        // @ts-ignore
+        message: model.document,
+        topic: undefined,
+        // topic: 'du.xdv.digital',
+      })
+      this.add(
+        cid,
+        'Publish to ancon',
+        this.getWalletconnect().accounts[0],
+        dagblock
+      )
+
+      // @ts-ignore
+      await this.getDb.putBlock({
+        cid: dagblock.cid,
+        // topic: 'du.xdv.digital',
+        kind: 'AnconBlock',
+        ref: cid,
+      })
+      this.loading = false
+      this.loadingText = this.defaultLoadingText
+
+      this.snackbarText = 'Upload completed'
+      this.snackbar = true
+    } catch (e) {
+      this.loading = false
+      this.showShare = true
+      this.snackbarText = `${e}`
+      this.snackbar = true
+    }
   }
 
   async mintAsset(cid: string) {
@@ -1159,11 +1180,6 @@ export default class Personal extends Vue.extend({
       //   uuid: uuid,
       // });
     } catch (e) {
-      // setStatus(4);
-      // setModal(true);
-      // setMintingStatus(e.message);
-      // setLoading(false);
-      console.log(e)
       this.loading = false
       this.showMint = true
       this.snackbarText = `${e}`
