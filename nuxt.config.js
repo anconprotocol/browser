@@ -7,7 +7,6 @@ import colors from 'vuetify/es5/util/colors'
 
 // // SignInType could be Window or Popup
 // const mainOidc = createOidcAuth('main', SignInType.Window, appUrl , {
-
 //   authority: 'https://accounts.google.com',
 //   client_id: "21519769802-l2n9e5um21n1onq27qnt2r4idh71kbd6.apps.googleusercontent.com",
 //   redirect_uri: "http://localhost:3000/auth/callback",
@@ -64,7 +63,7 @@ export default {
     '@nuxtjs/axios',
 
   ],
-
+  
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
     // Workaround to avoid enforcing hard-coded localhost:3000: https://github.com/nuxt-community/axios-module/issues/308
@@ -142,5 +141,6 @@ export default {
     Waku: 'https://waku.did.pa/',
     WakuLibp2p:
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB',
+    WebAuthn:  'du.xdv.digital'
   },
 }

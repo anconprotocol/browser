@@ -208,7 +208,7 @@ c<template>
         </v-card-title>
         <v-card-text>
           <v-list>
-            <v-list-item @click="registerCidForFido2(selectedItem.cid)">
+            <v-list-item @click="signWithWebAuthn(selectedItem.cid)">
               <v-list-item-avatar>
                 <v-icon color="indigo">mdi-fingerprint </v-icon>
               </v-list-item-avatar>
@@ -383,7 +383,7 @@ c<template>
                 icon
                 @click="handleDisplay('showMint', true, v)"
                 color="orange lighten-2"
-                v-show="v.document.kind === 'StorageAsset'"
+                v-show="v.document.kind === 'StorageAsset' && canSignTransaction"
               >
                 <v-icon>mdi-export-variant</v-icon>
               </v-btn>
@@ -530,6 +530,7 @@ const FilePond = vueFilePond(
     },
   },
   inject: [
+    'canSignTransaction',
     'getDb',
     'web3',
     'getWalletconnect',
@@ -554,6 +555,7 @@ export default class Personal extends Vue.extend({
     IPFS: 'IpfsBlock',
     Ancon: 'AnconBlock',
     'ERC-721': 'ERC721Block',
+    'Identities': 'AddressBlock'
   }
   editItem = {
     description: '',
@@ -636,6 +638,7 @@ export default class Personal extends Vue.extend({
   selectedItem: any
   showMint: boolean = false
   showProvenanceSigning = false
+  canSignTransaction: any
   edit(index, item) {
     if (!this.editing) {
       this.editing = item
@@ -658,7 +661,7 @@ export default class Personal extends Vue.extend({
     )
   }
 
-  async registerCidForFido2(cid) {
+  async signWithWebAuthn(cid) {
     // this.loading = true
     this.loadingText = this.signingLoadingText
 
@@ -669,16 +672,17 @@ export default class Personal extends Vue.extend({
     // @ts-ignore
     const fido2server = new WebauthnHardwareAuthenticate({})
     fido2server.initialize({
-      rpId: `du.xdv.digital`,
-      rpName: cid,
-      rpIcon: `https://du,xdv.digital`,
+      rpId: this.$nuxt.context.env.WebAuthn,
+      rpName: 'du.',
+      rpIcon: '',
       attestation: 'none',
       authenticatorRequireResidentKey: false,
       authenticatorUserVerification: 'required',
     })
 
     // Fido2 client                                    settings, user is the user address + origin
-    const fido2client = new WebauthnHardwareClient(fido2server)
+    // @ts-ignore
+    const fido2client = new WebauthnHardwareClient(fido2server, this.getDb())
     const origin = window.location.origin
     // @ts-ignore
     const res = await fido2client.register(
@@ -725,7 +729,7 @@ export default class Personal extends Vue.extend({
     const payload = {
       name: source.name,
       kind: 'StorageAsset',
-      owner: this.getWalletconnect().accounts[0],
+      owner: this.defaultAddress(),
       sources: this.selectedEdit.options.sources.split(','),
       description: this.selectedEdit.options.description,
       timestamp: new Date().getTime(),
@@ -765,7 +769,7 @@ export default class Personal extends Vue.extend({
       // signature,
       // digest,
       timestamp: new Date().getTime(),
-      issuer: this.defaultAddress,
+      issuer: this.defaultAddress(),
     }
 
     // @ts-ignore
@@ -785,7 +789,7 @@ export default class Personal extends Vue.extend({
       // phone: string,
     })
 
-    this.add(cid, `Shared whatsapp message`, this.defaultAddress, block)
+    this.add(cid, `Shared whatsapp message`, this.defaultAddress(), block)
     this.snackbarText = `Asset succesfully sent to ${this.selectedRecipient}`
     this.snackbar = true
   }
@@ -810,7 +814,7 @@ export default class Personal extends Vue.extend({
       // @ts-ignore
       const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
       // sign message
-      const { signature, digest } = await this.registerCidForFido2(cid)
+      const { signature, digest } = await this.signWithWebAuthn(cid)
       const block = {
         ...model.document,
         image: cidFromIpfs.image,
@@ -818,7 +822,7 @@ export default class Personal extends Vue.extend({
         signature,
         // digest,
         timestamp: new Date().getTime(),
-        issuer: this.defaultAddress,
+        issuer: this.defaultAddress(),
       }
       const blockCodec = {
         name: 'cbor',
@@ -867,7 +871,7 @@ export default class Personal extends Vue.extend({
         this.add(
           cid,
           `Sent message to ${this.selectedRecipient}`,
-          this.defaultAddress,
+          this.defaultAddress(),
           block
         )
 
@@ -920,7 +924,7 @@ export default class Personal extends Vue.extend({
       // @ts-ignore
       const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
       // sign message
-      const { signature, digest } = await this.registerCidForFido2(cid)
+      const { signature, digest } = await this.signWithWebAuthn(cid)
       const block = {
         ...model.document,
         image: cidFromIpfs.image,
@@ -928,7 +932,7 @@ export default class Personal extends Vue.extend({
         signature,
         // digest,
         timestamp: new Date().getTime(),
-        issuer: this.defaultAddress,
+        issuer: this.defaultAddress(),
       }
 
       const body = new FormData()
@@ -984,16 +988,26 @@ export default class Personal extends Vue.extend({
       const siwe = new Siwe(this.getWalletconnect(), api)
 
       const pubkey = await siwe.getSIWEPublicKey()
+      const web3provider = new ethers.providers.Web3Provider(
+        this.getWalletconnect()
+      )
+      const network = await web3provider.getNetwork()
+      const didacct = {
+        ethrdid: `did:ethr:${network.name}:${
+          this.getWalletconnect().accounts[0]
+        }`,
+      }
       // @ts-ignore
-      const did = await this.getDb.ancon.createDid(pubkey)
+      await this.getDb.ancon.createDid(didacct, pubkey)
       // @ts-ignore
 
-      const dagblock = await this.getDb.ancon.createDagBlock({
+      const dagblock = await this.getDb.ancon.createDagBlock(didacct.ethrdid, {
         // @ts-ignore
         message: model.document,
         topic: undefined,
         // topic: 'du.xdv.digital',
       })
+
       this.add(
         cid,
         'Publish to ancon',
@@ -1318,52 +1332,48 @@ export default class Personal extends Vue.extend({
       },
     })
 
-    const { AnconNFTContract, AnconNFTContract_ethers } = helper.getContracts(
-      new Web3(this.$nuxt.context.env.BSC_MAINNET),
-      this.getWalletconnect().accounts[0]
-    )
-
-    const time$ = interval(9650).pipe(take(25))
-    const block = await AnconNFTContract_ethers.provider.getBlockNumber()
-    time$
-      .pipe(
-        mergeMap((i: any) => {
-          return AnconNFTContract.getPastEvents('AddMintInfo', {
-            filter: { to: this.getWalletconnect().accounts[0] },
-            fromBlock: block - i * 2000,
-            toBlock: block - (i - 1) * 2000,
-          })
-        }),
-        mergeMap((p) => p)
+    if (this.canSignTransaction) {
+      const { AnconNFTContract, AnconNFTContract_ethers } = helper.getContracts(
+        new Web3(this.$nuxt.context.env.BSC_MAINNET),
+        this.getWalletconnect().accounts[0]
       )
-      .subscribe({
-        next: async (tx: any) => {
-          //            console.log(tokenUri)
-          // TODO: Search by tokenuri
-          // @ts-ignore
-          await this.getDb.putBlock({
-            txid: tx.transactionHash,
 
-            image: tx.returnValues.uri,
-            tokenAddress: tx.address,
-            tokenId: tx.returnValues.tokenId,
-            kind: 'ERC721Block',
-            minterAddress: tx.returnValues.creator,
-          } as ERC721Block)
-        },
-      })
+      const time$ = interval(9650).pipe(take(25))
+      const block = await AnconNFTContract_ethers.provider.getBlockNumber()
+      time$
+        .pipe(
+          mergeMap((i: any) => {
+            return AnconNFTContract.getPastEvents('AddMintInfo', {
+              filter: { to: this.getWalletconnect().accounts[0] },
+              fromBlock: block - i * 2000,
+              toBlock: block - (i - 1) * 2000,
+            })
+          }),
+          mergeMap((p) => p)
+        )
+        .subscribe({
+          next: async (tx: any) => {
+            //            console.log(tokenUri)
+            // TODO: Search by tokenuri
+            // @ts-ignore
+            await this.getDb.putBlock({
+              txid: tx.transactionHash,
+
+              image: tx.returnValues.uri,
+              tokenAddress: tx.address,
+              tokenId: tx.returnValues.tokenId,
+              kind: 'ERC721Block',
+              minterAddress: tx.returnValues.creator,
+            } as ERC721Block)
+          },
+        })
+    }
   }
   async mounted() {
-    this.loading = true
-    await this.bindSubscriptions()
-
-    const cancel = setInterval(async () => {
-      if (this.getWalletconnect().connected && this.items) {
-        this.loading = false
-
-        clearInterval(cancel)
-      }
-    }, 1200)
+    const cancel = setTimeout(async () => {
+      await this.bindSubscriptions()
+      this.loading = false
+    }, 1500)
   }
 
   async handleDisplay(key, show, item) {

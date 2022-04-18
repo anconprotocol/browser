@@ -34,22 +34,22 @@
       color="purple darken-4"
       class="orange--text"
     >
-      <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
-      <v-toolbar-title v-text="title" class="font-weight-black display-1" />
+      <!-- <v-app-bar-nav-icon @click.stop="drawer = !drawer" /> -->
+      <v-toolbar-title
+        v-text="title"
+        class="font-weight-black display-1"
+        @click="home()"
+      />
       <v-spacer />
 
       <v-spacer />
 
-      <v-btn v-if="this.walletconnect.connected" v-on:click="disconnect"
-        >Disconnect
-      </v-btn>
-      <v-btn v-if="!this.walletconnect.connected" v-on:click="connect">
-        Connect
-      </v-btn>
+      <v-btn v-if="connected" v-on:click="disconnect">Disconnect </v-btn>
+      <v-btn v-if="!connected" v-on:click="showConnect = true"> Connect </v-btn>
     </v-app-bar>
     <v-main>
       <v-container>
-        <v-subheader v-if="this.walletconnect.connected"
+        <v-subheader v-if="connected"
           ><v-row dense
             ><v-col xs>Network {{ network.name }}</v-col>
 
@@ -69,28 +69,69 @@
       </v-container>
     </v-main>
     <v-footer :absolute="!fixed" app>
-      <span
-        >&copy; {{ new Date().getFullYear() }} Industrias de Firmas Electronicas
-        SA</span
+      <v-row>
+        <v-col>&copy; {{ new Date().getFullYear() }} IFESA</v-col>
+        <v-col align="right"><a href="privacy">Privacy</a></v-col></v-row
       >
     </v-footer>
+    <v-dialog v-model="showConnect" max-width="600px">
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">Sign in or connect with</span>
+        </v-card-title>
+        <v-card-text>
+          <v-list>
+            <v-list-item @click="signInWithWebAuthn()">
+              <v-list-item-avatar>
+                <v-icon color="white accent-4">mdi-fingerprint </v-icon>
+              </v-list-item-avatar>
+
+              <v-list-item-content>
+                <v-list-item-title>W3C Web Authentication</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item @click="connect()">
+              <v-list-item-avatar>
+                <v-img src="wc.svg"></v-img>
+              </v-list-item-avatar>
+
+              <v-list-item-content>
+                <v-list-item-title>WalletConnect</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="orange accent-4" text @click="showConnect = false">
+            Back
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
 <script>
 import WalletConnectProvider from '@walletconnect/web3-provider'
+import loadImage from 'blueimp-load-image'
+import * as hashicon from 'hashicon'
+import { base58btc } from 'multiformats/bases/base58'
+
 import { ethers } from 'ethers'
 import { ParkyDB } from 'parkydb'
 import AnconProtocolClient from '../lib/AnconProtocol/AnconProtocolClient'
 import { Subject } from 'rxjs'
 import { decode, encode } from 'cbor-x'
-import { defaultResolvers} from 'parkydb/lib/resolvers'
+import { defaultResolvers } from 'parkydb/lib/resolvers'
 import VueQrcode from '@chenfengyuan/vue-qrcode'
 const PromiseFileReader = require('promise-file-reader')
 import EthCrypto from 'eth-crypto'
-
-
-
+import { v4 as uuidv4 } from 'uuid'
+//@ts-ignore
+import { WebauthnHardwareClient } from 'parkydb/lib/core/webauthnClient'
+import { WebauthnHardwareAuthenticate } from 'parkydb/lib/core/webauthnServer'
+import Web3 from 'web3'
+import { toUtf8String } from '@ethersproject/strings'
 export default {
   name: 'DefaultLayout',
   components: {
@@ -108,23 +149,14 @@ export default {
 
     const bootstrap = async (accounts) => {
       this.address = accounts[0]
-
+      this.canSignTransaction = true
       try {
         this.network = await web3provider.getNetwork()
         await this.db.initialize({
-    graphql: { resolvers: defaultResolvers},
-
+          graphql: { resolvers: defaultResolvers },
           enableSync: true,
           wakuconnect: {
             bootstrap: { peers: [$nuxt.context.env.WakuLibp2p] },
-            // libp2p: {
-            //   config: {
-            //     pubsub: {
-            //       enabled: true,
-            //       emitSelf: true,
-            //     },
-            //   },
-            // },
           },
           withWallet: {
             password: '', /// Not used
@@ -165,8 +197,9 @@ export default {
     provider.on('chainChanged', window.location.reload)
 
     this.walletconnect = provider
-
-    this.connect()
+  },
+  mounted: function () {
+    this.connected = this.walletconnect.connected
   },
   provide: function () {
     return {
@@ -177,13 +210,17 @@ export default {
       personalBlocksSubscription: this.onPersonal,
       historySubscription: this.onHistory,
       defaultTopic: this.defaultTopic,
-      defaultAddress: this.defaultAddress,
+      defaultAddress: () => this.defaultAddress,
       currentAccountTopic: this.currentAccountTopic,
+      canSignTransaction: this.canSignTransaction,
       getAncon: () => this.Ancon,
     }
   },
   data() {
     return {
+      connected: false,
+      showConnect: false,
+      canSignTransaction: true,
       qrDialog: false,
       defaultAddress: '',
       defaultTopic: '',
@@ -246,13 +283,128 @@ export default {
         this.onPersonal.next(v)
       })
     },
-    connect: async function () {
-      console.log('Connect')
-      if (!this.walletconnect.connected) await this.walletconnect.enable()
+    bootstrap: async function () {
+      const web3provider = new ethers.providers.Web3Provider(
+        new Web3(this.$nuxt.context.env.BSC_MAINNET).currentProvider
+      )
+      // read only
+      // create new identity for waku messaging
+      const identity = EthCrypto.createIdentity()
+      // this.address = identity.address
+      this.canSignTransaction = false
+
+      try {
+        // this.network = await web3provider.getNetwork()
+        await this.db.initialize({
+          graphql: { resolvers: defaultResolvers },
+          enableSync: true,
+          wakuconnect: {
+            bootstrap: { peers: [$nuxt.context.env.WakuLibp2p] },
+          },
+          withWallet: {
+            password: '', /// Not used
+          },
+          withWeb3: {
+            provider: web3provider,
+            defaultAddress: identity.address,
+          },
+          withIpfs: {
+            gateway: 'https://ipfs.infura.io',
+            api: this.$nuxt.context.env.IPFS,
+          },
+        })
+      } catch (e) {
+        console.error(e)
+      }
     },
-    disconnect: function () {
+    signInWithWebAuthn: async function () {
+      try {
+        // @ts-ignore
+        const fido2server = new WebauthnHardwareAuthenticate()
+        fido2server.initialize({
+          rpId: this.$nuxt.context.env.WebAuthn,
+          rpName: 'du.',
+          rpIcon: '',
+          attestation: 'none',
+          authenticatorRequireResidentKey: false,
+          authenticatorUserVerification: 'required',
+          cryptoParams: [-257],
+        })
+
+        await this.bootstrap()
+        // Fido2 client settings, user is the user address + origin
+        const fido2client = new WebauthnHardwareClient(fido2server, this.db)
+        const origin = window.location.origin
+
+        let didacct
+        let didkey
+        let pubkey
+        let jwk
+        const uid = uuidv4()
+        const mess = ethers.utils.toUtf8Bytes(
+          'Sign-in with a FIDO2 WebAuthn device'
+        )
+        const res = await fido2client.registerSign(
+          origin,
+          uid,
+          uid,
+          mess,
+          async ({ publicKey, publicKeyJwk, prevCounter }) => {
+            pubkey = publicKey
+            jwk = publicKeyJwk
+            didkey = base58btc.encode(publicKey)
+            didacct = {
+              did: `did:key:${didkey}`,
+            }
+          }
+        )
+        let i = hashicon(didkey, 100).toDataURL()
+
+        // @ts-ignore
+        await this.db.putBlock({
+          cid: didacct.did,
+          address: didacct.did,
+          kind: 'Fido2IdentityBlock',
+          image: i,
+          uid,
+          type: 'did',
+          publicKeyJwk: jwk,
+          pubkey: didkey,
+          digest: ethers.utils.sha256(mess),
+          signature: res.signature,
+          // authenticatorData: res.authenticatorData,
+          // clientData: res.clientDataJSON.,
+          owner: didacct.did,
+          name: didacct.did,
+          description: 'did key generated from webauthn device',
+        })
+
+        this.network = 'did-key'
+        this.defaultAddress = this.address = didacct.did
+
+        await this.createDefaults([this.address])
+
+        await this.localBlocks()
+        await this.subscribeTopics()
+
+        this.connected = true
+        this.showConnect = false
+      } catch (e) {
+        console.error(e)
+        debugger
+      }
+    },
+    connect: async function () {
+      if (!this.walletconnect.connected) {
+        await this.walletconnect.enable()
+        this.connected = true
+      }
+      this.showConnect = false
+    },
+    disconnect: async function () {
       console.log('Disconnect')
       this.walletconnect.disconnect()
+      location.reload()
     },
     aggregate: async function () {
       const url = $nuxt.context.env.WakuRPC
@@ -299,6 +451,10 @@ export default {
 
       return { digest: b, signature }
     },
+    home: function () {
+      window.location.href = '/'
+    },
+
     subscribeTopics: async function () {
       const w = EthCrypto.createIdentity()
       const encBlockCodec = {
@@ -330,7 +486,7 @@ export default {
         isKeyExchangeChannel: false,
         // sigKey: w.privateKey, // !!! Very important
         canPublish: true,
-        isCRDT: true,
+        isCRDT: false,
       })
       this.currentAccountTopic = pubsub
       this.onIncomingCancel = pubsub.onBlockReply$.subscribe(async (v) => {
@@ -351,7 +507,7 @@ export default {
         this.keyExchangeTopic,
         {
           blockCodec,
-          isCRDT: true,
+          isCRDT: false,
           pk: w.privateKey,
           pub: w.publicKey,
         }
@@ -360,7 +516,6 @@ export default {
         // no op
         this.onIncoming.next(v)
       })
-
     },
   },
 }
