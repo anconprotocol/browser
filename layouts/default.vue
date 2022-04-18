@@ -356,7 +356,8 @@ export default {
             didacct = {
               did: `did:key:${didkey}`,
             }
-          }
+          },
+          false
         )
         let i = hashicon(didkey, 100).toDataURL()
 
