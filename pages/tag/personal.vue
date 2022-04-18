@@ -669,7 +669,7 @@ export default class Personal extends Vue.extend({
     // @ts-ignore
     const fido2server = new WebauthnHardwareAuthenticate({})
     fido2server.initialize({
-      rpId: `localhost`,
+      rpId: `du.xdv.digital`,
       rpName: cid,
       rpIcon: `https://du,xdv.digital`,
       attestation: 'none',
