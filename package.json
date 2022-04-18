@@ -35,7 +35,7 @@
     "hashicon": "^0.3.0",
     "jsonwebtoken": "^8.5.1",
     "minidenticons": "^1.0.3",
-    "moment": "^2.29.1",
+    "moment": "^2.29.3",
     "multiformats": "^9.6.4",
     "parkydb": "^1.0.31",
     "pdfjs-dist": "^2.12.313",
