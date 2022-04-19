@@ -189,7 +189,7 @@ export default {
       )
 
       this.Ancon.initialize()
-      debugger
+      
     }
     // Subscribe to accounts change
     provider.on('accountsChanged', bootstrap)
@@ -326,7 +326,7 @@ export default {
           rpId: this.$nuxt.context.env.WebAuthn,
           rpName: 'du.',
           rpIcon: '',
-          attestation: 'direct',
+         // attestation: 'direct',
           authenticatorRequireResidentKey: false,
           authenticatorUserVerification: 'required',
    ///       cryptoParams: [-257],
@@ -393,7 +393,7 @@ export default {
         this.showConnect = false
       } catch (e) {
         console.error(e)
-        debugger
+        
       }
     },
     connect: async function () {

@@ -814,7 +814,7 @@ export default class Personal extends Vue.extend({
       // @ts-ignore
       const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
       // sign message
-      const { signature, digest } = await this.signWithWebAuthn(cid)
+      const { signature, digest } = await this.sign(cid)
       const block = {
         ...model.document,
         image: cidFromIpfs.image,
@@ -1143,23 +1143,23 @@ export default class Personal extends Vue.extend({
       const api = this.$nuxt.context.env.AnconAPI + '/'
       this.loadingText = 'Requesting metadata creation...'
       // @ts-ignore
-      const dagblock = await this.getDb.ancon.createDagBlock({
+      const dagblock = await this.getDb.ancon.createDagBlock(`did:ethr:bnb:${account}`,{
         // @ts-ignore
         message: { uuid, ...model.document },
-      })
+      }, this.sign)
 
       // @ts-ignore
-      await this.getDb.ancon.createDagBlock({
+      await this.getDb.ancon.createDagBlock(`did:ethr:bnb:${account}`,{
         // @ts-ignore
         message: { uuid, metadata: dagblock.cid },
-        topic: '/du.xdv.digital/' + cid + '/metadata/json',
-      })
-debugger
+        topic: '@du.xdv.digital'   }, this
+        .sign)
       this.loadingText = 'Minting...'
       const royalty2 = 0
       const params = [
         account, //user address
         dagblock.cid,
+        0                   
       ]
       const gasAmount = await readOnlyContracts.AnconNFTContract.methods
         .mint(...params)

@@ -142,6 +142,6 @@ export default {
     Waku: 'https://waku.did.pa/',
     WakuLibp2p:
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB',
-    WebAuthn:  'du.xdv.digital'
+    WebAuthn: 'du.xdv.digital'
   },
 }
