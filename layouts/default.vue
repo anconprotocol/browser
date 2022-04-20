@@ -45,7 +45,7 @@
       <v-spacer />
 
       <v-btn v-if="connected" v-on:click="disconnect">Disconnect </v-btn>
-      <v-btn v-if="!connected" v-on:click="showConnect = true"> Connect </v-btn>
+      <v-btn v-if="!connected" v-on:click="connect"> Connect </v-btn>
     </v-app-bar>
     <v-main>
       <v-container>
