@@ -26,7 +26,6 @@ export default class AnconProtocolClient {
   constructor(provider: any, address: string) {
     const url: any = process.env.REACT_APP_ANCON_API_URL
     this.url = url
-    debugger
     this.provider = provider
     this.prov = new ethers.providers.Web3Provider(provider)
     this.provWeb3 = new Web3(provider)

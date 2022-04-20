@@ -208,13 +208,13 @@ c<template>
         </v-card-title>
         <v-card-text>
           <v-list>
-            <v-list-item @click="signWithWebAuthn(selectedItem.cid)">
+            <v-list-item @click="signProvenance(selectedItem.cid)">
               <v-list-item-avatar>
                 <v-icon color="indigo">mdi-fingerprint </v-icon>
               </v-list-item-avatar>
 
               <v-list-item-content>
-                <v-list-item-title>Add Webauthn / Fido2</v-list-item-title>
+                <v-list-item-title>Sign image metadata</v-list-item-title>
               </v-list-item-content>
             </v-list-item>
           </v-list>
@@ -362,14 +362,14 @@ c<template>
             </v-card-subtitle>
             <v-card-text>{{ v.document.description }}</v-card-text>
             <v-card-actions>
-              <!-- <v-btn
+              <v-btn
                 icon
                 @click="handleDisplay('showProvenanceSigning', true, v)"
                 color="orange lighten-2"
                 v-show="v.document.kind === 'StorageAsset'"
               >
                 <v-icon>mdi-file-certificate</v-icon>
-              </v-btn> -->
+              </v-btn>
               <v-btn
                 icon
                 @click="handleDisplay('showShare', true, v)"
@@ -383,7 +383,9 @@ c<template>
                 icon
                 @click="handleDisplay('showMint', true, v)"
                 color="orange lighten-2"
-                v-show="v.document.kind === 'StorageAsset' && canSignTransaction"
+                v-show="
+                  v.document.kind === 'StorageAsset' && canSignTransaction
+                "
               >
                 <v-icon>mdi-export-variant</v-icon>
               </v-btn>
@@ -451,7 +453,7 @@ c<template>
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
 import { QrcodeCapture, QrcodeStream } from 'vue-qrcode-reader'
-import { whatsapp, tw, telegram } from 'vanilla-sharing'
+import { whatsapp } from 'vanilla-sharing'
 
 //@ts-ignore
 import { WebauthnHardwareClient } from 'parkydb/lib/core/webauthnClient'
@@ -483,18 +485,10 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
 import {
-  async,
-  debounce,
-  from,
   interval,
-  lastValueFrom,
-  map,
   mergeMap,
   Subject,
   take,
-  takeUntil,
-  tap,
-  timeout,
 } from 'rxjs'
 
 import { Siwe } from '../../lib/AnconProtocol/SIWE'
@@ -503,8 +497,9 @@ import helper from '~/utils/helper'
 import AnconProtocolClient from '~/lib/AnconProtocol/AnconProtocolClient'
 import { v4 as uuidv4 } from 'uuid'
 import Web3 from 'web3'
-
-import { arrayify, hexlify } from 'ethers/lib/utils'
+import { JwtCredentialPayload, createVerifiableCredentialJwt } from 'did-jwt-vc/src'
+import base64url from 'base64url'
+import { toUtf8Bytes } from 'ethers/lib/utils'
 // Create component
 const FilePond = vueFilePond(
   FilePondPluginFileValidateType,
@@ -555,7 +550,7 @@ export default class Personal extends Vue.extend({
     IPFS: 'IpfsBlock',
     Ancon: 'AnconBlock',
     'ERC-721': 'ERC721Block',
-    'Identities': 'AddressBlock'
+    Identities: 'AddressBlock',
   }
   editItem = {
     description: '',
@@ -631,6 +626,7 @@ export default class Personal extends Vue.extend({
   selectedEdit: any = {
     options: {},
   }
+  // @ts-ignore
   showInfo: any = false
   showAssets: any = true
   showHistory = false
@@ -661,31 +657,88 @@ export default class Personal extends Vue.extend({
     )
   }
 
-  async signWithWebAuthn(cid) {
-    // this.loading = true
-    this.loadingText = this.signingLoadingText
-
+  async signProvenance(cid) {
     // @ts-ignore
     const model = await this.getDb.get(cid, null)
 
-    // Fido2 server settings, rp*** is the data asset
-    // @ts-ignore
-    const fido2server = new WebauthnHardwareAuthenticate({})
-    fido2server.initialize({
-      rpId: this.$nuxt.context.env.WebAuthn,
-      rpName: 'du.',
-      rpIcon: '',
-      attestation: 'none',
-      authenticatorRequireResidentKey: false,
-      authenticatorUserVerification: 'required',
-    })
+    const fileAsBlob = await fetch(model.document.image)
+    const file = await fileAsBlob.blob()
 
-    // Fido2 client                                    settings, user is the user address + origin
     // @ts-ignore
-    const fido2client = new WebauthnHardwareClient(fido2server, this.getDb)
+    const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
+    const fidoClient = this.getFidoClient()
+    let signerResult
+    const did = this.defaultAddress()
+    const issuer = {
+      did,
+      alg: 'ES256K',
+      signer: async function mySigner(
+        data: string
+      ): Promise<string> {
+        const origin = window.location.origin
+        // @ts-ignore
+        signerResult =  await fidoClient.registerSign(
+          origin,
+          model.cid,
+          did,
+          toUtf8Bytes(data)
+        )        
+        return base64url.encode(signerResult.signature)
+      },
+    }
+
+    model.document.image = cidFromIpfs.image
+    const vcPayload: JwtCredentialPayload = {
+      // sub: 'did:ethr:0x435df3eda57154cf8cf7926079881f2912f54db4',
+      vc: {
+        '@context': ['https://www.w3.org/2018/credentials/v1'],
+        type: ['VerifiableCredential'],
+        credentialSubject: {
+          ...model.document
+        }
+      }
+    }
+    const jwt = await createVerifiableCredentialJwt(vcPayload, issuer)
+
+    const payload = {
+      cid: cidFromIpfs.cid,
+      name: model.document.name,
+      description: model.document.description,
+      address: this.defaultAddress(),
+      deviceSignerMake: '',
+      deviceSignerModel: '',
+      jwt,
+    }
+    const requestOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+
+    // @ts-ignore
+    const rawResponse = await fetch(
+      // @ts-ignore
+      `http://localhost:3030/api/v0/provenance_metadata`,
+      requestOptions
+    )
+
+    const res = await rawResponse.json()
+    console.log(res)
+  }
+
+  async signWithWebAuthn(cid, model?) {
+    // this.loading = true
+    this.loadingText = this.signingLoadingText
+
+    if (!!model) {
+      // @ts-ignore
+      model = await this.getDb.get(cid, null)
+    }
+    const fidoClient = this.getFidoClient()
+
     const origin = window.location.origin
     // @ts-ignore
-    const res = await fido2client.registerSign(
+    const res = await fidoClient.registerSign(
       origin,
       model.cid,
       this.defaultAddress(),
@@ -998,7 +1051,11 @@ export default class Personal extends Vue.extend({
         }`,
       }
       // @ts-ignore
-      await this.getDb.ancon.createDid(didacct, pubkey, 'Welcome tu du.xdv.digital!')
+      await this.getDb.ancon.createDid(
+        didacct,
+        pubkey,
+        'Welcome tu du.xdv.digital!'
+      )
       // @ts-ignore
 
       const dagblock = await this.getDb.ancon.createDagBlock(didacct.ethrdid, {
@@ -1143,23 +1200,31 @@ export default class Personal extends Vue.extend({
       const api = this.$nuxt.context.env.AnconAPI + '/'
       this.loadingText = 'Requesting metadata creation...'
       // @ts-ignore
-      const dagblock = await this.getDb.ancon.createDagBlock(`did:ethr:bnb:${account}`,{
-        // @ts-ignore
-        message: { uuid, ...model.document },
-      }, this.sign)
+      const dagblock = await this.getDb.ancon.createDagBlock(
+        `did:ethr:bnb:${account}`,
+        {
+          // @ts-ignore
+          message: { uuid, ...model.document },
+        },
+        this.sign
+      )
 
       // @ts-ignore
-      await this.getDb.ancon.createDagBlock(`did:ethr:bnb:${account}`,{
-        // @ts-ignore
-        message: { uuid, metadata: dagblock.cid },
-        topic: '@du.xdv.digital'   }, this
-        .sign)
+      await this.getDb.ancon.createDagBlock(
+        `did:ethr:bnb:${account}`,
+        {
+          // @ts-ignore
+          message: { uuid, metadata: dagblock.cid },
+          topic: '@du.xdv.digital',
+        },
+        this.sign
+      )
       this.loadingText = 'Minting...'
       const royalty2 = 0
       const params = [
         account, //user address
         dagblock.cid,
-        0                   
+        0,
       ]
       const gasAmount = await readOnlyContracts.AnconNFTContract.methods
         .mint(...params)
@@ -1291,7 +1356,6 @@ export default class Personal extends Vue.extend({
     } else if (this.keys[this.selectedChip] === 'ERC721Block') {
       r = items.map(async (i: any) => {
         try {
-          debugger
           const result = await fetch(
             `${this.$nuxt.context.env.AnconAPI}/v0/dag/${i.document.cid}/`
           )
@@ -1368,6 +1432,26 @@ export default class Personal extends Vue.extend({
           },
         })
     }
+  }
+
+  getFidoClient() {
+        // Fido2 server settings, rp*** is the data asset
+    // @ts-ignore
+    const fido2server = new WebauthnHardwareAuthenticate()
+    fido2server.initialize({
+      rpId: this.$nuxt.context.env.WebAuthn,
+      rpName: 'du.',
+      rpIcon: '',
+      attestation: 'direct',
+      cryptoParams: [-7],
+      authenticatorRequireResidentKey: false,
+      authenticatorUserVerification: 'required',
+    })
+
+    // Fido2 client                                    settings, user is the user address + origin
+    // @ts-ignore
+    return new WebauthnHardwareClient(fido2server, this.getDb)
+
   }
   async mounted() {
     const cancel = setTimeout(async () => {

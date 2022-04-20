@@ -35,14 +35,14 @@ export default {
       { name: 'format-detection', content: 'telephone=no' },
     ],
     link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
-    script:[]
+    script: [],
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: [],
+  // plugins: [{ src: '@/plugins/vue-codemirror', ssr: false }],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
@@ -54,16 +54,14 @@ export default {
     // https://go.nuxtjs.dev/vuetify
     '@nuxtjs/vuetify',
     '@nuxtjs/pwa',
-
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
     // https://go.nuxtjs.dev/axios
     '@nuxtjs/axios',
-
   ],
-  
+
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
     // Workaround to avoid enforcing hard-coded localhost:3000: https://github.com/nuxt-community/axios-module/issues/308
@@ -93,6 +91,30 @@ export default {
     color: '#3B8070',
     background: 'white',
   },
+  graphql: {
+    /**
+     * An Object of your GraphQL clients
+     */
+    clients: {},
+
+    /**
+     * Options
+     * See: https://github.com/prisma-labs/graphql-request#passing-more-options-to-fetch
+     */
+    options: {
+      // method: 'get', // Default to `POST`
+    },
+
+    // /**
+    //  * Optional
+    //  * default: false (this includes graphql-tag for node_modules folder)
+    //  */
+    // includeNodeModules: true,
+  },
+  alias: {
+    'did-jwt':[]
+  },
+
   /*
    ** Build configuration
    ** Doc: https://nuxtjs.org/api/configuration-build
@@ -101,6 +123,7 @@ export default {
     /*
      ** You can extend webpack config here
      */
+    
     extend(config, ctx) {
       // transpile .mjs too
       const babelRule = config.module.rules.find(
@@ -114,21 +137,25 @@ export default {
         include: /node_modules/,
         type: 'javascript/auto',
       })
+      
       config.module.rules.push({
         test: /\.js$/,
         include: /node_modules/,
         type: 'javascript/auto',
       })
-
-      
     },
-    plugins:[
-      new webpack.NormalModuleReplacementPlugin(/type-graphql$/, resource => {
-        resource.request = resource.request.replace(/type-graphql/, "type-graphql/dist/browser-shim.js");
-      })
-    ]
+    plugins: [
+      new webpack.NormalModuleReplacementPlugin(/type-graphql$/, (resource) => {
+        resource.request = resource.request.replace(
+          /type-graphql/,
+          'type-graphql/dist/browser-shim.js'
+        )
+      }),
+    ],
   },
-
+  alias: {
+    
+  },
   env: {
     AnconNFT: process.env.REACT_APP_AnconNFTAddress,
     AnconToken: process.env.REACT_APP_AnconTokenAddress,
@@ -142,6 +169,6 @@ export default {
     Waku: 'https://waku.did.pa/',
     WakuLibp2p:
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB',
-    WebAuthn: 'du.xdv.digital'
+    WebAuthn:  'localhost' // , 'du.xdv.digital',
   },
 }

@@ -49,9 +49,13 @@
     </v-app-bar>
     <v-main>
       <v-container>
+          <!-- <v-img :src="avatar" height="32" max-height="32" width="32" max-width="32" ></v-img> -->
+
         <v-subheader v-if="connected"
-          ><v-row dense
-            ><v-col xs>Network {{ network.name }}</v-col>
+          >          
+          <v-row dense
+            >
+            <v-col xs>Network {{ network.name }}</v-col>
 
             <v-col xs cols="12"
               >Address
@@ -65,7 +69,7 @@
 
           <vue-qrcode :value="address" :options="{ width: 55 }"></vue-qrcode>
         </v-subheader>
-        <Nuxt />
+        <Nuxt v-if="connected"/>
       </v-container>
     </v-main>
     <v-footer :absolute="!fixed" app>
@@ -113,7 +117,7 @@
 
 <script>
 import WalletConnectProvider from '@walletconnect/web3-provider'
-import loadImage from 'blueimp-load-image'
+import "reflect-metadata";
 import * as hashicon from 'hashicon'
 import { base58btc } from 'multiformats/bases/base58'
 
@@ -122,7 +126,7 @@ import { ParkyDB } from 'parkydb'
 import AnconProtocolClient from '../lib/AnconProtocol/AnconProtocolClient'
 import { Subject } from 'rxjs'
 import { decode, encode } from 'cbor-x'
-import { defaultResolvers } from 'parkydb/lib/resolvers'
+import { defaultResolvers } from 'parkydb/src/resolvers'
 import VueQrcode from '@chenfengyuan/vue-qrcode'
 const PromiseFileReader = require('promise-file-reader')
 import EthCrypto from 'eth-crypto'
@@ -178,6 +182,7 @@ export default {
       } catch (e) {
         console.error(e)
       }
+
       await this.createDefaults(accounts)
 
       await this.localBlocks()
@@ -189,6 +194,9 @@ export default {
       )
 
       this.Ancon.initialize()
+
+      this.connected = this.walletconnect.connected
+      this.showConnect = false
       
     }
     // Subscribe to accounts change
@@ -200,7 +208,7 @@ export default {
     this.walletconnect = provider
   },
   mounted: function () {
-    this.connected = this.walletconnect.connected
+    
   },
   provide: function () {
     return {
@@ -214,11 +222,13 @@ export default {
       defaultAddress: () => this.defaultAddress,
       currentAccountTopic: this.currentAccountTopic,
       canSignTransaction: this.canSignTransaction,
+      connected:() => this.connected,
       getAncon: () => this.Ancon,
     }
   },
   data() {
     return {
+      avatar: null,
       connected: false,
       showConnect: false,
       canSignTransaction: true,
@@ -399,10 +409,7 @@ export default {
     connect: async function () {
       if (!this.walletconnect.connected) {
         await this.walletconnect.enable()
-        this.connected = true
-        
       }
-      this.showConnect = false
     },
     disconnect: async function () {
       console.log('Disconnect')
@@ -459,6 +466,8 @@ export default {
     },
 
     subscribeTopics: async function () {
+      this.avatar = hashicon(this.defaultAddress, 32).toDataURL()
+
       const w = EthCrypto.createIdentity()
       const encBlockCodec = {
         name: 'cbor',

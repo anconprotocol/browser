@@ -1,0 +1,55 @@
+<template>
+  <v-container>
+    <codemirror
+      ref="cmEditor"
+      :value="value"
+      :options="cmOptions"
+      @input="onCmCodeChange"
+      @ready="onCmReady"
+    />
+  </v-container>
+</template>
+
+<script lang="ts">
+import { Component, Vue } from 'vue-property-decorator'
+import { QrcodeCapture } from 'vue-qrcode-reader'
+import 'reflect-metadata'
+
+import { ParkyDB } from 'parkydb'
+// @ts-ignore
+import { printIntrospectionSchema, printSchema } from 'graphql'
+
+@Component({
+  components: {
+    QrcodeCapture,
+  },
+  inject: ['connected', 'getDb'],
+})
+export default class Query extends Vue {
+  value = ''
+  cmOptions = {
+    mode: 'graphql',
+              }
+  async onCmReady() {}
+
+  async onCmCodeChange() {}
+
+  async mounted() {
+        // @ts-ignore
+        const schema = (this.getDb.graphqlSchema)
+
+        console.log(schema)
+        this.cmOptions = {
+          mode: 'graphql',
+          lint: {
+            // @ts-ignore
+            schema,
+          },
+          hintOptions: {
+            // @ts-ignore
+            schema,
+          },
+        }
+  }
+}
+</script>

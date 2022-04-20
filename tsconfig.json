@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2018",
-    "module": "ESNext",
+    "module": "es2020",
     "moduleResolution": "Node",
-    "lib": ["ESNext", "ESNext.AsyncIterable", "DOM"],
+    "lib": ["es2020", "ESNext.AsyncIterable", "DOM"],
     "esModuleInterop": true,
     "allowJs": true,
     "sourceMap": true,
