@@ -484,12 +484,7 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 // Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
-import {
-  interval,
-  mergeMap,
-  Subject,
-  take,
-} from 'rxjs'
+import { interval, mergeMap, Subject, take } from 'rxjs'
 
 import { Siwe } from '../../lib/AnconProtocol/SIWE'
 import { ethers } from 'ethers'
@@ -497,7 +492,10 @@ import helper from '~/utils/helper'
 import AnconProtocolClient from '~/lib/AnconProtocol/AnconProtocolClient'
 import { v4 as uuidv4 } from 'uuid'
 import Web3 from 'web3'
-import { JwtCredentialPayload, createVerifiableCredentialJwt } from 'did-jwt-vc/src'
+import {
+  JwtCredentialPayload,
+  createVerifiableCredentialJwt,
+} from 'did-jwt-vc/src'
 import base64url from 'base64url'
 import { toUtf8Bytes } from 'ethers/lib/utils'
 // Create component
@@ -658,6 +656,9 @@ export default class Personal extends Vue.extend({
   }
 
   async signProvenance(cid) {
+        this.snackbarText = `Sign with security device... `
+    this.snackbar = true
+
     // @ts-ignore
     const model = await this.getDb.get(cid, null)
 
@@ -672,31 +673,32 @@ export default class Personal extends Vue.extend({
     const issuer = {
       did,
       alg: 'ES256K',
-      signer: async function mySigner(
-        data: string
-      ): Promise<string> {
+      signer: async function mySigner(data: string): Promise<string> {
         const origin = window.location.origin
         // @ts-ignore
-        signerResult =  await fidoClient.registerSign(
+        signerResult = await fidoClient.registerSign(
           origin,
           model.cid,
           did,
           toUtf8Bytes(data)
-        )        
+        )
         return base64url.encode(signerResult.signature)
       },
     }
 
-    model.document.image = cidFromIpfs.image
     const vcPayload: JwtCredentialPayload = {
-      // sub: 'did:ethr:0x435df3eda57154cf8cf7926079881f2912f54db4',
+      sub: 'did:ethr:' + this.defaultAddress(),
       vc: {
         '@context': ['https://www.w3.org/2018/credentials/v1'],
         type: ['VerifiableCredential'],
         credentialSubject: {
-          ...model.document
-        }
-      }
+          owner: model.document.owner,
+          name: model.document.name,
+          description: model.document.description,
+
+          souces: model.document.souces,
+        },
+      },
     }
     const jwt = await createVerifiableCredentialJwt(vcPayload, issuer)
 
@@ -705,8 +707,6 @@ export default class Personal extends Vue.extend({
       name: model.document.name,
       description: model.document.description,
       address: this.defaultAddress(),
-      deviceSignerMake: '',
-      deviceSignerModel: '',
       jwt,
     }
     const requestOptions = {
@@ -718,12 +718,31 @@ export default class Personal extends Vue.extend({
     // @ts-ignore
     const rawResponse = await fetch(
       // @ts-ignore
-      `http://localhost:3030/api/v0/provenance_metadata`,
+      `https:/api.ancon.did.pa/img`,
       requestOptions
     )
 
-    const res = await rawResponse.json()
-    console.log(res)
+    const res = await rawResponse.blob()
+    debugger
+    const block = {
+      ...model.document,
+      kind: 'StorageAsset',
+      timestamp: new Date().getTime(),
+      contentAuthenticity: {
+        signature: signerResult.signature,
+        // clientDataJSON: signerResult.clientDataJSON,
+        // authenticatorData: signerResult.authenticatorData,
+      },
+      image: await PromiseFileReader.readAsDataURL(res),
+    } as StorageAsset
+
+    // @ts-ignore
+     await this.getDb.putBlock(block, {
+      kind: 'StorageAsset',
+    })
+    this.snackbarText = `Asset succesfully signed`
+    this.snackbar = true
+
   }
 
   async signWithWebAuthn(cid, model?) {
@@ -969,6 +988,7 @@ export default class Personal extends Vue.extend({
     try {
       this.snackbarText = 'Uploading to IPFS...'
       this.snackbar = true
+      debugger
       const model = await (this as any).getDb.get(cid)
 
       const fileAsBlob = await fetch(model.document.image)
@@ -977,7 +997,7 @@ export default class Personal extends Vue.extend({
       // @ts-ignore
       const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
       // sign message
-      const { signature, digest } = await this.signWithWebAuthn(cid)
+      const { signature, digest } = await this.signWithWebAuthn(cid, model)
       const block = {
         ...model.document,
         image: cidFromIpfs.image,
@@ -1435,7 +1455,7 @@ export default class Personal extends Vue.extend({
   }
 
   getFidoClient() {
-        // Fido2 server settings, rp*** is the data asset
+    // Fido2 server settings, rp*** is the data asset
     // @ts-ignore
     const fido2server = new WebauthnHardwareAuthenticate()
     fido2server.initialize({
@@ -1451,7 +1471,6 @@ export default class Personal extends Vue.extend({
     // Fido2 client                                    settings, user is the user address + origin
     // @ts-ignore
     return new WebauthnHardwareClient(fido2server, this.getDb)
-
   }
   async mounted() {
     const cancel = setTimeout(async () => {
