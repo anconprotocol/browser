@@ -700,7 +700,7 @@ export default class Personal extends Vue.extend({
         },
       },
     }
-    const jwt = await createVerifiableCredentialJwt(vcPayload, issuer)
+    const jwt = await createVerifiableCredentialJwt(vcPayload, issuer as any)
 
     const payload = {
       cid: cidFromIpfs.cid,
