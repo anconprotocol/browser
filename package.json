@@ -23,7 +23,7 @@
     "buffer": "^6.0.3",
     "checkdigit": "^1.1.1",
     "class-validator": "^0.13.2",
-    "core-js": "^3.19.3",
+    "core-js": "^3.22.1",
     "eth-crypto": "^2.2.0",
     "ethers": "^5.5.1",
     "fido2-lib": "github:anconprotocol/fido2-lib",
