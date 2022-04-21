@@ -166,6 +166,7 @@ export default {
     WakuRPC: 'https://api.ancon.did.pa/waku',
     InfuraIPFS: 'https://infura.ipfs.io:5001',
     IPFS: 'https://ipfs.xdv.digital/',
+    ImageContentAuthenticity: `https://api.ancon.did.pa/img`,
     Waku: 'https://waku.did.pa/',
     WakuLibp2p:
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB',

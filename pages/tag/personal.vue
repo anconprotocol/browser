@@ -718,7 +718,7 @@ export default class Personal extends Vue.extend({
     // @ts-ignore
     const rawResponse = await fetch(
       // @ts-ignore
-      `https:/api.ancon.did.pa/img`,
+      this.$nuxt.context.env.ImageContentAuthenticity,
       requestOptions
     )
 
