@@ -49,12 +49,10 @@
     </v-app-bar>
     <v-main>
       <v-container>
-          <!-- <v-img :src="avatar" height="32" max-height="32" width="32" max-width="32" ></v-img> -->
+        <!-- <v-img :src="avatar" height="32" max-height="32" width="32" max-width="32" ></v-img> -->
 
-        <v-subheader v-if="connected"
-          >          
-          <v-row dense
-            >
+        <v-subheader v-if="connected">
+          <v-row dense>
             <v-col xs>Network {{ network.name }}</v-col>
 
             <v-col xs cols="12"
@@ -69,7 +67,7 @@
 
           <vue-qrcode :value="address" :options="{ width: 55 }"></vue-qrcode>
         </v-subheader>
-        <Nuxt v-if="connected"/>
+        <Nuxt v-if="connected" />
       </v-container>
     </v-main>
     <v-footer :absolute="!fixed" app>
@@ -117,7 +115,7 @@
 
 <script>
 import WalletConnectProvider from '@walletconnect/web3-provider'
-import "reflect-metadata";
+import 'reflect-metadata'
 import * as hashicon from 'hashicon'
 import { base58btc } from 'multiformats/bases/base58'
 
@@ -135,7 +133,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { WebauthnHardwareClient } from 'parkydb/lib/core/webauthnClient'
 import { WebauthnHardwareAuthenticate } from 'parkydb/lib/core/webauthnServer'
 import Web3 from 'web3'
-import { toUtf8String } from '@ethersproject/strings'
+import { IndexedDBAdapter } from 'parkydb/lib//parkydb-indexeddb'
+
 export default {
   name: 'DefaultLayout',
   components: {
@@ -156,9 +155,16 @@ export default {
       this.canSignTransaction = true
       try {
         this.network = await web3provider.getNetwork()
+        this.defaultDid = `did:ethr:${this.address}`
         await this.db.initialize({
           graphql: { resolvers: defaultResolvers },
           enableSync: true,
+          withDB: {
+            provider: IndexedDBAdapter,
+            options: {
+              name: 'du',
+            },
+          },
           wakuconnect: {
             bootstrap: { peers: [$nuxt.context.env.WakuLibp2p] },
           },
@@ -197,7 +203,6 @@ export default {
 
       this.connected = this.walletconnect.connected
       this.showConnect = false
-      
     }
     // Subscribe to accounts change
     provider.on('accountsChanged', bootstrap)
@@ -207,9 +212,7 @@ export default {
 
     this.walletconnect = provider
   },
-  mounted: function () {
-    
-  },
+  mounted: function () {},
   provide: function () {
     return {
       getWalletconnect: () => this.walletconnect,
@@ -220,9 +223,10 @@ export default {
       historySubscription: this.onHistory,
       defaultTopic: this.defaultTopic,
       defaultAddress: () => this.defaultAddress,
+      defaultDid: () => this.defaultDid,
       currentAccountTopic: this.currentAccountTopic,
       canSignTransaction: this.canSignTransaction,
-      connected:() => this.connected,
+      connected: () => this.connected,
       getAncon: () => this.Ancon,
     }
   },
@@ -307,6 +311,12 @@ export default {
       try {
         // this.network = await web3provider.getNetwork()
         await this.db.initialize({
+          withDB: {
+            provider: IndexedDBAdapter,
+            options: {
+              name: 'du',
+            },
+          },
           graphql: { resolvers: defaultResolvers },
           enableSync: true,
           wakuconnect: {
@@ -318,7 +328,7 @@ export default {
           withWeb3: {
             provider: web3provider,
             defaultAddress: identity.address,
-          },       
+          },
           withIpfs: {
             gateway: 'https://ipfs.infura.io',
             api: this.$nuxt.context.env.IPFS,
@@ -336,10 +346,10 @@ export default {
           rpId: this.$nuxt.context.env.WebAuthn,
           rpName: 'du.',
           rpIcon: '',
-         // attestation: 'direct',
+          // attestation: 'direct',
           authenticatorRequireResidentKey: false,
           authenticatorUserVerification: 'required',
-   ///       cryptoParams: [-257],
+          ///       cryptoParams: [-257],
         })
 
         await this.bootstrap()
@@ -403,7 +413,6 @@ export default {
         this.showConnect = false
       } catch (e) {
         console.error(e)
-        
       }
     },
     connect: async function () {

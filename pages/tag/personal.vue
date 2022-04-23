@@ -1,3 +1,4 @@
+
 c<template>
   <v-container fluid>
     <div></div>
@@ -484,7 +485,7 @@ import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css
 // Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
-import { interval, mergeMap, Subject, take } from 'rxjs'
+import { interval, lastValueFrom, mergeMap, Subject, take, tap } from 'rxjs'
 
 import { Siwe } from '../../lib/AnconProtocol/SIWE'
 import { ethers } from 'ethers'
@@ -529,6 +530,7 @@ const FilePond = vueFilePond(
     'getWalletconnect',
     'defaultTopic',
     'defaultAddress',
+    'defaultDid',
     'incomingSubscriptions',
     'personalBlocksSubscription',
     'historySubscription',
@@ -586,6 +588,7 @@ export default class Personal extends Vue.extend({
   selectedFile: any = {}
   selectedInfoItem: any = { document: {}, meta: { ref: '' } }
   defaultAddress: any
+  defaultDid: any
   db: any
   // @ts-ignore
   historySubscription: Subject<any>
@@ -656,7 +659,7 @@ export default class Personal extends Vue.extend({
   }
 
   async signProvenance(cid) {
-        this.snackbarText = `Sign with security device... `
+    this.snackbarText = `Sign with security device... `
     this.snackbar = true
 
     // @ts-ignore
@@ -669,25 +672,27 @@ export default class Personal extends Vue.extend({
     const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
     const fidoClient = this.getFidoClient()
     let signerResult
-    const did = this.defaultAddress()
+
     const issuer = {
-      did,
+      did: this.defaultDid(),
       alg: 'ES256K',
       signer: async function mySigner(data: string): Promise<string> {
         const origin = window.location.origin
         // @ts-ignore
         signerResult = await fidoClient.registerSign(
           origin,
-          model.cid,
-          did,
-          toUtf8Bytes(data)
+          this.defaultDid(),
+          this.defaultDid(),
+          toUtf8Bytes(data),
+          false
         )
         return base64url.encode(signerResult.signature)
       },
     }
+    const did = this.defaultDid()
 
     const vcPayload: JwtCredentialPayload = {
-      sub: 'did:ethr:' + this.defaultAddress(),
+      sub: did,
       vc: {
         '@context': ['https://www.w3.org/2018/credentials/v1'],
         type: ['VerifiableCredential'],
@@ -695,7 +700,6 @@ export default class Personal extends Vue.extend({
           owner: model.document.owner,
           name: model.document.name,
           description: model.document.description,
-
           souces: model.document.souces,
         },
       },
@@ -723,7 +727,6 @@ export default class Personal extends Vue.extend({
     )
 
     const res = await rawResponse.blob()
-    debugger
     const block = {
       ...model.document,
       kind: 'StorageAsset',
@@ -737,12 +740,11 @@ export default class Personal extends Vue.extend({
     } as StorageAsset
 
     // @ts-ignore
-     await this.getDb.putBlock(block, {
+    await this.getDb.putBlock(block, {
       kind: 'StorageAsset',
     })
     this.snackbarText = `Asset succesfully signed`
     this.snackbar = true
-
   }
 
   async signWithWebAuthn(cid, model?) {
@@ -759,9 +761,10 @@ export default class Personal extends Vue.extend({
     // @ts-ignore
     const res = await fidoClient.registerSign(
       origin,
-      model.cid,
-      this.defaultAddress(),
-      model.dag.bytes
+      this.defaultDid(),
+      this.defaultDid(),
+      model.dag.bytes,
+      false
     )
 
     this.loading = false
@@ -1022,7 +1025,7 @@ export default class Personal extends Vue.extend({
       const ipfsAddResJSON = await ipfsAddRes.json()
 
       const cidipfs = ipfsAddResJSON.Hash
-
+      debugger
       this.add(cid, 'Publish to ipfs', this.getWalletconnect().accounts[0], {
         cid: cidipfs,
       })
@@ -1057,53 +1060,74 @@ export default class Personal extends Vue.extend({
       // @ts-ignore
       const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
       model.document.image = cidFromIpfs.image
-      const api = this.$nuxt.context.env.AnconAPI + '/'
-      const siwe = new Siwe(this.getWalletconnect(), api)
+      // const api = this.$nuxt.context.env.AnconAPI + '/'
+      // const siwe = new Siwe(this.getWalletconnect(), api)
 
-      const pubkey = await siwe.getSIWEPublicKey()
-      const web3provider = new ethers.providers.Web3Provider(
-        this.getWalletconnect()
-      )
-      const network = await web3provider.getNetwork()
-      const didacct = {
-        ethrdid: `did:ethr:${network.name}:${
-          this.getWalletconnect().accounts[0]
-        }`,
-      }
-      // @ts-ignore
-      await this.getDb.ancon.createDid(
-        didacct,
-        pubkey,
-        'Welcome tu du.xdv.digital!'
-      )
+      // const pubkey = await siwe.getSIWEPublicKey()
+      // const web3provider = new ethers.providers.Web3Provider(
+      //   this.getWalletconnect()
+      // )
+      // const network = await web3provider.getNetwork()
+      // const didacct = {
+      //   ethrdid: `did:ethr:${network.name}:${
+      //     this.getWalletconnect().accounts[0]
+      //   }`,
+      // }
+
+      // // @ts-ignore
+      // await this.getDb.ancon.createDid(
+      //   didacct,
+      //   pubkey,
+      //   'Welcome tu du.xdv.digital!'
+      // )
       // @ts-ignore
 
-      const dagblock = await this.getDb.ancon.createDagBlock(didacct.ethrdid, {
+      // const dagblock = await this.getDb.ancon.createDagBlock(
+      //   this.defaultDid(), {
+      //   // @ts-ignore
+      //   message: model.document,
+      //   topic: undefined,
+      //   // topic: 'du.xdv.digital',
+      // })
+
+      // @ts-ignore
+      const pubsub = await this.getDb.createTopicPubsub(`/du/storage/1/cbor`, {
+        middleware: {
+          incoming: [tap()],
+          outgoing: [tap()],
+        },
         // @ts-ignore
-        message: model.document,
-        topic: undefined,
-        // topic: 'du.xdv.digital',
+        blockCodec: this.getDb.defaultBlockCodec as any,
+        canSubscribe: true,
+        canPublish: true,
+        isKeyExchangeChannel: false,
+        isCRDT: false,
+      })
+      const cancel = pubsub.onBlockReply$.subscribe(async (msg) => {
+        this.loading = false
+        this.loadingText = this.defaultLoadingText
+
+        this.snackbarText = 'Upload completed'
+        this.snackbar = true
       })
 
-      this.add(
-        cid,
-        'Publish to ancon',
-        this.getWalletconnect().accounts[0],
-        dagblock
+      const { signature, digest } = await this.sign(
+        JSON.stringify(model.document)
       )
 
-      // @ts-ignore
-      await this.getDb.putBlock({
-        cid: dagblock.cid,
-        // topic: 'du.xdv.digital',
-        kind: 'AnconBlock',
-        ref: cid,
-      })
-      this.loading = false
-      this.loadingText = this.defaultLoadingText
+      let payload = {
+        path: '/',
+        from: this.defaultAddress(),
+        signature,
+        //      topic: model.document,
+        data: model.document,
+      } as any
 
-      this.snackbarText = 'Upload completed'
-      this.snackbar = true
+      pubsub.publish({
+        event: 'pushToAncon',
+        from: this.defaultDid(),
+        payload: model.document,
+      })
     } catch (e) {
       this.loading = false
       this.showShare = true
@@ -1287,7 +1311,11 @@ export default class Personal extends Vue.extend({
   }
 
   async add(_cid, _action, _user, metadata) {
-    const model = await (this as any).getDb.db.history.get({ cid: _cid })
+    // @ts-ignore
+    const q = await this.getDb.getBlocksByTableName$('history', (h) => {
+      return () => h.where({ cid: _cid }).toArray()
+    })
+    const model: any = await lastValueFrom(q)
 
     const event = {
       message: _action,
@@ -1304,9 +1332,23 @@ export default class Personal extends Vue.extend({
         cid: _cid,
         refs: [...model.refs, event],
       }
-      ;(this as any).getDb.db.history.update(_cid, update)
+      // @ts-ignore
+      const updateTask = await this.getDb.getBlocksByTableName$(
+        'history',
+        (h) => {
+          return () => h.update(_cid, update)
+        }
+      )
+      await lastValueFrom(updateTask)
     } else {
-      ;(this as any).getDb.db.history.put(init)
+      // @ts-ignore
+      const updateTask = await this.getDb.getBlocksByTableName$(
+        'history',
+        (h) => {
+          return () => h.put(init)
+        }
+      )
+      await lastValueFrom(updateTask)
     }
   }
 
@@ -1397,8 +1439,10 @@ export default class Personal extends Vue.extend({
           (x) => x.document.kind === this.keys[this.selectedChip]
         )
 
-        this.postFilter(p)
-        this.items = await Promise.all(p)
+        if (p.length > 0) {
+          this.postFilter(p)
+          this.items = await Promise.all(p)
+        }
         this.loading = false
       },
     })
@@ -1416,7 +1460,7 @@ export default class Personal extends Vue.extend({
       },
     })
 
-    if (this.canSignTransaction) {
+    if (this.getWalletconnect() && this.getWalletconnect().connected) {
       const { AnconNFTContract, AnconNFTContract_ethers } = helper.getContracts(
         new Web3(this.$nuxt.context.env.BSC_MAINNET),
         this.getWalletconnect().accounts[0]
@@ -1477,6 +1521,30 @@ export default class Personal extends Vue.extend({
       await this.bindSubscriptions()
       this.loading = false
     }, 1500)
+
+    // @ts-ignore
+    window.addEventListener('fetch', (event: any) => {
+      const url = new URL(event.request.url)
+      // Si esta es una solicitud POST entrante para la
+      // URL de "action" registrada, se responde.
+      if (
+        event.request.method === 'POST' &&
+        url.pathname === '/intent/shared'
+      ) {
+        event.respondWith(
+          (async () => {
+            const formData = await event.request.formData()
+            const name = formData.get('name') || ''
+            const link = formData.get('link') || ''
+            const description = formData.get('description') || ''
+            const files = formData.get('files') || ''
+            debugger
+
+            return Response.redirect('responseUrl', 303)
+          })()
+        )
+      }
+    })
   }
 
   async handleDisplay(key, show, item) {
