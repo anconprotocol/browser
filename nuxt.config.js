@@ -56,6 +56,27 @@ export default {
     '@nuxtjs/pwa',
   ],
 
+  pwa: {
+    manifest: {
+      name: 'du.',
+      share_target: {
+        action: '/intent/share_du',
+        method: 'POST',
+        enctype: 'multipart/form-data',
+        params: {
+          title: 'name',
+          text: 'description',
+          url: 'link',
+          files: [
+            {
+              name: 'files',
+              accept: ['png', 'pdf', '.jpg', 'xml'],
+            },
+          ],
+        },
+      },
+    },
+  },
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
     // https://go.nuxtjs.dev/axios
@@ -112,7 +133,7 @@ export default {
     // includeNodeModules: true,
   },
   alias: {
-    'did-jwt':[]
+    'did-jwt': [],
   },
 
   /*
@@ -123,7 +144,7 @@ export default {
     /*
      ** You can extend webpack config here
      */
-    
+
     extend(config, ctx) {
       // transpile .mjs too
       const babelRule = config.module.rules.find(
@@ -137,7 +158,7 @@ export default {
         include: /node_modules/,
         type: 'javascript/auto',
       })
-      
+
       config.module.rules.push({
         test: /\.js$/,
         include: /node_modules/,
@@ -153,9 +174,7 @@ export default {
       }),
     ],
   },
-  alias: {
-    
-  },
+  alias: {},
   env: {
     AnconNFT: process.env.REACT_APP_AnconNFTAddress,
     AnconToken: process.env.REACT_APP_AnconTokenAddress,
@@ -170,6 +189,6 @@ export default {
     Waku: 'https://waku.did.pa/',
     WakuLibp2p:
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB',
-    WebAuthn:  'du.xdv.digital',
+    WebAuthn:  'localhost' // 'du.xdv.digital',
   },
 }
