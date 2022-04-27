@@ -1,12 +1,11 @@
-c<template>
-  <v-container fluid>
+<template>
+  <v-container fluid>    
     <div></div>
-    <v-row>
+    <v-row>      
       <v-col>
         <file-pond
           name="test"
-          ref="pond"
-          label-idle="Drop files here..."
+          ref="pond" dropOnPage="true" dropOnElement="false"
           v-bind:allow-multiple="false"
           accepted-file-types="image/jpeg,
         image/png, image/gif, application/pdf"
@@ -522,6 +521,7 @@ const FilePond = vueFilePond(
     },
   },
   inject: [
+    'network',
     'canSignTransaction',
     'getDb',
     'web3',
@@ -789,6 +789,7 @@ export default class Personal extends Vue.extend({
     }
     if (this.editDialog) {
       this.editDialog = false
+          this.files = []
     } else {
       this.editDialog = true
     }
