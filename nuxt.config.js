@@ -162,7 +162,7 @@ export default {
     XDVNFT: '0xD6cE9d299E1899B4BBCece03D2ad44b41212f324',
     BSC_MAINNET: 'https://bsc-dataseed.binance.org/',
     Onramper: `pk_test_vce1UmxZ3fdhoOGiZBJHiUivX205TfsfAiyljF9LF_k0`,
-    AnconAPI: 'https://api.ancon.did.pa',
+    AnconAPI: 'https://tensta.did.pa',
     WakuRPC: 'https://api.ancon.did.pa/waku',
     InfuraIPFS: 'https://infura.ipfs.io:5001',
     IPFS: 'https://ipfs.xdv.digital/',
@@ -170,6 +170,6 @@ export default {
     Waku: 'https://waku.did.pa/',
     WakuLibp2p:
       '/dns4/waku.did.pa/tcp/8000/wss/p2p/16Uiu2HAmN96WgFsyepE3tLw67i3j6BdBo3xPF6MQ2hjmbaW5TUoB',
-    WebAuthn:  'du.xdv.digital',
+    WebAuthn: 'localhost' // 'du.xdv.digital',
   },
 }

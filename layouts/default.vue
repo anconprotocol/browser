@@ -1,45 +1,20 @@
 <template>
   <v-app dark>
-    <v-navigation-drawer
-      v-model="drawer"
-      :mini-variant="true"
-      :clipped="clipped"
-      fixed
-      app
-    >
-      <v-list>
-        <v-list-item
-          v-for="(item, i) in items"
-          :key="i"
-          :to="item.to"
-          router
-          exact
-        >
-          <v-list-item-action>
-            <v-icon>{{ item.icon }}</v-icon>
-          </v-list-item-action>
-          <v-list-item-content>
-            <v-list-item-title v-text="item.title" />
-          </v-list-item-content>
-        </v-list-item>
-      </v-list>
-      <!-- <v-btn icon @click.stop="miniVariant = !miniVariant" ali>
-        <v-icon>mdi-{{ `chevron-${miniVariant ? 'left' : 'right'}` }}</v-icon>
-      </v-btn> -->
-    </v-navigation-drawer>
-    <v-app-bar
+    
+    
+    <v-app-bar  
       :clipped-left="clipped"
       fixed
       app
-      color="purple darken-4"
-      class="orange--text"
+      
+      class="orange--text bgimage"
     >
       <!-- <v-app-bar-nav-icon @click.stop="drawer = !drawer" /> -->
-      <v-toolbar-title
+      <router-link to="/" custom v-slot="{ navigate, href, route }">
+      <v-toolbar-title @click="navigate"
         v-text="title"
         class="font-weight-black display-1"
-        @click="home()"
-      />
+      /></router-link>
       <v-spacer />
 
       <v-spacer />
@@ -49,12 +24,8 @@
     </v-app-bar>
     <v-main>
       <v-container>
-          <!-- <v-img :src="avatar" height="32" max-height="32" width="32" max-width="32" ></v-img> -->
-
-        <v-subheader v-if="connected"
-          >          
-          <v-row dense
-            >
+      <v-subheader>
+          <v-row dense>
             <v-col xs>Network {{ network.name }}</v-col>
 
             <v-col xs cols="12"
@@ -69,13 +40,14 @@
 
           <vue-qrcode :value="address" :options="{ width: 55 }"></vue-qrcode>
         </v-subheader>
-        <Nuxt v-if="connected"/>
+        <Nuxt v-if="connected" />
       </v-container>
     </v-main>
-    <v-footer :absolute="!fixed" app>
+    <v-footer :absolute="!fixed" app       color="purple darken-4 bgimage">
       <v-row>
         <v-col>&copy; {{ new Date().getFullYear() }} IFESA</v-col>
-        <v-col align="right"><a href="privacy">Privacy</a></v-col></v-row
+        <v-col align="right"><router-link to="/privacy">Privacy</router-link>
+</v-col></v-row
       >
     </v-footer>
     <v-dialog v-model="showConnect" max-width="600px">
@@ -117,7 +89,7 @@
 
 <script>
 import WalletConnectProvider from '@walletconnect/web3-provider'
-import "reflect-metadata";
+import 'reflect-metadata'
 import * as hashicon from 'hashicon'
 import { base58btc } from 'multiformats/bases/base58'
 
@@ -135,7 +107,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { WebauthnHardwareClient } from 'parkydb/lib/core/webauthnClient'
 import { WebauthnHardwareAuthenticate } from 'parkydb/lib/core/webauthnServer'
 import Web3 from 'web3'
-import { toUtf8String } from '@ethersproject/strings'
+import { IndexedDBAdapter } from 'parkydb/lib/parkydb-indexeddb'
+
 export default {
   name: 'DefaultLayout',
   components: {
@@ -156,9 +129,16 @@ export default {
       this.canSignTransaction = true
       try {
         this.network = await web3provider.getNetwork()
+        this.defaultDid = `did:ethr:${this.address}`
         await this.db.initialize({
           graphql: { resolvers: defaultResolvers },
           enableSync: true,
+          withDB: {
+            provider: IndexedDBAdapter,
+            options: {
+              name: 'du',
+            },
+          },
           wakuconnect: {
             bootstrap: { peers: [$nuxt.context.env.WakuLibp2p] },
           },
@@ -197,7 +177,6 @@ export default {
 
       this.connected = this.walletconnect.connected
       this.showConnect = false
-      
     }
     // Subscribe to accounts change
     provider.on('accountsChanged', bootstrap)
@@ -207,9 +186,7 @@ export default {
 
     this.walletconnect = provider
   },
-  mounted: function () {
-    
-  },
+  mounted: function () {},
   provide: function () {
     return {
       getWalletconnect: () => this.walletconnect,
@@ -220,9 +197,11 @@ export default {
       historySubscription: this.onHistory,
       defaultTopic: this.defaultTopic,
       defaultAddress: () => this.defaultAddress,
+      defaultDid: () => this.defaultDid,
+      network: () => this.network,
       currentAccountTopic: this.currentAccountTopic,
       canSignTransaction: this.canSignTransaction,
-      connected:() => this.connected,
+      connected: () => this.connected,
       getAncon: () => this.Ancon,
     }
   },
@@ -260,7 +239,7 @@ export default {
         chainId: 1,
       }),
       network: '',
-      address: '',
+      address: 'du.',
       keyExchangeTopic: '',
       clipped: false,
       drawer: false,
@@ -307,6 +286,12 @@ export default {
       try {
         // this.network = await web3provider.getNetwork()
         await this.db.initialize({
+          withDB: {
+            provider: IndexedDBAdapter,
+            options: {
+              name: 'du',
+            },
+          },
           graphql: { resolvers: defaultResolvers },
           enableSync: true,
           wakuconnect: {
@@ -318,7 +303,7 @@ export default {
           withWeb3: {
             provider: web3provider,
             defaultAddress: identity.address,
-          },       
+          },
           withIpfs: {
             gateway: 'https://ipfs.infura.io',
             api: this.$nuxt.context.env.IPFS,
@@ -336,10 +321,10 @@ export default {
           rpId: this.$nuxt.context.env.WebAuthn,
           rpName: 'du.',
           rpIcon: '',
-         // attestation: 'direct',
+          // attestation: 'direct',
           authenticatorRequireResidentKey: false,
           authenticatorUserVerification: 'required',
-   ///       cryptoParams: [-257],
+          ///       cryptoParams: [-257],
         })
 
         await this.bootstrap()
@@ -403,7 +388,6 @@ export default {
         this.showConnect = false
       } catch (e) {
         console.error(e)
-        
       }
     },
     connect: async function () {
@@ -532,3 +516,8 @@ export default {
   },
 }
 </script>
+<style scoped>
+.bgimage {
+  background: linear-gradient(130.92deg, rgb(58, 28, 113) -14.59%, rgb(215, 109, 119) 38.47%, rgb(255, 175, 123) 98.62%)
+}
+</style>

@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <v-tabs color="orange accent-2" right  >
+    <v-tabs color="orange accent-2" right>
       <v-tab v-for="tab in tabs" :key="tab.title">{{ tab.title }}</v-tab>
       <v-tab-item v-for="tab in tabs" :key="tab.title">
         <v-container fluid>

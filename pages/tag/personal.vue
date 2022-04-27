@@ -486,7 +486,6 @@ import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
 import { interval, mergeMap, Subject, take } from 'rxjs'
 
-import { Siwe } from '../../lib/AnconProtocol/SIWE'
 import { ethers } from 'ethers'
 import helper from '~/utils/helper'
 import AnconProtocolClient from '~/lib/AnconProtocol/AnconProtocolClient'
@@ -1043,6 +1042,41 @@ export default class Personal extends Vue.extend({
       this.snackbar = true
     }
   }
+  async createDagBlock(
+    from: string,
+    options: { topic: string; message: string },
+    customSigner?: (message: any) => Promise<any>,
+  ) {
+    let signer = customSigner || this.sign.bind(this)
+    const { signature, digest } = await signer(JSON.stringify(options.message))
+
+    let payload = {
+      path: '/',
+      from,
+      signature,
+      //      topic: options.topic,
+      data: options.message,
+    } as any
+
+    if (options.topic) {
+      payload.topic = options.topic
+    }
+
+    const requestOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+
+    // @ts-ignore
+    const rawResponse = await fetch(
+      // @ts-ignore
+      `${this.$nuxt.context.env.AnconAPI}/v1/dag`,
+      requestOptions,
+    )
+    //   json response
+    return rawResponse.json()
+  }
 
   async sendToAncon(cid: string) {
     try {
@@ -1058,27 +1092,10 @@ export default class Personal extends Vue.extend({
       const cidFromIpfs = await this.getDb.ipfs.uploadFile(file)
       model.document.image = cidFromIpfs.image
       const api = this.$nuxt.context.env.AnconAPI + '/'
-      const siwe = new Siwe(this.getWalletconnect(), api)
 
-      const pubkey = await siwe.getSIWEPublicKey()
-      const web3provider = new ethers.providers.Web3Provider(
-        this.getWalletconnect()
-      )
-      const network = await web3provider.getNetwork()
-      const didacct = {
-        ethrdid: `did:ethr:${network.name}:${
-          this.getWalletconnect().accounts[0]
-        }`,
-      }
+      const did = `did:ethr:${this.defaultAddress()}`
       // @ts-ignore
-      await this.getDb.ancon.createDid(
-        didacct,
-        pubkey,
-        'Welcome tu du.xdv.digital!'
-      )
-      // @ts-ignore
-
-      const dagblock = await this.getDb.ancon.createDagBlock(didacct.ethrdid, {
+      const dagblock = await this.createDagBlock(did, {
         // @ts-ignore
         message: model.document,
         topic: undefined,
