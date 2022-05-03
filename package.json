@@ -46,7 +46,7 @@
     "vue-filepond": "^6.0.3",
     "vue-property-decorator": "^9.1.2",
     "vue-qrcode-reader": "^3.1.0",
-    "vuetify": "^2.6.1",
+    "vuetify": "^2.6.5",
     "web3": "^1.7.1"
   },
   "devDependencies": {
